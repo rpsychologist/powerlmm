@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^dev
+^README\.Rmd$
+^README-.*\.png$
+^tests/local
+^man/figures
+^powerlmm.pdf$
+^\.travis\.yml$

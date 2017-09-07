@@ -1,0 +1,8 @@
+inst/doc
+.DS_Store
+.Rproj.user
+.Rhistory
+.RData
+dev/
+~$README.md
+powerlmm.pdf

@@ -1,0 +1,219 @@
+---
+title: "Power analysis for Two-level Longitudinal Models with Missing Data"
+author: "Kristoffer Magnusson"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tutorial: Two-level Longitudinal Power Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(powerlmm)
+```
+
+
+# Introduction
+This vignette shows how to use the *powerlmm*-package to design a two-level longitudinal study. The package does not only contain tools to calculate power for these models, but also tools to help you understand 
+the implications of the model's parameters. The real world performance of the study designs can also be evaluated using Monte Carlo simulations (see the simulation vignette). The package also includes functions to help you understand the consequences of
+ignoring clustering effects at the third level (see the three-level vignette). The design effect can be calculated, as well as the inflation of type 1 errors when a random slope at the third level is ignored.
+
+# Supported models
+Currently power can be calculated for the following designs
+
+* Two-level model (subjects with repeated measures)
+* Nested three-level models (subjects with repeated measures, nested within e.g. therapists)
+* Partially nested designs (only one treatment arm in the nested three-level models have clustering)
+
+## Random slopes
+It is possible to include random slopes at both the cluster and subject level. 
+
+## Unbalanced designs
+Unbalanced designs are supported; e.g. treatments can have different number of subjects and/or clusters. It is also possible to have unbalanced cluster sizes within a treatment. 
+
+## Missing data
+The power calculations can account for missing data, either by manually specifying dropout per time point, or by using a Weibull survival function. 
+
+
+# Two-level longitudinal linear mixed model with random slopes
+This is the typical longitudinal linear mixed model, which in multilevel notion is written as
+
+## Model formulation
+$$
+\begin{align}
+\text{Level 1}& \notag\\\
+Y_{ij} &= \beta_{0j} + \beta_{1j}t_{ij} + R_{ij}\\\
+\text{Level 2}& \notag\\\
+\beta_{0j} &= \gamma_{00} + \gamma_{01} TX_j + U_{0j} \\\
+\beta_{1j} &= \gamma_{10} + \gamma_{11} TX_j + U_{1j} \\\
+\end{align}
+$$
+with, 
+$$
+\begin{equation}
+\begin{pmatrix}
+U_{0j} \\\
+ U_{1j}
+\end{pmatrix}
+\sim\mathcal{N}
+\left(
+\begin{matrix}
+0 &\\\
+0
+\end{matrix}
+,
+\begin{matrix}
+ \tau_{00}^2 & \tau_{01}\\\
+ \tau_{01} & \tau_{10}^2
+\end{matrix}
+\right)
+,
+\end{equation}
+$$
+and
+$$
+\begin{equation}
+R_{ij} \sim\mathcal{N}(0, ~\sigma^2)
+\end{equation}
+$$
+
+
+All designs are setup using the `study_parameters` function. Parameters can be specified
+either directly or by their standardized counterpart.
+
+The corresponding arguments in `study_parameters` are
+
+parameter        | `study_parameters()-`argument
+---------------- | -----------
+$\gamma_{00}$    | `fixed_intercept`
+$\gamma_{01}$    | NA; assumed to be 0
+$\gamma_{10}$    | `fixed_slope`
+$\gamma_{11}$    | calculated from `cohend`; standardized using baseline standard deviation
+$\tau_{00}$      | `sigma_subject_intercept`
+$\tau_{10}$      | `sigma_subject_slope`
+$\tau_{01}$      | calculated from `cor_subject`
+$\sigma$         | `sigma_error`
+
+## Standardized and unstandardized formulation
+
+For a two-level model power depends on `n1`, `n2`, the amount of baseline variance at the subject level (`icc_pre_subjects`) and the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`). 
+
+
+Standardized        | Calculation
+------------------- | -----------
+`icc_pre_subjects`  | $\tau_{00}^2/(\tau_{00}^2 + \sigma^2)$  
+`var_ratio`         | $\tau_{10}^2/\sigma^2$  
+`cohend`            | $\gamma_{11}/(\tau_{00}^2 + \sigma^2)$  
+
+## Setting up the model using study_parameters()
+Here's an example of specifing the "same" model using standardized or unstandardized inputs.
+
+```{r}
+p1 <- study_parameters(n1 = 11,
+                      n2 = 25,
+                      sigma_subject_intercept = 1.44,
+                      sigma_subject_slope = 0.2,
+                      sigma_error = 1.44,
+                      cohend = 0.5)
+
+p2 <- study_parameters(n1 = 11,
+                      n2 = 25,
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.019,
+                      cohend = 0.5)
+p2
+```
+
+To calculate power we use `get_power`
+```{r}
+get_power(p2)
+```
+
+# Missing data
+Missing data can be accounted for in the power calculations by the argument `dropout`. Intermittent missing
+data is not currently supported, thus missing data is monotonically increasing. Two helper functions are used to define the dropout pattern; either `dropout_manual` or `dropout_weibull`. Here I will `dropout_weibull`.
+
+```{r}
+p2 <- study_parameters(n1 = 11,
+                      n2 = 25,
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.019,
+                      dropout = dropout_weibull(proportion = 0.3, 
+                                                rate = 1/2),
+                      cohend = -0.5)
+```
+
+Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and missing data pattern using ´plot´.
+
+```{r, fig.width=8}
+plot(p2)
+```
+
+And the power can be calculated using `get_power`.
+```{r, message = FALSE}
+get_power(p2)
+```
+Not surprisingly, power is decreased compared to the model with no missing data.
+
+## Different dropout patterns per treatment group
+The helper function `per_treatment` allows some options to differ by treatment arm.
+```{r, fig.width=4}
+
+d <- per_treatment(control = dropout_weibull(proportion = 0.3, 
+                                                rate = 1/2),
+                   treatment = dropout_weibull(proportion = 0.5, 
+                                                rate = 2))
+
+p2 <- study_parameters(n1 = 11,
+                      n2 = 25,
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.019,
+                      dropout = d,
+                      cohend = -0.5)
+
+plot(p2, plot = 2)
+```
+
+## Different number of subjects per treatment group
+The amount of subjects per treatment group can also be specified per treatment. Let's specify two studies
+that both have a total of 60 participants. The first have equal allocation (30 per group), and the second unequal allocation.
+
+```{r}
+p1 <- study_parameters(n1 = 11,
+                      n2 = 30,
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.019,
+                      cohend = -0.5)
+p2 <- study_parameters(n1 = 11,
+                      n2 = per_treatment(control = 10,
+                                         treatment = 50),
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.019,
+                      cohend = -0.5)
+
+p1
+p2
+```
+
+If we calculate power we can see that balanced allocation is more powerful.
+```{r}
+get_power(p1)$power
+get_power(p2)$power
+```
+
+# Power curves
+```{r}
+p1 <- study_parameters(n1 = 11,
+                      n2 = 30,
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.019,
+                      cohend = -0.5)
+
+x <- get_power_table(p1, n2 = seq(10, 30, by = 5), var_ratio = c(0.01, 0.02, 0.05))
+x
+```
+```{r, fig.width = 5}
+plot(x)
+```
+

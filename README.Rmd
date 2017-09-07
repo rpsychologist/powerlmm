@@ -1,0 +1,96 @@
+---
+output:
+  md_document:
+    variant: markdown_github
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-"
+)
+```
+
+# powerlmm
+[![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm)
+
+**Currently under development**
+
+Power Calculations for Longitudinal Multilevel/Linear Mixed Models.
+
+## Overview
+The purpose of `powerlmm` is to help design longitudinal treatment studies, with
+or without higher-level clustering (e.g. by therapists, groups, or physician), 
+and missing data. The main features of the package are:
+
+* Longitudinal two- and three-level (nested) linear mixed models, and partially nested designs
+* Random slopes at the subject- and cluster-level. 
+* Missing data.
+* Unbalanced designs (both unequal cluster sizes, and treatment groups).
+* Design effect, and estimated type I error when the third-level is ignored.
+* Fast analytical power calculations for all designs.
+* Explore bias, type 1 error and model misspecification using convenient simulation methods.
+
+## Installation
+Currently `powerlmm` is in development, and can only be installed from GitHub.
+```{r, eval = FALSE}
+devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
+```
+
+
+## Example usage
+This is an example of setting up a three-level longitudinal model with random slopes at both the subject- 
+and cluster-level, with different missing data pattern per treatment arm. Here relative standardized inputs are used,
+but unstandardized raw parameters values can also be used. 
+
+```{r three-level-setup, fig.width=9}
+library(powerlmm)
+d <- per_treatment(control = dropout_weibull(0.3, 2),
+              treatment = dropout_weibull(0.2, 2))
+p <- study_parameters(n1 = 11,
+                      n2 = 10,
+                      n3 = 5,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      dropout = d,
+                      cohend = -0.8)
+
+p
+```
+
+```{r, eval=FALSE}
+plot(p)
+```
+![](http://rpsychologist.com/img/powerlmm/README-three-level-setup-1.png)
+
+```{r three-level-power, message= FALSE, warning=FALSE}
+get_power(p)
+```
+
+Several convenience functions are also included, e.g. for creating power curves.
+
+```{r three-level-power-curve, eval = FALSE}
+x <- get_power_table(p, n2 = 5:10, n3 = c(4, 8, 12), cohend = c(0.5, 0.8))
+```
+
+```{r, eval = FALSE}
+plot(x)
+```
+![](http://rpsychologist.com/img/powerlmm/README-three-level-power-curve-1.png)
+
+## Launch interactive web application
+The package's basic functionality is also implemented in a Shiny web application, 
+aimed at users that are less familiar with R. Launch the application by typing
+```{r, eval = FALSE}
+library(powerlmm)
+shiny_powerlmm()
+```
+
+![](http://rpsychologist.com/img/powerlmm/README-shiny-screenshot1.png)
+
+![](http://rpsychologist.com/img/powerlmm/README-shiny-screenshot2.png)
