@@ -1,0 +1,134 @@
+---
+title: "A Tutorial on Using the Simulation Functions Included in powerlmm"
+author: "Kristoffer Magnusson"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Tutoria: Evaluation the Models Using Monte Carlo Simulations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(powerlmm)
+knitr::opts_chunk$set(eval = FALSE)
+```
+# Setup
+The simulation-function accepts the same study setup-object that we're used in the two- and three-level power vignettes. The analytical solution used by the `get_power`-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in *powerlmm*. Even if the analytical power calculations work well, simulation can still be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters. 
+
+## Partially nested three-level model
+When doing simulations I recommend specifying the raw values to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
+```{r}
+p <- study_parameters(n1 = 11,
+                      n2 = 10,
+                      n3 = 6,
+                      fixed_intercept = 37,
+                      fixed_slope = -0.64,
+                      sigma_subject_intercept = 2.8,
+                      sigma_subject_slope = 0.4,
+                      sigma_cluster_intercept = 0,
+                      cor_subject = -0.2,
+                      icc_slope = 0.05,
+                      sigma_error = 2.6,
+                      dropout = dropout_weibull(proportion = 0.3, 
+                                                rate = 1/2),
+                      partially_nested = TRUE,
+                      cohend = -0.8)
+
+p
+```
+
+## How many simulations to run?
+The `get_monte_carlo_se`-function accepts an power object, and will return the 95 % interval for a given amount of simulations. This is useful to gauge the precision of the empirical power estimates.  
+```{r}
+x <- get_power(p)
+get_monte_carlo_se(x, nsim = c(1000, 2000, 5000))
+```
+We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power. 
+
+Now, let's run the simulation. First we need to write the *lmer*-formula. Then we pass the `study_parameters` to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. However, parallelization relies on `parallel::mclapply` which does not support Windows. If you're using Windows use `cores = 1`. 
+
+```{r}
+f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
+
+res <- simulate(object = p,
+                nsim = 5000,
+                formula = f,
+                satterthwaite = TRUE,
+                progress = TRUE,
+                cores = 1,
+                save = FALSE)
+
+summary(res)
+```
+
+
+
+## Investigate model miss-specification
+Let's compare the correct partially nested model to a two-level linear mixed model. The formula argument accepts a named list with a `correct` and `wrong` formula. By setting `cohend` to 0 the simulation results tells us the empirical type I error for the correct and misspecified model.
+
+```{r}
+p <- update(p, cohend = 0)
+
+f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)",
+          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+
+res <- simulate(object = p,
+                nsim = 5000,
+                formula = f,
+                satterthwaite = TRUE,
+                progress = TRUE,
+                cores = 1,
+                save = FALSE)
+
+summary(res)
+```
+
+
+All of the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald t test using Satterthwaite's df approximation (from the lmerTest-package).
+
+# Compare multiple combinations of parameter values
+We can also simulate multiple designs and compare them. Let's compare 6 vs 12 clusters in the treatment arm, and `ìcc_slope` of 0.05 and 0.1, and a Cohen's d of 0.5 and 0.8. 
+
+```{r}
+p <- study_parameters(n1 = 11,
+                      n2 = 10,
+                      n3 = c(6, 12),
+                      fixed_intercept = 37,
+                      fixed_slope = -0.64,
+                      sigma_subject_intercept = 2.8,
+                      sigma_subject_slope = 0.4,
+                      sigma_cluster_intercept = 0,
+                      cor_subject = -0.2,
+                      icc_slope = c(0.05, 0.1),
+                      sigma_error = 2.6,
+                      dropout = dropout_weibull(proportion = 0.3, 
+                                                rate = 1/2),
+                      partially_nested = TRUE,
+                      cohend = -c(0.5, 0.8))
+
+
+f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
+
+res <- simulate(object = p,
+                nsim = 5000,
+                formula = f,
+                satterthwaite = TRUE,
+                progress = TRUE,
+                cores = 1,
+                save = FALSE)
+```
+
+The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups `nsim` number of simulations will be performed. With multiple designs `summary` works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.
+
+```{r}
+# Summarize 'time:treatment' results 
+summary(res, para = "time:treatment", type = "fixed", model = "correct")
+
+# Summarize cluster-level random slope 
+summary(res, para = "cluster_slope", type = "random", model = "correct")
+
+```
+
+
+
+
