@@ -4,12 +4,12 @@
 \name{powerlmm}
 \alias{powerlmm}
 \alias{powerlmm-package}
-\title{powerlmm}
+\title{Power Calculations for Longitudinal Multilevel Models}
 \description{
 The \pkg{powerlmm} package provides a fast and flexible way to calculate power for
 two- and three-level multilevel models with missing data. The focus is on
 longitudinal designs, i.e. where the first level is measurements, and the second
-level is subjects nested within a (optional) higher level three unit, e.g. therapists.
+level is subjects nested within a (optional) higher level-three unit, e.g. therapists.
 }
 \details{
 All study designs are specified using the function \code{\link{study_parameters}},
@@ -17,7 +17,7 @@ which lets you define your model using familiar notation, either by specifying
 the model parameters directly, or by using relative standardized inputs (e.g. \% variance at
 each level). Several functions are provided to help you visualize and understand
 the implied model, type \code{methods(class="plcp")} to see available methods.
-The basic features of the package is also available via a interactive (\pkg{Shiny})
+The basic features of the package are also available via a interactive (\pkg{Shiny})
 web application, which you can launch by typing \code{shiny_powerlmm()}.
 }
 \section{Supported models}{
@@ -32,10 +32,10 @@ and partially nested designs
 \item Account for missing data/dropout
 \item Unbalanced designs (both unequal cluster sizes, and treatment groups)
 \item Calculate the design effect, and estimated type I error when the
-third-level is ignored.
+third-level is ignored
 \item Fast analytical power calculations for all supported designs
 \item Explore bias, type 1 error and model misspecification using
-convenient simulation methods.
+convenient simulation methods
 }
 }
 

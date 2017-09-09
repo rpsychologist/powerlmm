@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2017-09-08" />
+<meta name="date" content="2017-09-09" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,13 +70,15 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2017-09-08</em></h4>
+<h4 class="date"><em>2017-09-09</em></h4>
 
 
 
-<div id="setup" class="section level1">
-<h1>Setup</h1>
-<p>The simulation-function accepts the same study setup-object that we’re used in the two- and three-level power vignettes. The analytical solution used by the <code>get_power</code>-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in <em>powerlmm</em>. Even if the analytical power calculations work well, simulation can still be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters.</p>
+<p>This vignettes shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, type 1 errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters.</p>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
+<p>The simulation-function accepts the same study setup-object that we’re used in the two- and three-level power vignettes. The analytical solution used by the <code>get_power</code>-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in <em>powerlmm</em>.</p>
+</div>
 <div id="partially-nested-three-level-model" class="section level2">
 <h2>Partially nested three-level model</h2>
 <p>When doing simulations I recommend specifying the raw values to ensure all parameters are reasonable. Here I use estimates from a real clinical trial.</p>
@@ -104,7 +106,7 @@ p</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span><span class="kw">get_power</span>(p)
 <span class="kw">get_monte_carlo_se</span>(x, <span class="dt">nsim =</span> <span class="kw">c</span>(<span class="dv">1000</span>, <span class="dv">2000</span>, <span class="dv">5000</span>))</code></pre></div>
 <p>We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power.</p>
-<p>Now, let’s run the simulation. First we need to write the <em>lmer</em>-formula. Then we pass the <code>study_parameters</code> to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. However, parallelization relies on <code>parallel::mclapply</code> which does not support Windows. If you’re using Windows use <code>cores = 1</code>.</p>
+<p>Now, let’s run the simulation. First we need to write the <em>lme4</em>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. However, parallelization relies on <code>parallel::mclapply</code> which does not support Windows. If you’re using Windows use <code>cores = 1</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
@@ -117,8 +119,8 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 
 <span class="kw">summary</span>(res)</code></pre></div>
 </div>
-<div id="investigate-model-miss-specification" class="section level2">
-<h2>Investigate model miss-specification</h2>
+<div id="investigate-model-misspecification" class="section level2">
+<h2>Investigate model misspecification</h2>
 <p>Let’s compare the correct partially nested model to a two-level linear mixed model. The formula argument accepts a named list with a <code>correct</code> and <code>wrong</code> formula. By setting <code>cohend</code> to 0 the simulation results tells us the empirical type I error for the correct and misspecified model.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">cohend =</span> <span class="dv">0</span>)
 
@@ -136,9 +138,8 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 <span class="kw">summary</span>(res)</code></pre></div>
 <p>All of the parameters are summarized and presented for both models. Since we specified <code>satterthwaite = TRUE</code>, empirical power is both based on the Wald Z test and the Wald t test using Satterthwaite’s df approximation (from the lmerTest-package).</p>
 </div>
-</div>
-<div id="compare-multiple-combinations-of-parameter-values" class="section level1">
-<h1>Compare multiple combinations of parameter values</h1>
+<div id="compare-multiple-combinations-of-parameter-values" class="section level2">
+<h2>Compare multiple combinations of parameter values</h2>
 <p>We can also simulate multiple designs and compare them. Let’s compare 6 vs 12 clusters in the treatment arm, and <code>ìcc_slope</code> of 0.05 and 0.1, and a Cohen’s d of 0.5 and 0.8.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">11</span>,
                       <span class="dt">n2 =</span> <span class="dv">10</span>,

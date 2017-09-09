@@ -45,7 +45,7 @@ get_ICC_slope.plcp_multi <- function(object, ...) {
 }
 
 
-#' Calculates the ratio of slope variance to within-subjects error variance
+#' Calculates the ratio of the slope variance to the within-subjects error variance
 #'
 #' @param object An object created by \code{\link{study_parameters}}
 #' @param ... Optional arguments.
@@ -365,8 +365,8 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #' @param object An object created by \code{\link{study_parameters}}
 #' @param n2 A vector of n2 values
 #' @param ... Optional named arguments. Up to two extra arguments can be compared.
-#' When used  the plot method, the first argument will be grouped by color and the
-#' second by facets.
+#' When used together with the plot method, the first argument will be grouped by
+#' color and the second by facets.
 #'
 #' @return A \code{data.frame} with class \code{plcp_power_table}.
 #' @export

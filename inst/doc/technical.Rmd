@@ -1,5 +1,5 @@
 ---
-title: "Technical Appendix: Details on the Power Calculations"
+title: "Technical Appendix: Details on the Power Calculations for Two- and Three-level Models with Missing Data"
 author: 
 - Kristoffer Magnusson
 - Department of Clinical Neuroscience
@@ -14,9 +14,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-In standard multilevel notation the fully nested three-level model is
-
-
+This vignette details how the power calculations are implemented in `powerlmm`. We will focus on the fully *nested* three-level model, since the two- and partially nested three-level model are just reduced forms of the three-level model. Thus, in standard multilevel notation the fully nested three-level model is
 \begin{align*}
 \text{Level 1}& \notag \\
 Y_{ijk} &= \beta_{0jk} + \beta_{1jk}t_{ijk} + R_{ijk} \\
@@ -27,28 +25,28 @@ Y_{ijk} &= \beta_{0jk} + \beta_{1jk}t_{ijk} + R_{ijk} \\
 \gamma_{00k} &= \delta_{000} + \delta_{001} TX_k + V_{0k} \\
 \gamma_{10k} &= \delta_{100} + \delta_{101} TX_k + V_{1k} \\
 \end{align*}
+where we have $i = 1, \ldots, n_{1j}$ equally spaced time points for subject $j = 1, \ldots, N_2$, where $N_2$ is the total number of subjects in the treatment arm. Furthermore, the subjects are nested within $k = 1, \ldots, n_3$ clusters, where $n_3$ is the total number of clusters in the treatment arm. To allow for varying cluster sizes we let each cluster have $j = 1, \ldots, n_{2[k]}$ subjects, where $n_{2[k]}$ is the total number of subjects in cluster $k$.  
 
+The parameter of interest is $\delta_{101}$, i.e. the mean difference in slopes between the two treatment groups. However, in `powerlmm` the calculations are simplified by calculating the variance of the slope-coefficient separately for each treatment group. Since the slopes in the treatment and control group are independent, the variance of the interaction-term is simply 
 
-The parameter of interest is $\delta_{101}$, i.e. the mean difference in slopes between the two treatment groups. However, we can simplify the calculations by calculation the variance of the slope-coefficient separately for each treatment group. Since the slope in the treatment and control group are independent, the variance of the interaction-term is simply 
-
-$$\text{V}(\delta_{101}) = \text{V}(\delta_{100[tx]} - \delta_{100[c]}) = \text{V}(\delta_{100[tx]}) + \text{V}(\delta_{100[c]})$$
-where $\delta_{100[tx]}$ and $\delta_{100[c]}$  is fixed time effect in the treatment and control group respectively. In order to calculate the variances we begin by formulation the three-level model for the complete data from a single treatment arm.
+$$\text{V}(\delta_{101}) = \text{V}(\delta_{100[tx]} - \delta_{100[c]}) = \text{V}(\delta_{100[tx]}) + \text{V}(\delta_{100[c]}),$$
+where $\delta_{100[tx]}$ and $\delta_{100[c]}$ are the fixed time effects in the treatment and control group respectively. In order to calculate the variances we begin by formulating the three-level model for the complete data vector $\textbf{Y}$ from a single treatment arm, 
 
 \begin{equation}
 \label{eq-3lvl-def}
-\textbf{Y} = \textbf{X} \textbf{Z} \textbf{W} \bm{\beta} + \textbf{X}\textbf{u} + \textbf{X}\textbf{Z}\textbf{v} + \bm{\epsilon}
+\textbf{Y} = \textbf{X} \textbf{Z} \textbf{W} \bm{\beta} + \textbf{X}\textbf{u} + \textbf{X}\textbf{Z}\textbf{v} + \bm{\epsilon},
 \end{equation}
 
-where \textbf{Y} is the $N_1 \times 1$ outcome vector containing the for all observations from all the subjects in the treatment arm, \textbf{X} is a $N_1 \times 2N_2$ matrix containing co-variate information for all $i = 1, \ldots, N_2$ subjects in the treatment arm, \textbf{X} is also used as the design matrix for the second-level random effects. $\textbf{Z}$ is a $2n_3 \times 2N_2$ matrix containing the level-three random effects design matrices for each $j = 1, \ldots, n_3$ cluster in the treatment arm. $\textbf{W}$ is a $2n_3 \times 2$ matrix relating the third-level to the overall effects $\beta$, and here $\beta$ is simply a $2 \times 1$ vector with the population values for the fixed intercept and slope effects. Lastly, $\textbf{u}$ is a $2N_2 \times 1$ vector with the level two random effects, $\textbf{v}$ is a $2n_3 \times 1$ vector with the third-level random effects, and $\bm{\epsilon}$ a $N_1 \times 1$ vector with the level one residuals. 
+where \textbf{Y} is the $N_1 \times 1$ outcome vector containing all the observations from all the subjects in the treatment arm, \textbf{X} is a $N_1 \times 2N_2$ matrix containing co-variate information for all $N_2$ subjects in the treatment arm, \textbf{X} is also used as the design matrix for the second-level random effects. $\textbf{Z}$ is a $2n_3 \times 2N_2$ matrix containing the level-three random effects design matrices for each $k$th cluster in the treatment arm. $\textbf{W}$ is a $2n_3 \times 2$ matrix relating the third-level to the overall effects $\beta$, and here $\beta$ is simply a $2 \times 1$ vector with the population values for the fixed intercept and slope effects. Lastly, $\textbf{u}$ is a $2N_2 \times 1$ vector with the level two random effects, $\textbf{v}$ is a $2n_3 \times 1$ vector with the third-level random effects, and $\bm{\epsilon}$ a $N_1 \times 1$ vector with the level one residuals. 
 
-The random effects and residuals being distributed
+The random effects and residuals are distributed as follows,
 \begin{align*}
 \textbf{u} \sim& \mathcal{N}(\textbf{0}, \bm{\Psi}_2), \\
 \textbf{v} \sim& \mathcal{N}(\textbf{0}, \bm{\Psi}_3), \\
 \bm{\epsilon} \sim& \mathcal{N}(\textbf{0}, \sigma^2 \textbf{I}_{N_1}).
 \end{align*}
 
-With the second-level variance components being
+With the second and third level variance components being
 
 $$
 \bm{\Psi}_{2} =
@@ -56,40 +54,37 @@ $$
 \begin{pmatrix}
     u_0^2 & u_{01} \\
     u_{01} & u_{1}^2
-\end{pmatrix}
-$$
-and the third-level variance components being
-
-$$
+\end{pmatrix},
 \bm{\Psi}_{3} =
 \textbf{I}_{n_3} \otimes 
 \begin{pmatrix}
     v_0^2 & v_{01} \\
     v_{01} & v_{1}^2
- \end{pmatrix}
+ \end{pmatrix},
 $$
-$\textbf{X}$ is a block-diagonal matrix containing a sub-matrix $\textbf{X}_{ij}$ for each subject (level-two unit). 
+
+with $\otimes$ denoting the Kronecker product. The co-variate matrix $\textbf{X}$ is block-diagonal containing a sub-matrix $\textbf{X}_{jk}$ for each subject (level-two unit), thus
 $$
 \textbf{X} = \begin{pmatrix}
         \textbf{X}_1 & 0 & \cdots & 0 \\
          0 & \textbf{X}_2 & \cdots & 0 \\
          \vdots & \vdots  & \ddots & \vdots \\
-         0 & 0 & \cdots & \textbf{X}_{N}
-\end{pmatrix}
+         0 & 0 & \cdots & \textbf{X}_{N_2}
+\end{pmatrix}.
 $$
-Since each subject can have a different number of observations due to dropout, each $\textbf{X}_{ij}$ will have dimension $n_{1[i]} \times 2$, where $n_{1[i]}$ is the total number of observations for subject $i$ in cluster $j$.
+Since each subject can have a different number of observations due to dropout, each $\textbf{X}_{jk}$ will have dimension $n_{1[j]} \times 2$, where $n_{1[j]}$ is the total number of observations for subject $j$ in cluster $k$,
 
 \begin{equation}
 \label{eq-ind-X}
-\textbf{X}_{ij} = \begin{pmatrix}
+\textbf{X}_{jk} = \begin{pmatrix}
          1 & T_0 \\
        1 & T_1 \\
        \vdots & \vdots \\
-       1 & T_{n1[i]}
-\end{pmatrix}
+       1 & T_{n1[j]}
+\end{pmatrix}.
 \end{equation}
 
-\textbf{Z} is a block diagonal matrix containing the level-three design matrices for each cluster $j$.
+\textbf{Z} is a block-diagonal matrix containing the level-three design matrices for each cluster $k$,
 $$
 \textbf{Z} = 
 \begin{pmatrix}
@@ -97,66 +92,69 @@ $$
          0 & \textbf{Z}_2 & \cdots & 0 \\
          \vdots & \vdots  & \ddots & \vdots \\
          0 & 0 & \cdots & \textbf{Z}_{n3}
-\end{pmatrix}
+\end{pmatrix}.
 $$
 
-With the sub-matrices $\textbf{Z}_k$ being stacks of $2 \times 2$ matrices for each subject in cluster $j$. 
+With the sub-matrices $\textbf{Z}_k$ being stacks of $2 \times 2$ matrices for each subject in cluster $k$,
  
 $$
-\textbf{Z}_j = 
-\textbf{1}_{n2[j]} \otimes
+\textbf{Z}_k = 
+\textbf{1}_{n2[k]} \otimes
 \begin{pmatrix}
          1 & 0 \\
        0 & 1 
-\end{pmatrix}
+\end{pmatrix},
 $$
-thus the dimension of $\textbf{Z}_j$ will be $n_{2[j]} \times 2$, where $n_{2[j]}$ is the number of subjects in cluster $j$. This enables power calculations for designs with varying number of subjects per cluster.
+thus the dimension of $\textbf{Z}_k$ will be $n_{2[k]} \times 2$, where $n_{2[k]}$ is the number of subjects in cluster $k$. This enables power calculations for designs with varying number of subjects per cluster.
 
-The matrix $\textbf{W}$, relates the cluster-level effects to the overall effects $\bm\beta$
+The matrix $\textbf{W}$, relates the cluster-level effects to the overall effects $\bm\beta$,
 $$
 \textbf{W} = \textbf{1}_{n3} \otimes
 \begin{pmatrix}
          1 & 0 \\
        0 & 1 
-\end{pmatrix}
+\end{pmatrix},
 $$
 
-Thus 
+and thus 
 $$
-\textbf{X} \textbf{Z} \textbf{W} = \textbf{1}_{N} \otimes \textbf{X}_{ij}
+\textbf{X} \textbf{Z} \textbf{W} = \textbf{1}_{N} \otimes \textbf{X}_{jk}.
 $$
 
 
 Then we can calculate the marginal variance-covariance matrix for $\textbf{Y}$ as
 $$
-\text{V}(\textbf{Y}) = \textbf{X} \bm{\Psi}_2 \textbf{X}^\top + \textbf{X} \textbf{Z} \bm{\Psi}_3 \textbf{Z}^\top \textbf{X}^\top  + \bm{\epsilon}^2\textbf{I}_{N1}
+\text{V}(\textbf{Y}) = \textbf{X} \bm{\Psi}_2 \textbf{X}^\top + \textbf{X} \textbf{Z} \bm{\Psi}_3 \textbf{Z}^\top \textbf{X}^\top  + \bm{\epsilon}^2\textbf{I}_{N1},
 $$
 
-And 
+and the variance of the population parameters in $\bm{\beta}$ as 
 
-$$ \text{V}(\bm{\beta}) = [(\textbf{X}\textbf{Z}\textbf{W})^\top \text{V}(\textbf{Y}) ^{-1}\textbf{X}\textbf{Z}\textbf{W}]^{-1}$$
+\begin{equation}
+\label{eq-var-beta}
+\text{V}(\bm{\beta}) = [(\textbf{X}\textbf{Z}\textbf{W})^\top \text{V}(\textbf{Y}) ^{-1}\textbf{X}\textbf{Z}\textbf{W}]^{-1}.
+\end{equation}
 
 The lower right corner of $\text{V}(\bm{\beta})$ corresponds to the variance of the time-coefficient. As we noted earlier we can use the slope variances to calculate the variance of the time$\times$treatment-interaction.
 
 ## Accounting for dropout
-Dropout is calculated by defining a dropout vector $\textbf{D} = (p_1, \ldots, p_{n_1})^{\top}$, where $p_i$ is the proportion of participants that have dropped out at time point $i$, for the $i, \ldots, n_1$ scheduled time points, and $p_0 = 0$ and $p_i \leq p_{i+1}$. The default in `powerlmm` is to treat the values in $\textbf{D}$ as known, i.e. exactly $p_i$ subjects will have dropped out at time $i$. This is done by randomly sample which $p_i N_2$ participants should drop out a time $i$, then adjusting their design matrices $\textbf{X}_{ij}$ to be of size $(i-1) \times 2$, thus their last time point will be $i-1$. Since its random which subjects will dropout, the power calculations will differ slightly each time. It is also possible to treat $\textbf{D}$ as random (using the option `deterministic_dropout = FALSE`), then dropout will be sampled from a multinomial distribution, by converting the element of $\textbf{D}$ to the probability $p_i$ that a subject will have exactly $i$ measurements. This approach is similar to @Galbraith2002, and @Verbeke1999 who presents power calculations for two-level models with missing data.
+Dropout is calculated by defining a dropout vector $\textbf{D} = (p_1, \ldots, p_{n_1})^{\top}$, where $p_i$ is the proportion of participants that have dropped out at time point $i$, for the $i, \ldots, n_1$ scheduled time points, and $p_0 = 0$ and $p_i \leq p_{i+1}$. The default in `powerlmm` is to treat the values in $\textbf{D}$ as known, i.e. exactly $p_i$ subjects will have dropped out at time $i$. This is done by randomly sample which $p_i N_2$ participants should drop out a time $i$, then adjusting their design matrices $\textbf{X}_{ij}$ to be of size $(i-1) \times 2$, thus their last time point will be $i-1$. Since, it is random which subjects will dropout, the power calculations will differ slightly each time. It is also possible to treat $\textbf{D}$ as random (using the option `deterministic_dropout = FALSE`), then dropout will be sampled from a multinomial distribution, by converting the elements of $\textbf{D}$ to the probability $p_i$ that a subject will have exactly $i$ measurements. This approach is similar to @Galbraith2002, and @Verbeke1999 who presents power calculations for two-level models with missing data.
 
 ## Speeding up the computation of $V(Y)^{-1}$
-Doing the matrix inversion of $V(\textbf{Y})$, which is of dimension $N_1 \times N_1$, can be extremely slow for some designs. @DeLeeuw1986hd (where they credit @swamy1971statistical) noted a more computationally efficient formulation, adopting it to or three-level formulation (in \autoref{eq-3lvl-def}), lets us write
+Doing the matrix inversion of $V(\textbf{Y})$, which is of dimension $N_1 \times N_1$, can be extremely slow for some designs. @DeLeeuw1986hd (where they credit @swamy1971statistical) noted a more computationally efficient formulation, adopting it to the three-level formulation in \autoref{eq-3lvl-def}, lets us write
 
 $$
-V(\textbf{Y})^{-1} = \sigma^{-2}[\textbf{I}_{N_1} - \textbf{X}(\textbf{X}^{\top}\textbf{X})^{-1}\textbf{X}^{\top}]+\textbf{X}(\textbf{X}^{\top}\textbf{X})^{-1}\textbf{A}^{-1} (\textbf{X}^{\top}\textbf{X})^{-1}\textbf{X}
+V(\textbf{Y})^{-1} = \sigma^{-2}[\textbf{I}_{N_1} - \textbf{X}(\textbf{X}^{\top}\textbf{X})^{-1}\textbf{X}^{\top}]+\textbf{X}(\textbf{X}^{\top}\textbf{X})^{-1}\textbf{A}^{-1} (\textbf{X}^{\top}\textbf{X})^{-1}\textbf{X},
 $$
-where
+where,
 $$ \textbf{A}^{-1}=[\sigma^2(\textbf{X}^{\top}\textbf{X})^{-1}+ \bm{\Psi}_2 + \textbf{Z}\bm{\Psi}_3\textbf{Z}^{\top}].$$
-Here \textbf{A} of size $2N_2 \times 2N_2$. However, since \textbf{A} is block-diagonal, with each block for cluster $j$ being of size $n_{3[j]}$, the computation done in `powerlmm`, takes advantage of the sparse matrix functions from the `Matrix`-package. By using sparse matrix algebra the speed of computing $\textbf{A}^{-1}$ will depend greatly on the number of subjects per cluster. In most cases this solution is dramatically faster then directly solving $V(\textbf{Y})^{-1}$. For instance, calculating $\text{V}(\beta)$ for a study with $n_1=10$, $n_2=30$, $n_3=20$ is approximately 50 times faster using this method.
+Here \textbf{A} of size $2N_2 \times 2N_2$. However, since \textbf{A} is block-diagonal, with each block for cluster $k$ being of size $n_{2[k]}$, the computation done in `powerlmm`, takes advantage of the sparse matrix functions from the `Matrix`-package. By using sparse matrix algebra the speed of computing $\textbf{A}^{-1}$ will depend greatly on the number of subjects per cluster. In most cases this solution is dramatically faster then directly solving $V(\textbf{Y})^{-1}$. For instance, calculating $\text{V}(\beta)$ for a study with $n_1=10$, $n_2=30$, $n_3=20$ is approximately 50 times faster using this method.
 
 ## Power
-The power function is
-$$ P(t_{\nu,\lambda} > t_{\nu,1-\alpha/2}) + P(t_{\nu,\lambda} < t_{\nu,\alpha/2})$$
-Where $\lambda$ is the non-centrality parameter, calculated as
-$$\lambda = \delta_{101} / \sqrt{\text{V}(\delta_{101})}$$
-and $\nu$ is the appropriate degrees of freedom of the *t* distribution, for the fully nested three-level model the degrees of freedom are $N3 - 2$, where $N3$ is the total number of clusters in both treatment arms.
+To make the power calculations accurate for small samples sizes, power is calculated using the *t* distribution. Thus, we can define the power function as,
+$$ 1 - \beta = P(t_{\nu,\lambda} > t_{\nu,1-\alpha/2}) + P(t_{\nu,\lambda} < t_{\nu,\alpha/2}),$$
+where $\lambda$ is the non-centrality parameter, calculated as
+$$\lambda = \delta_{101} / \sqrt{\text{V}(\delta_{101})}.$$
+Here $\nu$ is the appropriate degrees of freedom of the *t* distribution. For the fully nested three-level model, the degrees of freedom are $N3 - 2$, where $N3$ is the total number of clusters in both treatment arms.
 
 ### Partially nested designs
 For the partially nested designs $\text{V}(\delta_{100[tx]})$ is calculated as above, and $\text{V}(\delta_{100[c]})$ by setting the cluster-level random effects to zero. Degrees of freedom for this model is trickier, and currently $2n_3 - 2$ i used, where $n_3$ is the number of clusters in the treatment group only. This is not exact, but works better than doing a normal approximation.
@@ -167,18 +165,18 @@ For the two-level designs, $\text{V}(\delta_{101})$ can be calculated using the 
 # Standardized formulation
 If there's no missing data and the clusters sizes are balanced, the variance of the slope can be calculated more simply as
 $$ 
-\text{V}(\delta_{100})= \frac{\sigma^2 + n_1 \sigma_{u_1}^2 V(T) + n_1 n_2 \sigma_{v_1}^2 V(T)}{n_1 n_2 n_3 V(T)} 
+\text{V}(\delta_{100})= \frac{\sigma^2 + n_1 \sigma_{u_1}^2 V(T) + n_1 n_2 \sigma_{v_1}^2 V(T)}{n_1 n_2 n_3 V(T)}, 
 $$
-With
+with,
 
-$$ \text{V(T)} = \Sigma_{i=1}^{n_1}(t_i - \bar{t})^2$$
+$$ \text{V(T)} = \Sigma_{i=1}^{n_1}(t_i - \bar{t})^2.$$
 
 By defining the amount of slope variance at the cluster-level as $\rho_s = \sigma_{v_1}^2 / (\sigma_{v_1}^2 + \sigma_{u_1}^2)$
-and the variance ratio as $r_{\tau} = ({\sigma_{v_1}^2 + \sigma_{u_1}^2}) / \sigma_{e}^2$ we can then rewrite the formula using the relative parameters $\rho_s$ and $r_{\tau}$, which will yield the same non-centrality parameters as long as the interaction-coefficient corresponds to the same standardized value, e.g. Cohen's d.
+and the variance ratio as $r_{\tau} = ({\sigma_{v_1}^2 + \sigma_{u_1}^2}) / \sigma_{e}^2$ we can then rewrite the formula using the relative parameters $\rho_s$ and $r_{\tau}$, 
 
 $$
- \text{V}(\delta_1^*) = \frac{1+n_1  \text{V}(T) (n_2 \rho_s r_{\tau} + (1-\rho_1)r_{\tau})}{n_1 n_2 n_3  \text{V}(T) }
+ \text{V}(\delta_1^*) = \frac{1+n_1  \text{V}(T) (n_2 \rho_s r_{\tau} + (1-\rho_1)r_{\tau})}{n_1 n_2 n_3  \text{V}(T) },
 $$
-And see that power depends n1, n2, n3, T_end, the amount of slope variance at the third level and the variance ratio. 
+which will yield the same non-centrality parameters as long as the interaction-coefficient corresponds to the same standardized value, e.g. Cohen's d. Thus, we see that power depends on $n1$, $n2$, $n3$, the duration of the study, the amount of slope variance at the third level and the variance ratio. 
 
 # References

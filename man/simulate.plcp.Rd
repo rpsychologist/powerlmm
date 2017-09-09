@@ -20,9 +20,9 @@
 
 \item{seed}{Currently ignored.}
 
-\item{formula}{\code{lmer} formula(s) used to analyze the data, see \emph{Details}.
+\item{formula}{\code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
 Should either be a character vector if one model is simulated.
-It also possible to compare two models, e.g. a correct and misspecified model,
+It also possible to compare two models, e.g. a correct and a misspecified model,
 by passing the two formulas as a named list, with the names "wrong" and "correct".
 See \emph{Examples}.}
 
@@ -51,6 +51,7 @@ Perform a simulation study using a \code{study_parameters}-object
 }
 \details{
 \strong{Model formula}
+
 The available model terms are:
 \itemize{
  \item \code{y} the outcome vector
@@ -65,7 +66,7 @@ See \emph{Examples} and the simulation-vignette for formula examples.
 
 \strong{Satterthwaite's approximation, and CI coverage}
 
-To decrease the simulation time Satterthwaite's dfs and the CIs coverage rates
+To decrease the simulation time Satterthwaite's dfs and the CIs' coverage rates
 will only be calculated for the test of 'time:treatment'-interaction.
 
 Confidence intervals are both calculated using profile likelihood and by

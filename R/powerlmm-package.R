@@ -1,9 +1,9 @@
-#' powerlmm
+#' Power Calculations for Longitudinal Multilevel Models
 #'
 #' The \pkg{powerlmm} package provides a fast and flexible way to calculate power for
 #' two- and three-level multilevel models with missing data. The focus is on
 #' longitudinal designs, i.e. where the first level is measurements, and the second
-#' level is subjects nested within a (optional) higher level three unit, e.g. therapists.
+#' level is subjects nested within a (optional) higher level-three unit, e.g. therapists.
 #'
 #' @details All study designs are specified using the function \code{\link{study_parameters}},
 #' which lets you define your model using familiar notation, either by specifying
@@ -24,10 +24,10 @@
 #' \item Account for missing data/dropout
 #' \item Unbalanced designs (both unequal cluster sizes, and treatment groups)
 #' \item Calculate the design effect, and estimated type I error when the
-#' third-level is ignored.
+#' third-level is ignored
 #' \item Fast analytical power calculations for all supported designs
 #' \item Explore bias, type 1 error and model misspecification using
-#' convenient simulation methods.
+#' convenient simulation methods
 #' }
 #'
 #' @section Non-longitudinal models:

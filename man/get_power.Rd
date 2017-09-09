@@ -27,8 +27,11 @@ Designs with equal cluster sizes, and with no missing data, uses standard closed
 calculate standard errors. Designs with missing data or unequal cluster sizes uses more
 computationally intensive linear algebra solutions.
 
+To see a more detailed explanation of the calculations, type
+\code{vignette("technical", package = "powerlmm")}.
+
 \bold{Degrees of freedom}
-Power is calculated using the t-distribution with non-centrality parameter \eqn{d/se}.
+Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{d/se}.
 }
 \examples{
 # Two-level model
@@ -82,5 +85,5 @@ paras <- study_parameters(n1 = 11,
 get_power(paras)
 }
 \seealso{
-\code{study_parameters}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
+\code{\link{study_parameters}}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
 }

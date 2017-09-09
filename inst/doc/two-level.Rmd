@@ -1,5 +1,5 @@
 ---
-title: "Power analysis for Two-level Longitudinal Models with Missing Data"
+title: "Power Analysis for Two-level Longitudinal Models with Missing Data"
 author: "Kristoffer Magnusson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
@@ -16,7 +16,7 @@ library(powerlmm)
 
 # Introduction
 This vignette shows how to use the *powerlmm*-package to design a two-level longitudinal study. The package does not only contain tools to calculate power for these models, but also tools to help you understand 
-the implications of the model's parameters. The real world performance of the study designs can also be evaluated using Monte Carlo simulations (see the simulation vignette). The package also includes functions to help you understand the consequences of
+the implications of the model's parameters. The real world performance of the study design can also be evaluated using Monte Carlo simulations (see the simulation vignette). The package also includes functions to help you understand the consequences of
 ignoring clustering effects at the third level (see the three-level vignette). The design effect can be calculated, as well as the inflation of type 1 errors when a random slope at the third level is ignored.
 
 # Supported models
@@ -64,8 +64,8 @@ U_{0j} \\\
 \end{matrix}
 ,
 \begin{matrix}
- \tau_{00}^2 & \tau_{01}\\\
- \tau_{01} & \tau_{10}^2
+ \sigma_{u_0}^2 & \sigma_{u_{01}}\\\
+ \sigma_{u_{01}} & \sigma_{u_1}^2
 \end{matrix}
 \right)
 ,
@@ -90,9 +90,9 @@ $\gamma_{00}$    | `fixed_intercept`
 $\gamma_{01}$    | NA; assumed to be 0
 $\gamma_{10}$    | `fixed_slope`
 $\gamma_{11}$    | calculated from `cohend`; standardized using baseline standard deviation
-$\tau_{00}$      | `sigma_subject_intercept`
-$\tau_{10}$      | `sigma_subject_slope`
-$\tau_{01}$      | calculated from `cor_subject`
+$\sigma_{u_0}$      | `sigma_subject_intercept`
+$\sigma_{u_1}$    | `sigma_subject_slope`
+$\sigma_{u_{01}}$      | calculated from `cor_subject`
 $\sigma$         | `sigma_error`
 
 ## Standardized and unstandardized formulation
@@ -102,9 +102,9 @@ For a two-level model power depends on `n1`, `n2`, the amount of baseline varian
 
 Standardized        | Calculation
 ------------------- | -----------
-`icc_pre_subjects`  | $\tau_{00}^2/(\tau_{00}^2 + \sigma^2)$  
-`var_ratio`         | $\tau_{10}^2/\sigma^2$  
-`cohend`            | $\gamma_{11}/(\tau_{00}^2 + \sigma^2)$  
+`icc_pre_subjects`  | $\sigma_{u_0}^2/(\sigma_{u_0}^2 + \sigma^2)$  
+`var_ratio`         | $\sigma_{u_1}^2/\sigma^2$  
+`cohend`            | $\gamma_{11}/(\sigma_{u_0}^2 + \sigma^2)$  
 
 ## Setting up the model using study_parameters()
 Here's an example of specifing the "same" model using standardized or unstandardized inputs.
@@ -122,7 +122,7 @@ p2 <- study_parameters(n1 = 11,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
                       cohend = 0.5)
-p2
+p1
 ```
 
 To calculate power we use `get_power`
@@ -132,7 +132,7 @@ get_power(p2)
 
 # Missing data
 Missing data can be accounted for in the power calculations by the argument `dropout`. Intermittent missing
-data is not currently supported, thus missing data is monotonically increasing. Two helper functions are used to define the dropout pattern; either `dropout_manual` or `dropout_weibull`. Here I will `dropout_weibull`.
+data is not currently supported, thus missing data is monotonically increasing. Two helper functions are used to define the dropout pattern; either `dropout_manual` or `dropout_weibull`. Here I will use `dropout_weibull`.
 
 ```{r}
 p2 <- study_parameters(n1 = 11,
@@ -144,7 +144,7 @@ p2 <- study_parameters(n1 = 11,
                       cohend = -0.5)
 ```
 
-Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and missing data pattern using ´plot´.
+Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and missing data pattern using `plot`.
 
 ```{r, fig.width=8}
 plot(p2)
@@ -157,7 +157,7 @@ get_power(p2)
 Not surprisingly, power is decreased compared to the model with no missing data.
 
 ## Different dropout patterns per treatment group
-The helper function `per_treatment` allows some options to differ by treatment arm.
+The helper function `per_treatment` allows some options to differ by treatment arm, here we will use it to specify a different dropout pattern in each treatment group.
 ```{r, fig.width=4}
 
 d <- per_treatment(control = dropout_weibull(proportion = 0.3, 
@@ -203,6 +203,7 @@ get_power(p2)$power
 ```
 
 # Power curves
+Since power is influenced by many different paremeters, the function `get_power_table` lets you compare the effect of up to 3 different parameters, and visualize the relationships. Let's see how the number of subjects and the variance ratio influences power. 
 ```{r}
 p1 <- study_parameters(n1 = 11,
                       n2 = 30,
@@ -217,3 +218,4 @@ x
 plot(x)
 ```
 
+We see that the variance ratio influences power more than the amount of subjects. 

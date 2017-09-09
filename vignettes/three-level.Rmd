@@ -20,7 +20,7 @@ This vignette shows how to setup and calculate power for three-level models with
 Currently, `powerlmm` support three-level models that are fully nested or partially nested; crossed designs are not yet supported. 
 
 ## Model formulation
-In standard multilevel notation the model is
+In standard multilevel notation the fully *nested* three-level model is
 $$
 \begin{align}
 \text{Level 1}& \notag\\\
@@ -48,8 +48,8 @@ U_{0j} \\\
 \end{matrix}
 ,
 \begin{matrix}
- \tau_{00}^2 & \tau_{01}\\\
- \tau_{01} & \tau_{10}^2
+ \sigma_{u_0}^2  & \sigma_{u_{01}} \\\
+ \sigma_{u_{01}} & \sigma_{u_{1}}^2
 \end{matrix}
 \right)
 ,
@@ -70,8 +70,8 @@ V_{0k} \\\
 \end{matrix}
 ,
 \begin{matrix}
- \varphi_{00}^2 & \varphi_{01} \\\
- \varphi_{01} & \varphi_{10}^2 
+ \sigma_{v_0}^2  & \sigma_{v_{01}} \\\
+ \sigma_{v_{01}} & \sigma_{v_{1}}^2
 \end{matrix}
 \right)
 ,
@@ -89,30 +89,30 @@ The corresponding arguments in `study_parameters` are
 parameter        | `study_parameters()-`argument
 ---------------- | -----------
 $\delta_{000}$   | `fixed_intercept`
-$\delta_{000}$   | NA; assumed to be 0
+$\delta_{001}$   | NA; assumed to be 0
 $\delta_{100}$   | `fixed_slope`
 $\delta_{101}$   | calculated from `cohend`; standardized using baseline standard deviation
-$\tau_{00}$      | `sigma_subject_intercept`
-$\tau_{10}$      | `sigma_subject_slope`
-$\tau_{01}$      | calculated from `cor_subject`
-$\varphi_{00}$   | `sigma_cluster_intercept`
-$\varphi_{10}$   | `sigma_cluster_slope`
-$\varphi_{01}$   | calculated from `cor_cluster`
+$\sigma_{u_0}$      | `sigma_subject_intercept`
+$\sigma_{u_1}$     | `sigma_subject_slope`
+$\sigma_{u_{01}}$     | calculated from `cor_subject`
+$\sigma_{v_0}$   | `sigma_cluster_intercept`
+$\sigma_{v_1}$  | `sigma_cluster_slope`
+$\sigma_{v_{01}}$   | calculated from `cor_cluster`
 $\sigma$         | `sigma_error`
 
 ## Standardized and unstandardized formulation
 
-If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on `n1`, `n2`, `n3`, the amount of baseline variance at the subject level (`icc_pre_subjects`) and the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`), and the amount of random slope variance at the third-level (`icc_slope`). Power is also influenced by the ratio of baseline variances (`icc_pre_subjects`, `icc_pre_clusters`).
+If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on `n1`, `n2`, `n3`, the amount of baseline variance at the subject level (`icc_pre_subjects`) and the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`), and the amount of random slope variance at the third-level (`icc_slope`). Power is also influenced by the ratio of the baseline variances (`icc_pre_subjects`, `icc_pre_clusters`), since the standardization of Cohen's *d* depends on those parameters. 
 
 The relative standardized inputs are calculated in the following way.
 
 Standardized        | Calculation
 ------------------- | -----------
-`icc_pre_subjects`  | $\tau_{00}^2/(\tau_{00}^2 + \varphi_{00}^2 + \sigma^2)$  
-`icc_pre_clusters`  | $\varphi_{00}^2/(\tau_{00}^2 + \varphi_{00}^2 + \sigma^2)$  
-`icc_slope`         | $\varphi_{10}^2/(\tau_{10}^2 + \varphi_{10}^2)$  
-`var_ratio`         | $(\tau_{10}^2 + \varphi_{10}^2)/\sigma^2$  
-`cohend`            | $\gamma_{11}/(\tau_{00}^2 + \varphi_{00}^2 + \sigma^2)$  
+`icc_pre_subjects`  | $\sigma_{u_0}^2/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
+`icc_pre_clusters`  | $\sigma_{v_0}^2/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
+`icc_slope`         | $\sigma_{v_1}^2/(\sigma_{u_1}^2 + \sigma_{v_1}^2)$  
+`var_ratio`         | $(\sigma_{u_1}^2 + \sigma_{v_1}^2)/\sigma^2$  
+`cohend`            | $\gamma_{11}/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
 
 Using the argument names in `study_parameters`, the standardized inputs are calculated in the following way. 
 
@@ -142,7 +142,7 @@ p
 ```
 
 ## Power 
-The `get_power`-method calculates power using the object created with `study_parameters`.
+To calcalute power for the study, we use the `get_power`-method using the object created with `study_parameters`.
 ```{r}
 get_power(p)
 ```
@@ -182,7 +182,7 @@ plot(x) + scale_x_continuous(breaks = seq(20, 240, length.out = 5))
 The plot shows clearly that including more clusters yields higher power for the same amount of total participants.
 
 # Unbalanced designs
-It is possible to define different cluster size both within treatment and between treatment groups using the `per_treatment` function. Here's an example of how to have more clusters in the treatment group.
+It is possible to define different cluster size both within a treatment and between treatment groups using the `per_treatment` function. Here's an example of how to have more clusters in the treatment group.
 
 ```{r}
 p <- study_parameters(n1 = 11,
@@ -318,7 +318,7 @@ p <- study_parameters(n1 = 11,
 p
 ```
 
-Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and missing data pattern using ´plot´.
+Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and the missing data pattern using the t`plot`-method.
 
 ```{r, fig.width=8}
 plot(p)
@@ -354,7 +354,7 @@ plot(p2, plot = 2)
 # The design effect and type I error rates if clustering is ignored
 You might be interested in calculation the *design effect*. The `get_DEFT`-function will 
 calculate the design effect for the standard error of the `time:treatment`-interaction. DEFT tells you
-how many times larger the standard errors from the miss-specified model should be. It will
+how many times larger the standard errors from the misspecified model should be. It will
 also report the approximate type I error if the random slope at the third level is omitted. Here's an example 
 that investigates the impact of increasing cluster sizes on the DEFT.
 ```{r, message = FALSE}

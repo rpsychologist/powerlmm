@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{get_var_ratio}
 \alias{get_var_ratio}
-\title{Calculates the ratio of slope variance to within-subjects error variance}
+\title{Calculates the ratio of the slope variance to the within-subjects error variance}
 \usage{
 get_var_ratio(object, ...)
 }
@@ -16,7 +16,7 @@ Returns the ratio of the total slope variance to the within-subject error
  as a numeric vector.
 }
 \description{
-Calculates the ratio of slope variance to within-subjects error variance
+Calculates the ratio of the slope variance to the within-subjects error variance
 }
 \examples{
 paras <- study_parameters(n1 = 11,

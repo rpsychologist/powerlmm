@@ -89,9 +89,9 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @param object An object created by \code{\link{study_parameters}}.
 #' @param nsim The number of simulations to run.
 #' @param seed Currently ignored.
-#' @param formula \code{lmer} formula(s) used to analyze the data, see \emph{Details}.
+#' @param formula \code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
 #' Should either be a character vector if one model is simulated.
-#' It also possible to compare two models, e.g. a correct and misspecified model,
+#' It also possible to compare two models, e.g. a correct and a misspecified model,
 #' by passing the two formulas as a named list, with the names "wrong" and "correct".
 #' See \emph{Examples}.
 #' @param satterthwaite Logical; if \code{TRUE} Satterthwaite's degrees of freedom
@@ -114,6 +114,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @details
 #'
 #' \strong{Model formula}
+#'
 #' The available model terms are:
 #' \itemize{
 #'  \item \code{y} the outcome vector
@@ -128,7 +129,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' \strong{Satterthwaite's approximation, and CI coverage}
 #'
-#' To decrease the simulation time Satterthwaite's dfs and the CIs coverage rates
+#' To decrease the simulation time Satterthwaite's dfs and the CIs' coverage rates
 #' will only be calculated for the test of 'time:treatment'-interaction.
 #'
 #' Confidence intervals are both calculated using profile likelihood and by
@@ -768,7 +769,7 @@ print.plcp_sim <- function(x, ...) {
 #'  deviation of the distribution of the generated estimates.
 #'  \item \code{power} is the empirical power of the Wald Z test, i.e. the proportion
 #'  of simulated p-values < alpha.
-#'  \item \code{power_satt} is the empirical power of the Wald t-test using
+#'  \item \code{power_satt} is the empirical power of the Wald \emph{t} test using
 #'   Satterthwaite's degree of freedom approximation.
 #'  \item \code{satt_NA} is the proportion of Satterthwaite's approximations that failed.
 #'  \item \code{prop_zero} is the proportion of the simulated estimates that
@@ -948,19 +949,19 @@ as.plcp_sim.data.frame <- function(object) {
 #' \itemize{
 #'  \item \code{parameter} is the name of the coefficient
 #'  \item \code{M_est} is the mean of the estimates taken over all the simulations.
-#'  \item \code{theta} is the population parameters values specified with \code{study_parameters}
+#'  \item \code{theta} is the population parameter values specified with \code{study_parameters}
 #'  \item \code{est_rel_bias} is the relative bias of the estimate
 #'  \item \code{M_se} is the mean estimated standard error taken over all the simulations.
-#'  \item \code{SD_se} is the empirical standard error; i.e. the standard
-#'  deviation of the distribution of the generated estimates.
+#'  \item \code{SD_est} is the empirical standard error; i.e. the standard
+#'  deviation of the distribution of the generated estimates
 #'  \item \code{se_rel_bias} is the relative bias of the standard error.
 #'  \item \code{power} is the empirical power of the Wald Z test, i.e. the proportion
-#'  of simulated p-values < alpha.
-#'  \item \code{power_satt} is the empirical power of the Wald t-test using
-#'   Satterthwaite's degree of freedom approximation.
+#'  of simulated p-values < alpha
+#'  \item \code{power_satt} is the empirical power of the Wald \emph{t} test using
+#'   Satterthwaite's degree of freedom approximation
 #'  \item \code{satt_NA} is the proportion of Satterthwaite's approximations that failed.
 #'  \item \code{prop_zero} is the proportion of the simulated estimates that
-#'  are zero; only shown for random effects.
+#'  are zero; only shown for random effects
 #' }
 #'
 #' @export

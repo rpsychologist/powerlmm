@@ -4,7 +4,7 @@ author: "Kristoffer Magnusson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Tutoria: Evaluation the Models Using Monte Carlo Simulations}
+  %\VignetteIndexEntry{Tutorial: Evaluation the Models Using Monte Carlo Simulations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -12,8 +12,11 @@ vignette: >
 library(powerlmm)
 knitr::opts_chunk$set(eval = FALSE)
 ```
-# Setup
-The simulation-function accepts the same study setup-object that we're used in the two- and three-level power vignettes. The analytical solution used by the `get_power`-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in *powerlmm*. Even if the analytical power calculations work well, simulation can still be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters. 
+
+This vignettes shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, type 1 errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters. 
+
+## Setup
+The simulation-function accepts the same study setup-object that we're used in the two- and three-level power vignettes. The analytical solution used by the `get_power`-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in *powerlmm*. 
 
 ## Partially nested three-level model
 When doing simulations I recommend specifying the raw values to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
@@ -45,7 +48,7 @@ get_monte_carlo_se(x, nsim = c(1000, 2000, 5000))
 ```
 We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power. 
 
-Now, let's run the simulation. First we need to write the *lmer*-formula. Then we pass the `study_parameters` to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. However, parallelization relies on `parallel::mclapply` which does not support Windows. If you're using Windows use `cores = 1`. 
+Now, let's run the simulation. First we need to write the *lme4*-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. However, parallelization relies on `parallel::mclapply` which does not support Windows. If you're using Windows use `cores = 1`. 
 
 ```{r}
 f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
@@ -63,7 +66,7 @@ summary(res)
 
 
 
-## Investigate model miss-specification
+## Investigate model misspecification
 Let's compare the correct partially nested model to a two-level linear mixed model. The formula argument accepts a named list with a `correct` and `wrong` formula. By setting `cohend` to 0 the simulation results tells us the empirical type I error for the correct and misspecified model.
 
 ```{r}
@@ -86,7 +89,7 @@ summary(res)
 
 All of the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald t test using Satterthwaite's df approximation (from the lmerTest-package).
 
-# Compare multiple combinations of parameter values
+## Compare multiple combinations of parameter values
 We can also simulate multiple designs and compare them. Let's compare 6 vs 12 clusters in the treatment arm, and `ìcc_slope` of 0.05 and 0.1, and a Cohen's d of 0.5 and 0.8. 
 
 ```{r}

@@ -28,19 +28,19 @@ the following columns:
 \itemize{
  \item \code{parameter} is the name of the coefficient
  \item \code{M_est} is the mean of the estimates taken over all the simulations.
- \item \code{theta} is the population parameters values specified with \code{study_parameters}
+ \item \code{theta} is the population parameter values specified with \code{study_parameters}
  \item \code{est_rel_bias} is the relative bias of the estimate
  \item \code{M_se} is the mean estimated standard error taken over all the simulations.
- \item \code{SD_se} is the empirical standard error; i.e. the standard
- deviation of the distribution of the generated estimates.
+ \item \code{SD_est} is the empirical standard error; i.e. the standard
+ deviation of the distribution of the generated estimates
  \item \code{se_rel_bias} is the relative bias of the standard error.
  \item \code{power} is the empirical power of the Wald Z test, i.e. the proportion
- of simulated p-values < alpha.
- \item \code{power_satt} is the empirical power of the Wald t-test using
-  Satterthwaite's degree of freedom approximation.
+ of simulated p-values < alpha
+ \item \code{power_satt} is the empirical power of the Wald \emph{t} test using
+  Satterthwaite's degree of freedom approximation
  \item \code{satt_NA} is the proportion of Satterthwaite's approximations that failed.
  \item \code{prop_zero} is the proportion of the simulated estimates that
- are zero; only shown for random effects.
+ are zero; only shown for random effects
 }
 }
 \description{

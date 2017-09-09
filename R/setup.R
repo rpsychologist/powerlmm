@@ -29,21 +29,20 @@
 #' @param icc_pre_subject Amount of baseline
 #' variance at the subject level. N.B. this is not really an ICC.
 #' @param icc_pre_cluster Amount of baseline
-#' variance at the cluster level. \code{sigma_cluster_intercept} must be
-#'  \code{NULL}.
+#' variance at the cluster level.
 #' @param cor_subject Correlation between the subject-level random intercept
 #'  and slopes.
 #' @param cor_cluster Correlation between the cluster-level random intercept
 #' and slopes.
-#' @param cor_within Correlation of level 1 residual. Currently ignored in
-#' analytical power calculations.
+#' @param cor_within Correlation of lthe evel 1 residual. Currently ignored in
+#' the analytical power calculations.
 #' @param cohend Standardized between-groups treatment effect at the last time point,
 #' see \emph{Details}.
-#' @param partially_nested Logical; indicates if there's clustering in both
+#' @param partially_nested \code{logical}; indicates if there's clustering in both
 #' arms or only in the treatment arm.
 #' @param dropout Dropout process, see \code{\link{dropout_weibull}} or
-#' \code{\link{dropout_manual}}.
-#' @param deterministic_dropout logical; if \code{FALSE} the input to
+#' \code{\link{dropout_manual}}. Assumed to be 0 if \code{NULL}.
+#' @param deterministic_dropout \code{logical}; if \code{FALSE} the input to
 #' \code{dropout} will be treated as stochastic and dropout will sampled
 #' from a multinomial distribution.
 #' @return A \code{list} or \code{data.frame} of parameters values, either of
@@ -53,7 +52,7 @@
 #'
 #' \bold{Comparing a combination of parameter values}
 #'
-#' It is possible to setup a grid of parameter combination by entering the values
+#' It is possible to setup a grid of parameter combinations by entering the values
 #' as vectors. All unique combinations of the inputs will be returned. This is
 #' useful if you want see how different values of the parameters affect power.
 #' See also the convenience function \code{\link{get_power_table}}.
@@ -62,13 +61,13 @@
 #'
 #' All parameters of the models can be specified. However, many of the raw
 #' parameter values in a multilevel/LMM do no directly affect the power of the
-#' test of \code{treatment:time}-coefficient. Power will depend greatly on the relative
+#' test of the \code{treatment:time}-coefficient. Power will depend greatly on the relative
 #' size of the parameters, therefore, it is possible to setup your calculations
 #' using only standardized inputs, or by a combination of raw inputs and
 #' standardized inputs. For instance, if \code{sigma_subject_slope} and
 #' \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
 #' solved for. More information regarding the standardized inputs are available in
-#' two-level and three-level vignettes.
+#' the two-level and three-level vignettes.
 #'
 #' \bold{Cohen's d calculation}
 #'

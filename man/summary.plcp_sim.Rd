@@ -22,7 +22,7 @@ the following output:
  deviation of the distribution of the generated estimates.
  \item \code{power} is the empirical power of the Wald Z test, i.e. the proportion
  of simulated p-values < alpha.
- \item \code{power_satt} is the empirical power of the Wald t-test using
+ \item \code{power_satt} is the empirical power of the Wald \emph{t} test using
   Satterthwaite's degree of freedom approximation.
  \item \code{satt_NA} is the proportion of Satterthwaite's approximations that failed.
  \item \code{prop_zero} is the proportion of the simulated estimates that

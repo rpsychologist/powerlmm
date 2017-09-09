@@ -12,8 +12,8 @@ get_power_table(object, n2, ...)
 \item{n2}{A vector of n2 values}
 
 \item{...}{Optional named arguments. Up to two extra arguments can be compared.
-When used  the plot method, the first argument will be grouped by color and the
-second by facets.}
+When used together with the plot method, the first argument will be grouped by
+color and the second by facets.}
 }
 \value{
 A \code{data.frame} with class \code{plcp_power_table}.

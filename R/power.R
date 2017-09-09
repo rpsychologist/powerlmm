@@ -12,10 +12,13 @@
 #' calculate standard errors. Designs with missing data or unequal cluster sizes uses more
 #' computationally intensive linear algebra solutions.
 #'
-#' \bold{Degrees of freedom}
-#' Power is calculated using the t-distribution with non-centrality parameter \eqn{d/se}.
+#' To see a more detailed explanation of the calculations, type
+#' \code{vignette("technical", package = "powerlmm")}.
 #'
-#' @seealso \code{study_parameters}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
+#' \bold{Degrees of freedom}
+#' Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{d/se}.
+#'
+#' @seealso \code{\link{study_parameters}}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
 #'
 #' @export
 #'

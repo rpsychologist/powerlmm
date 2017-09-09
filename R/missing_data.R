@@ -238,11 +238,11 @@ dropout_weibull <- function(proportion, rate) {
 
 #' Manually specify dropout per time point
 #'
-#' Used as input to the \code{dropout}-argument \code{\link{study_parameters}}.
+#' Used as input to the \code{dropout}-argument in \code{\link{study_parameters}}.
 #'
 #' @param ... The proportion of dropout per time point, either as
-#' a vector of length \code{n1}, or \code{n1} individual numeric arguments.
-#' See \emph{details}.
+#' a vector of length \code{n1}, or \code{n1} individual numeric arguments,
+#' see \emph{Details}.
 #' @details Specifying dropout manually requires that the dropout
 #' is 0 at the first time point. Moreover, dropout can't decrease over time and
 #' can never be 1.
@@ -267,7 +267,7 @@ dropout_weibull <- function(proportion, rate) {
 #' plot(p, plot = 2)
 #' get_power(p)
 #'
-#' # Can also use a vectors as input
+#' # Can also use a vector as input
 #' dropout <- dropout_manual(seq(0, 0.5, length.out = 11))
 #' p <- study_parameters(n1 = 11,
 #'                       n2 = 5,
@@ -283,10 +283,10 @@ dropout_weibull <- function(proportion, rate) {
 #' get_power(p)
 #'
 #' \dontrun{
-#' # Decreasning dropout will throw an error
+#' # Decreasing dropout will throw an error
 #' dropout_manual(0, 0.1, 0.1, 0.2, 0.1)
 #'
-#' # Dropout at first time point will throw an error
+#' # Dropout at the first time point will throw an error
 #' dropout_manual(0.1, 0.1, 0.1, 0.2, 0.2)
 #' }
 

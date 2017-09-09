@@ -14,7 +14,7 @@ p2 <- study_parameters(n1 = 11,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
                       cohend = 0.5)
-p2
+p1
 
 ## ------------------------------------------------------------------------
 get_power(p2)
