@@ -1,19 +1,21 @@
 #' powerlmm
 #'
-#' The \pkg{powerlmm} provides a fast and flexible way to calculate power for
+#' The \pkg{powerlmm} package provides a fast and flexible way to calculate power for
 #' two- and three-level multilevel models with missing data. The focus is on
-#' longitudinal designs, i.e. where level 1 is measurements, level 2 subjects nested within a higher
-#' level 3 unit, e.g. therapists.
+#' longitudinal designs, i.e. where the first level is measurements, and the second
+#' level is subjects nested within a (optional) higher level three unit, e.g. therapists.
 #'
 #' @details All study designs are specified using the function \code{\link{study_parameters}},
 #' which lets you define your model using familiar notation, either by specifying
-#' the model parameters directly, or by using relative standardize inputs (e.g. % variance at
-#' each level). Several functions are provide to help you visualize and understand
-#' implied model, type \code{methods(class="plcp")} to see available methods.
+#' the model parameters directly, or by using relative standardized inputs (e.g. \% variance at
+#' each level). Several functions are provided to help you visualize and understand
+#' the implied model, type \code{methods(class="plcp")} to see available methods.
+#' The basic features of the package are also available via a interactive (\pkg{Shiny})
+#' web application, which you can launch by typing \code{shiny_powerlmm()}.
 #'
 #' @section Supported models:
 #' The purpose of \pkg{powerlmm} is to help design longitudinal treatment studies,
-#' with or without higher-level clustering (e.g. by therapists, groups, or physician),
+#' with or without higher-level clustering (e.g. by therapists, groups, or physicians),
 #' and missing data. The main features of the package are:
 #' \itemize{
 #' \item (Longitudinal) Two- and three-level (nested) linear mixed models,
