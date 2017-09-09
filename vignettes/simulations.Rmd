@@ -4,7 +4,7 @@ author: "Kristoffer Magnusson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Tutoria: Evaluation the Models Using Monte Carlo Simulations}
+  %\VignetteIndexEntry{Tutorial: Evaluation the Models Using Monte Carlo Simulations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
