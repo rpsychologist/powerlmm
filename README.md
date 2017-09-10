@@ -2,9 +2,7 @@
 powerlmm
 ========
 
-[![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm)
-
-**Currently under development**
+[![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/powerlmm)](https://cran.r-project.org/package=powerlmm)
 
 Power Calculations for Longitudinal Multilevel/Linear Mixed Models.
 
@@ -13,7 +11,7 @@ Overview
 
 The purpose of `powerlmm` is to help design longitudinal treatment studies, with or without higher-level clustering (e.g. by therapists, groups, or physician), and missing data. The main features of the package are:
 
--   Longitudinal two- and three-level (nested) linear mixed models, and partially nested designs
+-   Longitudinal two- and three-level (nested) linear mixed models, and partially nested designs.
 -   Random slopes at the subject- and cluster-level.
 -   Missing data.
 -   Unbalanced designs (both unequal cluster sizes, and treatment groups).
@@ -24,9 +22,13 @@ The purpose of `powerlmm` is to help design longitudinal treatment studies, with
 Installation
 ------------
 
-Currently `powerlmm` is in development, and can only be installed from GitHub.
+`powerlmm` can be installed from CRAN and GitHub.
 
 ``` r
+# CRAN
+install.packages("powerlmm")
+
+# GitHub
 devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
 ```
 

@@ -7,3 +7,4 @@
 ^man/figures
 ^powerlmm.pdf$
 ^\.travis\.yml$
+^cran-comments\.md$
