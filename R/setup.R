@@ -34,7 +34,7 @@
 #'  and slopes.
 #' @param cor_cluster Correlation between the cluster-level random intercept
 #' and slopes.
-#' @param cor_within Correlation of lthe evel 1 residual. Currently ignored in
+#' @param cor_within Correlation of the level 1 residual. Currently ignored in
 #' the analytical power calculations.
 #' @param cohend Standardized between-groups treatment effect at the last time point,
 #' see \emph{Details}.
