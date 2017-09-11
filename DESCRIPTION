@@ -5,7 +5,7 @@ Version: 0.1.0
 Authors@R: person("Kristoffer", "Magnusson", 
     email = "hello@kristoffer.email",
     role = c("aut", "cre"))
-Description: Design two- and three-level multilevel longitudinal
+Description: Calculate power for two- and three-level multilevel longitudinal
     studies with missing data. Both the third-level factor (e.g. therapists, 
     schools, or physicians), and the second-level factor (e.g. subjects), 
     can be assigned random slopes. Studies with partially nested designs, 
