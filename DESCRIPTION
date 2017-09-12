@@ -1,7 +1,7 @@
 Package: powerlmm
 Type: Package
 Title: Power Calculations for Longitudinal Multilevel Models
-Version: 0.1.0
+Version: 0.1.1.9000
 Authors@R: person("Kristoffer", "Magnusson", email = "hello@kristoffer.email",
     role = c("aut", "cre"))
 Description: Calculate power for two- and three-level multilevel longitudinal
