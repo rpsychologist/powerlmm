@@ -116,10 +116,7 @@ $$
 \end{pmatrix},
 $$
 
-and thus 
-$$
-\textbf{X} \textbf{Z} \textbf{W} = \textbf{1}_{N} \otimes \textbf{X}_{jk}.
-$$
+and thus $\textbf{X} \textbf{Z} \textbf{W}$ simply stacks all the $N_2$ sub-matrices, $\textbf{X}_{jk}$, into a $N_1 \times 2$ matrix.
 
 
 Then we can calculate the marginal variance-covariance matrix for $\textbf{Y}$ as
