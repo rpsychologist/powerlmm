@@ -44,7 +44,7 @@ and slopes.}
 \item{cor_cluster}{Correlation between the cluster-level random intercept
 and slopes.}
 
-\item{cor_within}{Correlation of lthe evel 1 residual. Currently ignored in
+\item{cor_within}{Correlation of the level 1 residual. Currently ignored in
 the analytical power calculations.}
 
 \item{var_ratio}{Ratio of the random
