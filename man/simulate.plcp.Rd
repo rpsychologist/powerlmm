@@ -7,11 +7,11 @@
 \usage{
 \method{simulate}{plcp}(object, nsim, seed = NULL, formula,
   satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
-  save = FALSE, ...)
+  batch_progress = TRUE, save = FALSE, ...)
 
 \method{simulate}{plcp_multi}(object, nsim, seed = NULL, formula,
   satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
-  save = FALSE, ...)
+  batch_progress = TRUE, save = FALSE, ...)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}.}
@@ -37,9 +37,12 @@ will be calculated. See \emph{Details}.}
 parallel::mclapply() which does not support \strong{Windows}. Use \code{cores = 1}
 if you're on Windows.}
 
-\item{progress}{Logical; will display progress if \code{TRUE}. Currently
+\item{progress}{\code{logical}; will display progress if \code{TRUE}. Currently
 ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress.
 \strong{N.B} using a progress bar will noticeably increase the simulation time.}
+
+\item{batch_progress}{\code{logical}; if \code{TRUE} progress will be shown for
+simulations with multiple setups.}
 
 \item{save}{Logical; if \code{TRUE} results will be saved to your working directory
 under the folder "save".}
