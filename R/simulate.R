@@ -377,7 +377,7 @@ simulate.plcp_data_frame <-
              save = FALSE,
              batch_progress = TRUE) {
         if (save) {
-            output_dir <- format(Sys.time(), "%Y%m%d_%H%M")
+            output_dir <- format(Sys.time(), "%Y%m%d_%H%M_%S")
             output_dir <- paste("save/", output_dir, sep = "")
             dir.create(output_dir)
 
