@@ -102,9 +102,11 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @param cores Number of CPU cores to use. Parallelization is done using
 #' parallel::mclapply() which does not support \strong{Windows}. Use \code{cores = 1}
 #' if you're on Windows.
-#' @param progress Logical; will display progress if \code{TRUE}. Currently
+#' @param progress \code{logical}; will display progress if \code{TRUE}. Currently
 #' ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress.
 #' \strong{N.B} using a progress bar will noticeably increase the simulation time.
+#' @param batch_progress \code{logical}; if \code{TRUE} progress will be shown for
+#' simulations with multiple setups.
 #' @param save Logical; if \code{TRUE} results will be saved to your working directory
 #' under the folder "save".
 #' @param ... Optional arguments.
@@ -249,6 +251,7 @@ simulate.plcp <- function(object,
                           CI = FALSE,
                           cores = 1,
                           progress = FALSE,
+                          batch_progress = TRUE,
                           save = FALSE,
                           ...) {
     formula <- check_formula(formula)
@@ -274,6 +277,7 @@ simulate.plcp <- function(object,
             CI = CI,
             cores = cores,
             progress = progress,
+            batch_progress = batch_progress,
             save = save,
             ...
         )
@@ -291,6 +295,7 @@ simulate.plcp_multi <- function(object,
                                 CI = FALSE,
                                 cores = 1,
                                 progress = FALSE,
+                                batch_progress = TRUE,
                                 save = FALSE,
                                 ...) {
     simulate.plcp(
@@ -302,6 +307,7 @@ simulate.plcp_multi <- function(object,
         formula = formula,
         cores = cores,
         progress = progress,
+        batch_progress = batch_progress,
         save = save,
         ...
     )
@@ -368,9 +374,11 @@ simulate.plcp_data_frame <-
              CI = FALSE,
              cores,
              progress,
+             batch_progress,
              save = FALSE,
              save_folder = "save",
              save_folder_create = FALSE) {
+
         if (save) {
             if(!dir.exists(save_folder)) {
                 if(save_folder_create) {
@@ -381,7 +389,7 @@ simulate.plcp_data_frame <-
                 }
             }
 
-            output_dir <- format(Sys.time(), "%Y%m%d_%H%M")
+            output_dir <- format(Sys.time(), "%Y%m%d_%H%M_%S")
             output_dir <- file.path(save_folder, output_dir)
             dir.create(output_dir)
             if(!dir.exists(output_dir)) stop("Could not create save directory.")
@@ -390,7 +398,7 @@ simulate.plcp_data_frame <-
         }
 
         res <- lapply(1:nrow(object), function(i) {
-            if (progress) {
+            if (batch_progress) {
                 cat("\rBatch: ",
                     i,
                     "/",
