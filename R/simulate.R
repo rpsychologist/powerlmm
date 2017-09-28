@@ -368,13 +368,25 @@ simulate.plcp_data_frame <-
              CI = FALSE,
              cores,
              progress,
-             save = FALSE) {
+             save = FALSE,
+             save_folder = "save",
+             save_folder_create = FALSE) {
         if (save) {
-            output_dir <- format(Sys.time(), "%Y%m%d_%H%M")
-            output_dir <- paste("save/", output_dir, sep = "")
-            dir.create(output_dir)
+            if(!dir.exists(save_folder)) {
+                if(save_folder_create) {
+                    message("Creating save_folder: ", file.path(save_folder))
+                    dir.create(file.path(save_folder))
+                } else {
+                    stop("Directory '", save_folder, "' does not exist.")
+                }
+            }
 
-            cat("Each batch is being saved to: ", output_dir, "/\n", sep = "")
+            output_dir <- format(Sys.time(), "%Y%m%d_%H%M")
+            output_dir <- file.path(save_folder, output_dir)
+            dir.create(output_dir)
+            if(!dir.exists(output_dir)) stop("Could not create save directory.")
+
+            cat("Each batch is being saved to: ", output_dir, "\n", sep = "")
         }
 
         res <- lapply(1:nrow(object), function(i) {
@@ -398,12 +410,13 @@ simulate.plcp_data_frame <-
             )
 
             if (save) {
-                f <- paste(output_dir, "/sim", i, ".rds", sep = "")
+                fname <- paste("sim", i, ".rds", sep ="")
+                f <- file.path(output_dir, fname)
                 saveRDS(x, f)
             }
             x
         })
-
+        if(save) saveRDS(object, file.path(output_dir, "paras.rds"))
         class(res) <- append(class(res), "plcp_multi_sim")
         res
     }
