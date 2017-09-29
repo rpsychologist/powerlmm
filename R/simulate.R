@@ -547,7 +547,8 @@ add_p_value <- function(fit, satterthwaite) {
         L <- rep(0, length(ff))
         L[ind] <- 1
 
-        satt <- tryCatch(lmerTest::calcSatterth(fit, L),  error = function(e) { NA })
+        satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
+                                          error = function(e) { NA }))
 
         df <- rep(NA, length(ff))
         p <- rep(NA, length(ff))
