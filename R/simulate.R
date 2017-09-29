@@ -929,7 +929,7 @@ summary_.plcp_sim  <- function(res, paras) {
                         which(FE$parameter == i), numeric(1))
     FE <- FE[ind,]
 
-    convergence <- mean(res$convergence[[2]])
+    convergence <- mean(res$convergence)
 
     list("RE" = RE,
          "FE" = FE,
