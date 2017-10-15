@@ -360,7 +360,8 @@ simulate.plcp_list <-
                 res = res,
                 paras = object,
                 nsim = nsim,
-                time = time["elapsed"]
+                time = time["elapsed"],
+                formula = formula
             )
         out <- munge_results(out)
         class(out) <- append(class(out), "plcp_sim")
@@ -750,9 +751,17 @@ print.plcp_multi_sim <- function(x, ...) {
     nmulti <- length(x)
     cat("# ", nmulti, " x ", nsim, "grid of simulations")
     cat("\n")
+    cat("# lmer formula(s) used: \n")
+    cat_formulas(x[[1]]$formula)
     cat("# Object size:", format(object.size(x), units = "auto"))
 }
 
+
+cat_formulas <- function(f) {
+    nams <- names(f)
+    names
+    cat(paste("#    '", nams,"': ", f, sep = ""), sep = "\n")
+}
 #' Print method for \code{simulate.plcp}-objects
 #' @param x An object created with \code{\link{simulate.plcp}}
 #' @param ... Optional arguments.
@@ -766,6 +775,8 @@ print.plcp_sim <- function(x, ...) {
         "Use summary() to view results."
     )
     cat("\n")
+    cat("# lmer formula(s) used: \n")
+    cat_formulas(x$formula)
     cat("# Object size:", format(object.size(x), units = "auto"))
     invisible(x)
 }
