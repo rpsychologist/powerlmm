@@ -544,7 +544,7 @@ create_lmer_formula <- function(object) {
 
     f0 <- "y ~ time*treatment"
     lvl2 <- make_random_formula(u0, u01, u1, term = "subject")
-    if("pclp_2lvl" %in% class(object)) {
+    if("plcp_2lvl" %in% class(object)) {
     f <- paste(f0, lvl2, sep  = " + ")
     } else if("plcp_3lvl" %in% class(object)) {
         if(object$partially_nested) {
