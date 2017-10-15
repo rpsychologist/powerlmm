@@ -5,7 +5,7 @@
 \alias{simulate.plcp_multi}
 \title{Perform a simulation study using a \code{study_parameters}-object}
 \usage{
-\method{simulate}{plcp}(object, nsim, seed = NULL, formula,
+\method{simulate}{plcp}(object, nsim, seed = NULL, formula = NULL,
   satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
   batch_progress = TRUE, save = FALSE, ...)
 
@@ -21,10 +21,12 @@
 \item{seed}{Currently ignored.}
 
 \item{formula}{\code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
-Should either be a character vector if one model is simulated.
+Should either be a character vector or named list if one model is simulated.
 It also possible to compare two models, e.g. a correct and a misspecified model,
 by passing the two formulas as a named list, with the names "wrong" and "correct".
-See \emph{Examples}.}
+See \emph{Examples}. If \code{NULL} the formula is made automatically,
+using \code{\link{create_lmer_formula}}, which does not support objects with multiple
+simulation setups.}
 
 \item{satterthwaite}{Logical; if \code{TRUE} Satterthwaite's degrees of freedom
 approximation will be used when computing \emph{p}-values. This is implemented using
@@ -44,7 +46,7 @@ ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress
 \item{batch_progress}{\code{logical}; if \code{TRUE} progress will be shown for
 simulations with multiple setups.}
 
-\item{save}{Logical; if \code{TRUE} results will be saved to your working directory
+\item{save}{\code{logical}; if \code{TRUE} results will be saved to your working directory
 under the folder "save".}
 
 \item{...}{Optional arguments.}
@@ -65,7 +67,10 @@ The available model terms are:
  from 1 to the total number of clusters.
 }
 
-See \emph{Examples} and the simulation-vignette for formula examples.
+See \emph{Examples} and the simulation-vignette for formula examples. For
+\code{object}s that contain a single study setup, then the lmer formula
+can be created automatically using \code{\link{create_lmer_formula}}, by
+\code{formula = NULL}.
 
 \strong{Satterthwaite's approximation, and CI coverage}
 

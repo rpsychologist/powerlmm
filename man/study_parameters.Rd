@@ -4,13 +4,13 @@
 \alias{study_parameters}
 \title{Setup study parameters}
 \usage{
-study_parameters(n1, n2, n3 = 1, T_end = NULL, fixed_intercept = 0,
-  fixed_slope = 0, sigma_subject_intercept = NULL,
+study_parameters(n1, n2, n3 = 1, T_end = NULL, fixed_intercept = 0L,
+  fixed_slope = 0L, sigma_subject_intercept = NULL,
   sigma_subject_slope = NULL, sigma_cluster_intercept = NULL,
-  sigma_cluster_slope = NULL, sigma_error = NULL, cor_subject = 0,
-  cor_cluster = 0, cor_within = 0, var_ratio = NULL, icc_slope = NULL,
-  icc_pre_subject = NULL, icc_pre_cluster = NULL, cohend = 0,
-  partially_nested = FALSE, dropout = 0, deterministic_dropout = TRUE)
+  sigma_cluster_slope = NULL, sigma_error = NULL, cor_subject = 0L,
+  cor_cluster = 0L, cor_within = 0L, var_ratio = NULL, icc_slope = NULL,
+  icc_pre_subject = NULL, icc_pre_cluster = NULL, cohend = 0L,
+  partially_nested = FALSE, dropout = 0L, deterministic_dropout = TRUE)
 }
 \arguments{
 \item{n1}{Number of level 1 units, e.g. measurements per subject.}

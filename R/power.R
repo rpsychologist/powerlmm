@@ -533,7 +533,26 @@ print.plcp_power_2lvl <- function(x, ...) {
 #
 
 # lmer formual ------------------------------------------------------------
+
+
+#' Create an lmer formula based on a \code{\link{study_parameters}}-object
+#'
+#' @param object A \code{\link{study_parameters}}-object containing one study design
+#' @details
+#'
+#' The lmer formula will correspond to the model implied by the non-zero parameters in
+#' the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is 0 the
+#' corresponding term is removed from the lmer formula.
+#'
+#' Currently only objects with one study design are supported, i.e. objects with class \code{plcp},
+#' and not \code{plcp_multi}; \code{data.frame} with multiple designs are currently not supported.
+#'
+#' @return A \code{character} vector with lmer formula syntax.
+#' @export
 create_lmer_formula <- function(object) {
+    UseMethod("create_lmer_formula")
+}
+create_lmer_formula.plcp <- function(object) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     u01 <- object$cor_subject

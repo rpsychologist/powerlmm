@@ -90,10 +90,12 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @param nsim The number of simulations to run.
 #' @param seed Currently ignored.
 #' @param formula \code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
-#' Should either be a character vector if one model is simulated.
+#' Should either be a character vector or named list if one model is simulated.
 #' It also possible to compare two models, e.g. a correct and a misspecified model,
 #' by passing the two formulas as a named list, with the names "wrong" and "correct".
-#' See \emph{Examples}.
+#' See \emph{Examples}. If \code{NULL} the formula is made automatically,
+#' using \code{\link{create_lmer_formula}}, which does not support objects with multiple
+#' simulation setups.
 #' @param satterthwaite Logical; if \code{TRUE} Satterthwaite's degrees of freedom
 #' approximation will be used when computing \emph{p}-values. This is implemented using
 #' the \code{lmerTest}-package. See \emph{Details}.
@@ -107,7 +109,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' \strong{N.B} using a progress bar will noticeably increase the simulation time.
 #' @param batch_progress \code{logical}; if \code{TRUE} progress will be shown for
 #' simulations with multiple setups.
-#' @param save Logical; if \code{TRUE} results will be saved to your working directory
+#' @param save \code{logical}; if \code{TRUE} results will be saved to your working directory
 #' under the folder "save".
 #' @param ... Optional arguments.
 #'
@@ -127,7 +129,10 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'  from 1 to the total number of clusters.
 #' }
 #'
-#' See \emph{Examples} and the simulation-vignette for formula examples.
+#' See \emph{Examples} and the simulation-vignette for formula examples. For
+#' \code{object}s that contain a single study setup, then the lmer formula
+#' can be created automatically using \code{\link{create_lmer_formula}}, by
+#' \code{formula = NULL}.
 #'
 #' \strong{Satterthwaite's approximation, and CI coverage}
 #'
