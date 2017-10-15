@@ -246,7 +246,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 simulate.plcp <- function(object,
                           nsim,
                           seed = NULL,
-                          formula,
+                          formula = NULL,
                           satterthwaite = FALSE,
                           CI = FALSE,
                           cores = 1,
@@ -254,6 +254,8 @@ simulate.plcp <- function(object,
                           batch_progress = TRUE,
                           save = FALSE,
                           ...) {
+
+    if(is.null(formula)) formula <- create_lmer_formula(object)
     formula <- check_formula(formula)
 
     if (is.null(nrow(object))) {
@@ -482,7 +484,7 @@ check_formula_terms <- function(f) {
     x <- all.vars(f, functions = TRUE)
     ind <- x %in% c("y", "treatment", "time", "subject", "cluster")
     x <- x[!ind]
-    ind <- x %in% c("~", "+", "*", "(", "|", ":")
+    ind <- x %in% c("~", "+", "*", "(", "|", "||", ":")
     x <- x[!ind]
     if (length(x) > 0) {
         stop(
