@@ -167,23 +167,23 @@
 #' get_power(p)
 #' @export
 study_parameters <- function(n1, n2, n3=1, T_end=NULL,
-                             fixed_intercept = 0,
-                             fixed_slope = 0,
+                             fixed_intercept = 0L,
+                             fixed_slope = 0L,
                              sigma_subject_intercept = NULL,
                              sigma_subject_slope = NULL,
                              sigma_cluster_intercept = NULL,
                              sigma_cluster_slope = NULL,
                              sigma_error = NULL,
-                             cor_subject = 0,
-                             cor_cluster = 0,
-                             cor_within = 0,
+                             cor_subject = 0L,
+                             cor_cluster = 0L,
+                             cor_within = 0L,
                              var_ratio = NULL,
                              icc_slope = NULL,
                              icc_pre_subject = NULL,
                              icc_pre_cluster = NULL,
-                             cohend = 0,
+                             cohend = 0L,
                              partially_nested = FALSE,
-                             dropout = 0,
+                             dropout = 0L,
                              deterministic_dropout = TRUE) {
 
     # drop out checks
@@ -316,17 +316,17 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
         tmp$sigma_error <- sqrt(1 - (tmp$icc_pre_subject))
         sigma_error <- tmp$sigma_error
         tmp$sigma_subject_intercept <- sqrt(tmp$icc_pre_subject)
-        tmp$sigma_cluster_intercept <- 0
+        tmp$sigma_cluster_intercept <- 0L
     }
 
 
     # two level
 
     if(is.null(sigma_cluster_intercept) & (is.null(icc_pre_cluster) || icc_pre_cluster == 0)) {
-        tmp$sigma_cluster_intercept <- 0
+        tmp$sigma_cluster_intercept <- 0L
     }
     if(is.null(sigma_cluster_slope) & (is.null(icc_slope) || icc_slope == 0)) {
-        tmp$sigma_cluster_slope <- 0
+        tmp$sigma_cluster_slope <- 0L
     }
     if(!is.null(icc_pre_subject) &
        !is.null(sigma_error) &
@@ -423,7 +423,7 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
     if((is.null(var_ratio) || var_ratio == 0) &
       (is.null(icc_slope) || icc_slope == 0) &
        is.null(sigma_cluster_slope) & is.null(sigma_subject_slope)) {
-        tmp$sigma_subject_slope <- 0
+        tmp$sigma_subject_slope <- 0L
     }
 
 
@@ -624,7 +624,7 @@ prepare_paras <- function(paras) {
         paras_tx$n3 <- length(unlist(paras$n2))
     }
     if(paras$partially_nested) {
-        paras$sigma_cluster_slope <- 0
+        paras$sigma_cluster_slope <- 0L
     }
     if(is.per_treatment(paras$dropout)) {
         paras_tx$dropout <- paras$dropout[[1]][[1]]
@@ -856,7 +856,7 @@ get_n3.plcp <- function(paras) {
     tmp <- prepare_paras(paras)
 
     n3_cc <- get_n3_(tmp$control)
-    if(tmp$control$partially_nested) n3_cc <- 0
+    if(tmp$control$partially_nested) n3_cc <- 0L
     n3_tx <- get_n3_(tmp$treatment)
 
     data.frame(treatment = n3_tx,
