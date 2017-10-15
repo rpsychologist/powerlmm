@@ -11,7 +11,21 @@ simulate_3lvl_data.data.frame <- function(paras) {
      lapply(1:nrow(paras), function(i) do.call(simulate_3lvl_data_, paras[i,]))
 }
 
+create_cluster_index <- function(n2, n3) {
+    if(length(n2) == 1) {
+        cluster <- rep(1:n3, each = n2)
+    } else {
+        # if(is.null(n2_func)) {
+        cluster <- lapply(seq_along(n2), function(i) rep((1:n3)[i], each = n2[i]))
+        cluster <- unlist(cluster) # index clusters
+        #} else if(n2_func == "runif") {
+        #     n2 <- floor(runif(n3, n2[1], n2[2]))
+        #}
 
+    }
+    cluster
+
+}
 simulate_3lvl_data_ <- function (n1,
                            n2,
                            n3,
@@ -40,17 +54,8 @@ simulate_3lvl_data_ <- function (n1,
 
      n2_func <- names(n2)
      n2 <- unlist(n2)
-     if(length(n2) == 1) {
-          cluster <- rep(1:n3, each = n2)
-     } else {
-         # if(is.null(n2_func)) {
-               cluster <- lapply(seq_along(n2), function(i) rep((1:n3)[i], each = n2[i]))
-               cluster <- unlist(cluster) # index clusters
-          #} else if(n2_func == "runif") {
-          #     n2 <- floor(runif(n3, n2[1], n2[2]))
-          #}
+     cluster <- create_cluster_index(n2, n3)
 
-     }
      subject <- rep(1:length(cluster), each = n1) # subject IDs
      tot_n2 <- length(cluster)
 
