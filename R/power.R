@@ -262,8 +262,7 @@ get_power_3lvl.paras <- function(n1,
     dots <- list(...)
 
     sx <- Vectorize(var_T)(n1, T_end)
-     R <- allocation_ratio
-     R <- R/(R + 1)
+
 
      if(is.unequal_clusters(n2) | is.list(dropout)) {
 
@@ -380,6 +379,9 @@ get_vcov <- function(paras) {
      # missing
      if(is.list(paras$dropout) | is.function(paras$dropout[[1]])) {
          miss <- dropout_process(unlist(paras$dropout), paras)
+         cluster <- create_cluster_index(n2, n3)
+         cluster <- rep(cluster, each = n1)
+         miss$cluster <- cluster
          miss <- miss[order(miss$id), ]
          X <- X[miss$missing == 0, ]
      }
@@ -528,4 +530,55 @@ print.plcp_power_2lvl <- function(x, ...) {
 }
 
 
+#
 
+# lmer formual ------------------------------------------------------------
+create_lmer_formula <- function(object) {
+    u0 <- object$sigma_subject_intercept
+    u1 <- object$sigma_subject_slope
+    u01 <- object$cor_subject
+
+    v0 <- object$sigma_cluster_intercept
+    v1 <- object$sigma_cluster_slope
+    v01 <- object$cor_cluster
+
+    f0 <- "y ~ time*treatment"
+    lvl2 <- make_random_formula(u0, u01, u1, term = "subject")
+    if("pclp_2lvl" %in% class(object)) {
+    f <- paste(f0, lvl2, sep  = " + ")
+    } else if("plcp_3lvl" %in% class(object)) {
+        if(object$partially_nested) {
+            lvl3 <- make_random_formula_pn(v0, v01, v1)
+        } else {
+            lvl3 <- make_random_formula(v0, v01, v1, term = "cluster")
+        }
+        f <-  paste(f0, lvl2, lvl3, sep  = " + ")
+    }
+
+    f
+}
+make_random_formula <- function(x0, x01, x1, term) {
+    if(x0 != 0 & x1 == 0) {
+        f <- "(1 | g)"
+    } else if(x0 == 0 & x1 != 0) {
+        f <- "(0 + time | g)"
+    } else if(x0 != 0 & x1 != 0 & x01 != 0) {
+        f <- "(1 + time | g)"
+    } else if(x0 != 0 & x1 != 0 & x01 == 0) {
+        f <- "(1 + time || g)"
+    }
+    f <- gsub("g", term, f)
+    f
+}
+make_random_formula_pn <- function(x0, x01, x1) {
+    if(x0 != 0 & x1 == 0) {
+        f <- "(treatment | cluster)"
+    } else if(x0 == 0 & x1 != 0) {
+        f <- "(0 + treatment:time | cluster)"
+    } else if(x0 != 0 & x1 != 0 & x01 != 0) {
+        f <- "(1 + treatment:time | cluster)"
+    } else if(x0 != 0 & x1 != 0 & x01 == 0) {
+        f <- "(1 + treatment:time || cluster)"
+    }
+    f
+}
