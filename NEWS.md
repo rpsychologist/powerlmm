@@ -12,4 +12,6 @@ see ?create_lmer_formula
 multiple simulations.
 * Fixed bug in summary.plcp_sim, wrong % convergance calculated. 
 * Simulation function now accepts lmer-formulas containing "||"
+* Bugfix, the cluster-level intercept variance is now also set to zero in control group,
+for partially nested designs.
 
