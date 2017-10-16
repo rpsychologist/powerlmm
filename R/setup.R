@@ -624,6 +624,8 @@ prepare_paras <- function(paras) {
         paras_tx$n3 <- length(unlist(paras$n2))
     }
     if(paras$partially_nested) {
+        paras$sigma_cluster_intercept <- 0L
+        paras$cor_cluster <- 0L
         paras$sigma_cluster_slope <- 0L
     }
     if(is.per_treatment(paras$dropout)) {

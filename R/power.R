@@ -595,9 +595,9 @@ make_random_formula_pn <- function(x0, x01, x1) {
     } else if(x0 == 0 & x1 != 0) {
         f <- "(0 + treatment:time | cluster)"
     } else if(x0 != 0 & x1 != 0 & x01 != 0) {
-        f <- "(1 + treatment:time | cluster)"
+        f <- "(0 + treatment + treatment:time | cluster)"
     } else if(x0 != 0 & x1 != 0 & x01 == 0) {
-        f <- "(1 + treatment:time || cluster)"
+        f <- "(0 + treatment + treatment:time || cluster)"
     }
     f
 }
