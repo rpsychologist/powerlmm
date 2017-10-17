@@ -1,6 +1,10 @@
 
 ## G matrices
-create_G <- function(p) {
+create_G <- function(p, d) {
+
+
+    u01 <- with(p, sigma_subject_intercept * sigma_subject_slope * cor_subject)
+    v01 <- with(p, sigma_cluster_intercept * sigma_cluster_slope * cor_cluster)
 
     pp <- prepare_paras(p)
 
@@ -23,7 +27,6 @@ create_G <- function(p) {
 
 
     time <- get_time_vector(p)
-    d <- simulate_data(p)
 
     A <- Matrix::Diagonal(tot_n2$total)
     B <- array(c(rep(1, n1), time), dim=c(n1, 2))
@@ -43,7 +46,7 @@ create_G <- function(p) {
 
     Z <- matrix(c(0,1,1,0), ncol = 2)
     ## G 2 cov
-    if(p$cor_subject != 0) {
+    if(u01 != 0) {
         G2 <- X %*% kronecker(Diagonal(tot_n2$total), Z) %*% t(X)
         G <- c(G, G2)
     }
@@ -79,13 +82,13 @@ create_G <- function(p) {
     X3 <- X %*% Z2
 
     ## G5 cov cluster
-    if(p$cor_cluster != 0) {
+    if(v01 != 0) {
         G5 <- X3 %*% kronecker(Diagonal(n3_cc + n3_tx), Z) %*% t(X3)
         G <- c(G, G5)
     }
 
     ## G6 slope cluster
-    if(p$sigma_cluster_intercept != 0) {
+    if(p$sigma_cluster_slope != 0) {
         X32 <- X3[, ind]
         G6 <- tcrossprod(X32)
 
@@ -98,5 +101,85 @@ create_G <- function(p) {
     G <- c(G, Ge)
 
     G
+}
+
+# Approximate asymptotic covariance of random effects
+# from package pbkrtest
+vcovAdj16_internal <- function (Phi, SigmaG, X)
+{
+    SigmaInv <- SigmaG$iV
+    n.ggamma <- SigmaG$n.ggamma
+    TT <- SigmaInv %*% X
+    HH <- OO <- vector("list", n.ggamma)
+    for (ii in 1:n.ggamma) {
+        HH[[ii]] <- SigmaG$G[[ii]] %*% SigmaInv
+        OO[[ii]] <- HH[[ii]] %*% X
+    }
+    PP <- QQ <- NULL
+    for (rr in 1:n.ggamma) {
+        OrTrans <- t(OO[[rr]])
+        PP <- c(PP, list(forceSymmetric(-1 * OrTrans %*% TT)))
+        for (ss in rr:n.ggamma) {
+            QQ <- c(QQ, list(OrTrans %*% SigmaInv %*% OO[[ss]]))
+        }
+    }
+    Ktrace <- matrix(NA, nrow = n.ggamma, ncol = n.ggamma)
+    for (rr in 1:n.ggamma) {
+        HrTrans <- t(HH[[rr]])
+        for (ss in rr:n.ggamma) {
+            Ktrace[rr, ss] <- Ktrace[ss, rr] <- sum(HrTrans *
+                                                        HH[[ss]])
+        }
+    }
+    IE2 <- matrix(NA, nrow = n.ggamma, ncol = n.ggamma)
+    for (ii in 1:n.ggamma) {
+        Phi.P.ii <- Phi %*% PP[[ii]]
+        for (jj in c(ii:n.ggamma)) {
+            www <- .indexSymmat2vec(ii, jj, n.ggamma)
+            IE2[ii, jj] <- IE2[jj, ii] <- Ktrace[ii, jj] - 2 *
+                sum(Phi * QQ[[www]]) + sum(Phi.P.ii * (PP[[jj]] %*%
+                                                           Phi))
+        }
+    }
+    eigenIE2 <- eigen(IE2, only.values = TRUE)$values
+    condi <- min(abs(eigenIE2))
+    WW <- if (condi > 1e-10)
+        forceSymmetric(2 * solve(IE2))
+    else forceSymmetric(2 * ginv(IE2))
+
+    attr(WW, "P") <- PP
+    WW
+}
+.indexSymmat2vec <- function (i, j, N)
+{
+    k <- if (i <= j) {
+        (i - 1) * (N - i/2) + j
+    }
+    else {
+        (j - 1) * (N - j/2) + i
+    }
+}
+
+get_balanced_df <- function(object) {
+    pp <- prepare_paras(object)
+
+    tot_n2 <- get_tot_n(object)
+    n2_cc <- tot_n2$control
+    n2_tx <- tot_n2$treatment
+
+    n3 <- get_n3(object)
+    n3_cc <- n3$control
+    n3_tx <- n3$treatment
+
+
+    if(object$sigma_cluster_slope == 0) {
+        df <-  (n2_tx + n2_cc) - 2
+    } else if(object$partially_nested) {
+        df <- n3_tx - 1
+    } else {
+        df <- (n3_cc + n3_tx) - 2
+
+    }
+    df
 }
 

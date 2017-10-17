@@ -591,7 +591,7 @@ make_random_formula <- function(x0, x01, x1, term) {
 }
 make_random_formula_pn <- function(x0, x01, x1) {
     if(x0 != 0 & x1 == 0) {
-        f <- "(treatment | cluster)"
+        f <- "(0 + treatment | cluster)"
     } else if(x0 == 0 & x1 != 0) {
         f <- "(0 + treatment:time | cluster)"
     } else if(x0 != 0 & x1 != 0 & x01 != 0) {
@@ -600,4 +600,136 @@ make_random_formula_pn <- function(x0, x01, x1) {
         f <- "(0 + treatment + treatment:time || cluster)"
     }
     f
+}
+
+
+
+# new power
+## lme4:::grad.ctr3
+gradient <- function (fun, x, delta = 1e-04, ...)
+{
+    nx <- length(x)
+    Xadd <- matrix(rep(x, nx), nrow = nx, byrow = TRUE) + diag(delta,
+                                                               nx)
+    Xsub <- matrix(rep(x, nx), nrow = nx, byrow = TRUE) - diag(delta,
+                                                               nx)
+    fadd <- apply(Xadd, 1, fun, ...)
+    fsub <- apply(Xsub, 1, fun, ...)
+    (fadd - fsub)/(2 * delta)
+}
+make_theta_mat <- function(x0sq, x01, x1sq) {
+    if(x0sq == 0 | x1sq == 0) {
+        x <- c(x0sq, x1sq)
+        x <- x[x > 0]
+        x <- sqrt(x)
+    } else  {
+        x <- matrix(c(x0sq, x01, x01, x1sq), ncol = 2)
+        if(x01 == 0) {
+            x <- sqrt(x)
+            x <- x[c(1,4)]
+        } else {
+            x <- chol(x)
+            x <- x[c(1,3,4)]
+        }
+    }
+    x
+}
+make_theta <- function(pars) {
+    #p <- make_pars(pars)
+    p <- as.list(pars)
+    sigma <- sqrt(p$sigma)
+    lvl2 <- make_theta_mat(p$u0, p$u01, p$u1)/sigma
+    lvl3 <- make_theta_mat(p$v0, p$v01, p$v1)/sigma
+    c(lvl2, lvl3)
+}
+varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
+    ind <- which(para != 0)
+    pars <- as.list(para)
+    function(x = NULL, Lc) {
+        if(!is.null(x)) pars[ind] <- x
+        theta <- make_theta(pars)
+        sigma2 <- pars$sigma
+        Lambdat@x <- theta[Lind]
+        L0 <- Matrix::update(L0, Lambdat %*% Zt, mult = 1)
+        XtX <- crossprod(X)
+        ZtX <- Zt %*% X
+        RZX <- Matrix::solve(L0, Matrix::solve(L0, Lambdat %*% ZtX, system = "P"),
+                             system = "L")
+        RXtRX <- as(XtX - crossprod(RZX), "dpoMatrix")
+        t(Lc) %*% (sigma2 * solve(RXtRX)) %*% Lc
+    }
+}
+
+get_power_new <- function(object, d = NULL, satterthwaite = FALSE, alpha = 0.05) {
+
+    if(is.null(d)) d <- simulate_data(object)
+    f <- lme4::lFormula(formula = create_lmer_formula(object),
+                   data = d)
+
+    X <- f$X
+    Lambdat <- f$reTrms$Lambdat
+    Lind <- f$reTrms$Lind
+    u0 <- object$sigma_subject_intercept
+    u1 <- object$sigma_subject_slope
+    cor_subject <- object$cor_subject
+    u01 <- u0 * u1 * cor_subject
+    v0 <- object$sigma_cluster_intercept
+    v1 <- object$sigma_cluster_slope
+    v01 <- v0 * v1 * object$cor_cluster
+    sigma <- object$sigma_error
+    sigma2 <- sigma^2
+
+    pars <- c("u0" = u0^2, "u01" = u01, "u1" = u1^2,
+              "v0" = v0^2, "v01" = v01, "v1" = v1^2,
+              "sigma" = sigma^2)
+    theta <- make_theta(pars)
+    Zt <- f$reTrms$Zt
+    Lambdat@x <- theta[Lind]
+    L0 <- Matrix::Cholesky(tcrossprod(Lambdat %*% Zt), LDL = FALSE, Imult = 1)
+
+
+
+    # Satterthwaite dfs
+    varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
+    Phi <- varb(Lc = diag(4))
+
+    if(satterthwaite) {
+        A <- Lambdat %*% Zt
+        L <- as(L0, "sparseMatrix")
+        pvec <- L0@perm + 1L
+        P <- as(pvec, "pMatrix")
+        I <- Diagonal(ncol(A))
+        iL <- solve(L)
+        PA <- P %*% A
+        iLPA <- iL %*% PA
+        iV <- (I - crossprod(iLPA))/sigma2
+        V <- sigma2 * (crossprod(A) + I)
+
+        SigmaG <- list(G = create_G(object, d = d))
+        SigmaG$Sigma <- V
+        SigmaG$iV <- iV
+        SigmaG$n.ggamma <- length(SigmaG$G)
+
+        ## delta method
+        vv <- vcovAdj16_internal(Phi, SigmaG, X)
+        Lc <- c(0,0,0,1)
+        g <- gradient(function(x)  as.numeric(varb(x = x, Lc)), x = pars[pars != 0], delta = 1e-4)
+        df <- 2*(Phi[4,4])^2 / (t(g) %*% vv %*% g)
+        df <- as.numeric(df)
+    } else {
+        df <- get_balanced_df(object)
+    }
+
+    # power
+
+    slope_diff <- get_slope_diff(object)/object$T_end
+    se <- sqrt(Phi[4,4])
+    lambda <- slope_diff / se
+
+    power <- pt(qt(1-alpha/2, df = df), df = df, ncp = lambda, lower.tail = FALSE) +
+        pt(qt(alpha/2, df = df), df = df, ncp = lambda)
+
+
+    list(power = power, df = df, se = se)
+
 }
