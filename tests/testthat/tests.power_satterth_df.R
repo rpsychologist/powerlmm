@@ -164,23 +164,5 @@ test_that("satterth df 2lvl", {
 
     expect_equal(ddf, totn$total - 2)
 })
-test_varb <- function(object) {
-    d <- simulate_data(object)
-    f <- lme4::lFormula(formula = create_lmer_formula(object),
-                        data = d)
-
-    pc <- setup_power_calc(d, f, object)
-    X <- pc$X
-    Zt <- pc$Zt
-    L0 <- pc$L0
-    Lambdat <- pc$Lambdat
-    Lind <- pc$Lind
-
-    varb <- varb_func(para = pc$pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
-    bint <- as.numeric(varb(Lc = c(0,0,0,1)))
-
-    old_bint <- get_se_3lvl_matrix(object)$se^2
-    expect_equal(old_bint, bint)
-}
 
 
