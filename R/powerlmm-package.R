@@ -47,4 +47,6 @@
 #'
 #' Maintainer: Kristoffer Magnusson <hello@kristoffer.email>
 #' @seealso \code{\link{study_parameters}}, \code{\link{get_power}}
+#' @importFrom methods as
+#' @importFrom MASS ginv
 NULL
