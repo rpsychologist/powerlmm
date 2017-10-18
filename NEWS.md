@@ -1,9 +1,15 @@
-# powerlmm 0.1.1.9000
+# powerlmm 0.2.0.9000
 
 
 ## New features
 * Simulate.plcp will now automatically create lmer formulas if none is supplied,
 see ?create_lmer_formula
+* Analytical power calculations now support using Satterthwaite's degrees of freedom approximation.
+
+## Improvements
+* Calculations of the variance of treatment effects is now much faster for designs with 
+unequal clusters and/or missing data, when cluster sizes are large. The calculations now
+use the much faster implementation used by lme4.
 
 ## Minor changes
 * Fixed some types in the documentation
