@@ -617,7 +617,7 @@ gradient <- function (fun, x, delta = 1e-04, ...)
     fsub <- apply(Xsub, 1, fun, ...)
     (fadd - fsub)/(2 * delta)
 }
-make_theta_mat <- function(x0sq, x01, x1sq) {
+make_theta_vec <- function(x0sq, x01, x1sq) {
     if(x0sq == 0 | x1sq == 0) {
         x <- c(x0sq, x1sq)
         x <- x[x > 0]
@@ -638,8 +638,8 @@ make_theta <- function(pars) {
     #p <- make_pars(pars)
     p <- as.list(pars)
     sigma <- sqrt(p$sigma)
-    lvl2 <- make_theta_mat(p$u0, p$u01, p$u1)/sigma
-    lvl3 <- make_theta_mat(p$v0, p$v01, p$v1)/sigma
+    lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+    lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
     c(lvl2, lvl3)
 }
 varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
@@ -660,15 +660,7 @@ varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
     }
 }
 
-get_power_new <- function(object, d = NULL, satterthwaite = FALSE, alpha = 0.05) {
-
-    if(is.null(d)) d <- simulate_data(object)
-    f <- lme4::lFormula(formula = create_lmer_formula(object),
-                   data = d)
-
-    X <- f$X
-    Lambdat <- f$reTrms$Lambdat
-    Lind <- f$reTrms$Lind
+setup_power_calc <- function(d, f, object) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     cor_subject <- object$cor_subject
@@ -678,44 +670,46 @@ get_power_new <- function(object, d = NULL, satterthwaite = FALSE, alpha = 0.05)
     v01 <- v0 * v1 * object$cor_cluster
     sigma <- object$sigma_error
     sigma2 <- sigma^2
-
     pars <- c("u0" = u0^2, "u01" = u01, "u1" = u1^2,
               "v0" = v0^2, "v01" = v01, "v1" = v1^2,
               "sigma" = sigma^2)
     theta <- make_theta(pars)
+
+    X <- f$X
+    Lambdat <- f$reTrms$Lambdat
+    Lind <- f$reTrms$Lind
     Zt <- f$reTrms$Zt
     Lambdat@x <- theta[Lind]
     L0 <- Matrix::Cholesky(tcrossprod(Lambdat %*% Zt), LDL = FALSE, Imult = 1)
 
+    list("pars" = pars,
+         "theta" = theta,
+         "X" = X,
+         "Zt" = Zt,
+         "Lambdat" = Lambdat,
+         "L0" = L0,
+         "Lind" = Lind)
 
+}
+get_power_new <- function(object, satterthwaite = FALSE, alpha = 0.05, d = NULL) {
 
-    # Satterthwaite dfs
+    if(is.null(d)) d <- simulate_data(object)
+    f <- lme4::lFormula(formula = create_lmer_formula(object),
+                   data = d)
+
+    pc <- setup_power_calc(d, f, object)
+    pars <- pc$pars
+    X <- pc$X
+    Zt <- pc$Zt
+    L0 <- pc$L0
+    Lambdat <- pc$Lambdat
+    Lind <- pc$Lind
+
     varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
     Phi <- varb(Lc = diag(4))
 
     if(satterthwaite) {
-        A <- Lambdat %*% Zt
-        L <- as(L0, "sparseMatrix")
-        pvec <- L0@perm + 1L
-        P <- as(pvec, "pMatrix")
-        I <- Diagonal(ncol(A))
-        iL <- solve(L)
-        PA <- P %*% A
-        iLPA <- iL %*% PA
-        iV <- (I - crossprod(iLPA))/sigma2
-        V <- sigma2 * (crossprod(A) + I)
-
-        SigmaG <- list(G = create_G(object, d = d))
-        SigmaG$Sigma <- V
-        SigmaG$iV <- iV
-        SigmaG$n.ggamma <- length(SigmaG$G)
-
-        ## delta method
-        vv <- vcovAdj16_internal(Phi, SigmaG, X)
-        Lc <- c(0,0,0,1)
-        g <- gradient(function(x)  as.numeric(varb(x = x, Lc)), x = pars[pars != 0], delta = 1e-4)
-        df <- 2*(Phi[4,4])^2 / (t(g) %*% vv %*% g)
-        df <- as.numeric(df)
+        df <- get_satterth_df(object, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
     } else {
         df <- get_balanced_df(object)
     }

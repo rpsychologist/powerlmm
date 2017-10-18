@@ -118,7 +118,7 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     PP <- QQ <- NULL
     for (rr in 1:n.ggamma) {
         OrTrans <- t(OO[[rr]])
-        PP <- c(PP, list(forceSymmetric(-1 * OrTrans %*% TT)))
+        PP <- c(PP, list(Matrix::forceSymmetric(-1 * OrTrans %*% TT)))
         for (ss in rr:n.ggamma) {
             QQ <- c(QQ, list(OrTrans %*% SigmaInv %*% OO[[ss]]))
         }
@@ -144,8 +144,8 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     eigenIE2 <- eigen(IE2, only.values = TRUE)$values
     condi <- min(abs(eigenIE2))
     WW <- if (condi > 1e-10)
-        forceSymmetric(2 * solve(IE2))
-    else forceSymmetric(2 * ginv(IE2))
+        Matrix::forceSymmetric(2 * solve(IE2))
+    else Matrix::forceSymmetric(2 * MASS::ginv(IE2))
 
     attr(WW, "P") <- PP
     WW
@@ -180,6 +180,34 @@ get_balanced_df <- function(object) {
         df <- (n3_cc + n3_tx) - 2
 
     }
+    df
+}
+
+get_satterth_df <- function(object, d, pars, Lambdat, X, Zt, L0, Phi, varb) {
+    A <- Lambdat %*% Zt
+    L <- as(L0, "sparseMatrix")
+    pvec <- L0@perm + 1L
+    P <- as(pvec, "pMatrix")
+    I <- Matrix::Diagonal(ncol(A))
+    iL <- solve(L)
+    PA <- P %*% A
+    iLPA <- iL %*% PA
+    sigma2 <- pars["sigma"]
+    iV <- (I - crossprod(iLPA))/sigma2
+    V <- sigma2 * (crossprod(A) + I)
+
+    SigmaG <- list(G = create_G(object, d = d))
+    SigmaG$Sigma <- V
+    SigmaG$iV <- iV
+    SigmaG$n.ggamma <- length(SigmaG$G)
+
+    ## delta method
+    vv <- vcovAdj16_internal(Phi, SigmaG, X)
+    Lc <- c(0,0,0,1)
+    g <- gradient(function(x)  as.numeric(varb(x = x, Lc)), x = pars[pars != 0], delta = 1e-4)
+    df <- 2*(Phi[4,4])^2 / (t(g) %*% vv %*% g)
+    df <- as.numeric(df)
+
     df
 }
 
