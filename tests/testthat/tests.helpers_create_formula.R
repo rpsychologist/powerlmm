@@ -53,10 +53,10 @@ test_that("create_lmer_formula", {
 
     p <- update(p, icc_pre_cluster =  0.1)
     expect_equivalent(create_lmer_formula(p),
-                      "y ~ time*treatment + (1 + time | subject) + (treatment + treatment:time | cluster)")
+                      "y ~ time*treatment + (1 + time | subject) + (0 + treatment + treatment:time | cluster)")
 
     p <- update(p, cor_cluster = 0)
     expect_equivalent(create_lmer_formula(p),
-                      "y ~ time*treatment + (1 + time | subject) + (treatment + treatment:time || cluster)")
+                      "y ~ time*treatment + (1 + time | subject) + (0 + treatment + treatment:time || cluster)")
 
 })
