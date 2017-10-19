@@ -691,7 +691,7 @@ setup_power_calc <- function(d, f, object) {
          "Lind" = Lind)
 
 }
-get_power_new <- function(object, satterthwaite = FALSE, alpha = 0.05, d = NULL) {
+get_power_new <- function(object, df = "balanced", alpha = 0.05, d = NULL) {
 
     if(is.null(d)) d <- simulate_data(object)
     f <- lme4::lFormula(formula = create_lmer_formula(object),
@@ -708,11 +708,11 @@ get_power_new <- function(object, satterthwaite = FALSE, alpha = 0.05, d = NULL)
     varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
     Phi <- varb(Lc = diag(4))
 
-    if(satterthwaite) {
+    if(df == "satterthwaite") {
         df <- get_satterth_df(object, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
-    } else {
+    } else if(df == "balanced") {
         df <- get_balanced_df(object)
-    }
+    } else if(is.numeric(df)) df <- df
 
     # power
 
