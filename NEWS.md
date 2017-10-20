@@ -12,12 +12,13 @@ unequal clusters and/or missing data, when cluster sizes are large. The calculat
 use the much faster implementation used by lme4.
 
 ## Minor changes
-* Fixed some types in the documentation
+* Fixed some typos in the documentation
 * New arguments to simulate.plcp_multi; save_folder, etc
 * 'simulate.pclp' new argument 'batch_progress' enables showing progress when doing
 multiple simulations.
-* Fixed bug in summary.plcp_sim, wrong % convergance calculated. 
+* Fixed bug in summary.plcp_sim, wrong % convergence calculated. 
 * Simulation function now accepts lmer-formulas containing "||"
-* Bugfix, the cluster-level intercept variance is now also set to zero in control group,
+* Bug fix, the cluster-level intercept variance is now also set to zero in control group,
 for partially nested designs.
-
+* Fixed incorrect error message from study_parameters when icc_cluster_pre = NULL an all inputs are
+standardized

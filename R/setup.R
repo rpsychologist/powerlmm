@@ -246,8 +246,16 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
     #    is.null(sigma_error)) {
     #     stop("Not enough information provided.")
     # }
+
+    no_raw <- is.null(sigma_subject_intercept) &
+                is.null(sigma_subject_slope) &
+                is.null(sigma_cluster_intercept) &
+                is.null(sigma_cluster_slope) &
+                is.null(sigma_error)
+
     if(!(is.null(icc_slope) || icc_slope == 0) &
        !(is.null(var_ratio) || var_ratio == 0) &
+       !(no_raw) &
        (is.null(icc_pre_subject) | is.null(icc_pre_cluster)) &
        is.null(sigma_error) &
        is.null(sigma_subject_slope) &
