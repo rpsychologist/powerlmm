@@ -24,6 +24,9 @@ test_that("multi_sim", {
     tmp <- summary(res)
     expect_identical(nrow(tmp), 2L)
 
+    ## correct class for paras
+    expect_true("plcp_3lvl" %in% class(res[[1]]$paras))
+
     ## Fixed effect
 
     # set 1

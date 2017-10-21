@@ -418,7 +418,7 @@ simulate.plcp_data_frame <-
             }
 
             x <- simulate.plcp_list(
-                as.plcp_sim(object[i,]),
+                as.plcp(object[i,]),
                 nsim = nsim,
                 formula = formula,
                 satterthwaite = satterthwaite,
@@ -960,16 +960,16 @@ summary_.plcp_sim  <- function(res, paras) {
 # multi-sim ---------------------------------------------------------------
 
 
-as.plcp_sim <- function(object) {
-    UseMethod("as.plcp_sim")
-}
-
-as.plcp_sim.data.frame <- function(object) {
-    object <- as.list(object)
-    class(object) <- append("plcp", class(object))
-
-    object
-}
+# as.plcp_sim <- function(object) {
+#     UseMethod("as.plcp_sim")
+# }
+#
+# as.plcp_sim.data.frame <- function(object) {
+#     object <- as.list(object)
+#     class(object) <- append("plcp", class(object))
+#
+#     object
+# }
 
 
 #' Summarize simulations based on a combination of multiple parameter values

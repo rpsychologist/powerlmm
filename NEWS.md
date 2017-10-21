@@ -20,7 +20,9 @@ multiple simulations.
 * Simulation function now accepts lmer-formulas containing "||"
 * Bug fix, the cluster-level intercept variance is now also set to zero in control group,
 for partially nested designs.
-* Fixed incorrect error message from study_parameters when icc_cluster_pre = NULL an all inputs are
+* Fixed incorrect error message from study_parameters when 'icc_cluster_pre = NULL' an all inputs are
 standardized
 * Fixed a bug that would cause all slopes to be zero when 'var_ratio' argument was 
 passed a vector of values including a 0, e.g. var_ratio = c(0, 0.1, 0.2)
+* Fixed a bug for multi_sim-objects that caused the wrong class the be used for, e.g. 'res[[1]]$paras', and thus
+used the wrong print method.
