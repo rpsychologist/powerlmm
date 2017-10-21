@@ -109,9 +109,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' \strong{N.B} using a progress bar will noticeably increase the simulation time.
 #' @param batch_progress \code{logical}; if \code{TRUE} progress will be shown for
 #' simulations with multiple setups.
-#' @param save \code{logical}; if \code{TRUE} results will be saved to your working directory
-#' under the folder "save".
-#' @param ... Optional arguments.
+#' @param ... Optional arguments, see \emph{Saving} in \emph{Details} section.
 #'
 #' @importFrom stats simulate as.formula confint pnorm pt qnorm qt rmultinom sd time vcov
 #'
@@ -141,6 +139,21 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' Confidence intervals are both calculated using profile likelihood and by
 #' the Wald approximation.
+#'
+#' \strong{Saving intermediate results for multi-sims}
+#'
+#' Objects with multi-sims can be save after each batch is finished. This is highly
+#' recommended when many designs are simulated. The following additional arguments
+#' control saving behavior:
+#'
+#' \itemize{
+#'  \item \code{'save'}, \code{logical}, if \code{TRUE} each batch is saved as a
+#'  \code{RDS}-file. Results are saved in your working directery in the directory
+#'  specified by \code{save_folder}.
+#'  \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{save}.
+#'  \item \code{'save_folder_create'},  \code{logical}, if \code{TRUE} then \code{save_folder}
+#'  will be created if it does not exist in your working directory.
+#' }
 #'
 #' @seealso \code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
 #'

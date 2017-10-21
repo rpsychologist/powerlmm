@@ -9,7 +9,7 @@
   satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
   batch_progress = TRUE, save = FALSE, ...)
 
-\method{simulate}{plcp_multi}(object, nsim, seed = NULL, formula,
+\method{simulate}{plcp_multi}(object, nsim, seed = NULL, formula = NULL,
   satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
   batch_progress = TRUE, save = FALSE, ...)
 }
@@ -46,10 +46,7 @@ ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress
 \item{batch_progress}{\code{logical}; if \code{TRUE} progress will be shown for
 simulations with multiple setups.}
 
-\item{save}{\code{logical}; if \code{TRUE} results will be saved to your working directory
-under the folder "save".}
-
-\item{...}{Optional arguments.}
+\item{...}{Optional arguments, see \emph{Saving} in \emph{Details} section.}
 }
 \description{
 Perform a simulation study using a \code{study_parameters}-object
@@ -79,6 +76,21 @@ will only be calculated for the test of 'time:treatment'-interaction.
 
 Confidence intervals are both calculated using profile likelihood and by
 the Wald approximation.
+
+\strong{Saving intermediate results for multi-sims}
+
+Objects with multi-sims can be save after each batch is finished. This is highly
+recommended when many designs are simulated. The following additional arguments
+control saving behavior:
+
+\itemize{
+ \item \code{'save'}, \code{logical}, if \code{TRUE} each batch is saved as a
+ \code{RDS}-file. Results are saved in your working directery in the directory
+ specified by \code{save_folder}.
+ \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{save}.
+ \item \code{'save_folder_create'},  \code{logical}, if \code{TRUE} then \code{save_folder}
+ will be created if it does not exist in your working directory.
+}
 }
 \examples{
 \dontrun{
