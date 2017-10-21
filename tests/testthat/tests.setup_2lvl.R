@@ -321,6 +321,18 @@ test_that("multi 'var_ratio'", {
     expect_identical(nrow(p), 3L)
     expect_is(p, "plcp_multi")
 })
+test_that("multi 'var_ratio' with 0", {
+    p <- study_parameters(n1 = 11,
+                           n2 = 30,
+                           icc_pre_subject = 0.5,
+                           var_ratio = c(0, 0.1, 0.2),
+                           cohend = -0.5)
+    expect_equal(get_var_ratio(p), c(0, 0.1, 0.2))
+    expect_equal(get_ICC_slope(p), c(NA, 0, 0))
+    expect_equal(get_ICC_pre_subjects(p), c(0.5, 0.5, 0.5))
+
+})
+
 test_that("multi 'sigma_subject_slope'", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,

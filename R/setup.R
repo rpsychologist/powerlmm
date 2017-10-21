@@ -428,7 +428,7 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
 
     }
     # var ratio also null
-    if((is.null(var_ratio) || var_ratio == 0) &
+    if((all(is.null(var_ratio)) || all(var_ratio == 0)) &
       (is.null(icc_slope) || icc_slope == 0) &
        is.null(sigma_cluster_slope) & is.null(sigma_subject_slope)) {
         tmp$sigma_subject_slope <- 0L

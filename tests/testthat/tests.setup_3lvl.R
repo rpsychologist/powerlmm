@@ -607,15 +607,20 @@ test_that("Partially nested prepare", {
     expect_equal(get_ICC_pre_clusters(tmp$control), 0)
 })
 
+### Mutli
+test_that("multi 3lvl icc_slope + var_ratio 0", {
+    p <- study_parameters(n1 = 11,
+                           n2 = 30,
+                           icc_pre_subject = 0.5,
+                           var_ratio = c(0, 0.01),
+                           icc_slope = c(0, 0.1, 0.2),
+                           cohend = -0.5)
 
+    expect_equal(get_ICC_slope(p), c(NA, 0, NA, 0.1, NA, 0.2))
+    expect_equal(get_var_ratio(p), c(0, 0.01, 0, 0.01, 0, 0.01))
+    expect_equal(get_ICC_pre_subjects(p), rep(0.5, 6))
+})
 
-#
-#
-#
-#
-#
-#
-#
 
 
 

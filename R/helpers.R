@@ -7,7 +7,8 @@
 #' @param object An object created by \code{\link{study_parameters}}.
 #' @param ... Optional named arguments.
 #' @return Returns the proportion of slope variance at the third level as
-#' a numeric vector.
+#' a numeric vector. \code{NA} is returned for models with no slope variance
+#' as either level two or three.
 #' @export
 #'
 #' @examples
@@ -30,7 +31,9 @@ get_ICC_slope <- function(object, ...) {
 #' @export
 #'
 get_ICC_slope.default <- function(object = NULL, u1, v1, ...) {
-     v1^2/(v1^2 + u1^2)
+    x <- v1^2/(v1^2 + u1^2)
+    x[v1 == 0 & u1 == 0] <- NA
+    x
 }
 
 #' @export
