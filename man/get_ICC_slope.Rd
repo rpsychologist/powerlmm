@@ -13,7 +13,8 @@ get_ICC_slope(object, ...)
 }
 \value{
 Returns the proportion of slope variance at the third level as
-a numeric vector.
+a numeric vector. \code{NA} is returned for models with no slope variance
+as either level two or three.
 }
 \description{
 Calculate the amount of slope variance at the third level

@@ -11,7 +11,7 @@ see ?create_lmer_formula
 unequal clusters and/or missing data, when cluster sizes are large. The calculations now
 use the much faster implementation used by lme4.
 
-## Minor changes
+## Minor changes and fixes
 * Fixed some typos in the documentation
 * New arguments to simulate.plcp_multi; save_folder, etc
 * 'simulate.pclp' new argument 'batch_progress' enables showing progress when doing
@@ -22,3 +22,5 @@ multiple simulations.
 for partially nested designs.
 * Fixed incorrect error message from study_parameters when icc_cluster_pre = NULL an all inputs are
 standardized
+* Fixed a bug that would cause all slopes to be zero when 'var_ratio' argument was 
+passed a vector of values including a 0, e.g. var_ratio = c(0, 0.1, 0.2)
