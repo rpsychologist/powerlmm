@@ -8,6 +8,8 @@ create_lmer_formula(object, ...)
 }
 \arguments{
 \item{object}{A \code{\link{study_parameters}}-object containing one study design}
+
+\item{...}{Unused, optional arguments.}
 }
 \value{
 A \code{character} vector with lmer formula syntax.

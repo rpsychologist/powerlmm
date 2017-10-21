@@ -538,6 +538,7 @@ print.plcp_power_2lvl <- function(x, ...) {
 #' Create an lmer formula based on a \code{\link{study_parameters}}-object
 #'
 #' @param object A \code{\link{study_parameters}}-object containing one study design
+#' @param ... Unused, optional arguments.
 #' @details
 #'
 #' The lmer formula will correspond to the model implied by the non-zero parameters in
@@ -554,13 +555,13 @@ create_lmer_formula <- function(object, ...) {
 }
 
 #' @export
-create_lmer_formula.plcp_multi <- function(object, n = 1) {
+create_lmer_formula.plcp_multi <- function(object, n = 1, ...) {
     if(n > nrow(object)) stop("Row does not exist, 'n' is too large.")
-    create_lmer_formula(as.plcp(p1[n,]))
+    create_lmer_formula(as.plcp(object[n, ]))
 }
 
 #' @export
-create_lmer_formula.plcp <- function(object, n = NULL) {
+create_lmer_formula.plcp <- function(object, n = NULL, ...) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     u01 <- object$cor_subject

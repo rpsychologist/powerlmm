@@ -134,7 +134,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' \strong{Satterthwaite's approximation, and CI coverage}
 #'
-#' To decrease the simulation time Satterthwaite's dfs and the CIs' coverage rates
+#' To decrease the simulation time Satterthwaite's DFs and the CIs' coverage rates
 #' will only be calculated for the test of 'time:treatment'-interaction.
 #'
 #' Confidence intervals are both calculated using profile likelihood and by
@@ -148,7 +148,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' \itemize{
 #'  \item \code{'save'}, \code{logical}, if \code{TRUE} each batch is saved as a
-#'  \code{RDS}-file. Results are saved in your working directery in the directory
+#'  \code{RDS}-file. Results are saved in your working directory in the directory
 #'  specified by \code{save_folder}.
 #'  \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{save}.
 #'  \item \code{'save_folder_create'},  \code{logical}, if \code{TRUE} then \code{save_folder}
@@ -270,7 +270,6 @@ simulate.plcp <- function(object,
                           cores = 1,
                           progress = FALSE,
                           batch_progress = TRUE,
-                          save = FALSE,
                           ...) {
 
     if(is.null(formula)) formula <- create_lmer_formula(object)
@@ -285,7 +284,6 @@ simulate.plcp <- function(object,
             CI = CI,
             cores = cores,
             progress = progress,
-            save = save,
             ...
         )
     } else if (nrow(object) > 1) {
@@ -298,7 +296,6 @@ simulate.plcp <- function(object,
             cores = cores,
             progress = progress,
             batch_progress = batch_progress,
-            save = save,
             ...
         )
     }
@@ -316,7 +313,6 @@ simulate.plcp_multi <- function(object,
                                 cores = 1,
                                 progress = FALSE,
                                 batch_progress = TRUE,
-                                save = FALSE,
                                 ...) {
 
     if(is.null(formula)) stop("Argument 'formula' is missing. Automatic formula creation is not yet supported for multi-sim objects")
@@ -330,7 +326,6 @@ simulate.plcp_multi <- function(object,
         cores = cores,
         progress = progress,
         batch_progress = batch_progress,
-        save = save,
         ...
     )
 }
@@ -344,6 +339,8 @@ simulate.plcp_list <-
              cores = 1,
              progress = FALSE,
              save = FALSE,
+             save_folder = NULL,
+             save_folder_create = NULL,
              ...) {
         ptm <- proc.time()
         is_windows <- .Platform$OS.type == "windows"
