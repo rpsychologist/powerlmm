@@ -549,10 +549,18 @@ print.plcp_power_2lvl <- function(x, ...) {
 #'
 #' @return A \code{character} vector with lmer formula syntax.
 #' @export
-create_lmer_formula <- function(object) {
+create_lmer_formula <- function(object, ...) {
     UseMethod("create_lmer_formula")
 }
-create_lmer_formula.plcp <- function(object) {
+
+#' @export
+create_lmer_formula.plcp_multi <- function(object, n = 1) {
+    if(n > nrow(object)) stop("Row does not exist, 'n' is too large.")
+    create_lmer_formula(as.plcp(p1[n,]))
+}
+
+#' @export
+create_lmer_formula.plcp <- function(object, n = NULL) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     u01 <- object$cor_subject

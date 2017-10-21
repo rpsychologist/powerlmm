@@ -297,7 +297,7 @@ simulate.plcp <- function(object,
 simulate.plcp_multi <- function(object,
                                 nsim,
                                 seed = NULL,
-                                formula,
+                                formula = NULL,
                                 satterthwaite = FALSE,
                                 CI = FALSE,
                                 cores = 1,
@@ -305,6 +305,8 @@ simulate.plcp_multi <- function(object,
                                 batch_progress = TRUE,
                                 save = FALSE,
                                 ...) {
+
+    if(is.null(formula)) stop("Argument 'formula' is missing. Automatic formula creation is not yet supported for multi-sim objects")
     simulate.plcp(
         object = object,
         nsim = nsim,

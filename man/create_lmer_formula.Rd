@@ -4,7 +4,7 @@
 \alias{create_lmer_formula}
 \title{Create an lmer formula based on a \code{\link{study_parameters}}-object}
 \usage{
-create_lmer_formula(object)
+create_lmer_formula(object, ...)
 }
 \arguments{
 \item{object}{A \code{\link{study_parameters}}-object containing one study design}
