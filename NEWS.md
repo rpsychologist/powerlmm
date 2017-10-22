@@ -26,3 +26,7 @@ standardized
 passed a vector of values including a 0, e.g. var_ratio = c(0, 0.1, 0.2)
 * Fixed a bug for multi_sim-objects that caused the wrong class the be used for, e.g. 'res[[1]]$paras', and thus
 used the wrong print method.
+* Results from mult-sim objects can now be summarized for all random effects in the model.
+* More support for summarizing random effects from partially nested formulas,
+e.g. 'cluster_intercept' and 'cluster_slope' is now correctly extracted from
+ '(0 + treatment + treatment:time || cluster)' 

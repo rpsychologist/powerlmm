@@ -647,7 +647,8 @@ rename_random_effects <- function(.x) {
             "cluster_time",
             "cluster.1_time",
             "cluster_time:treatment",
-            "cluster_treatment:time"
+            "cluster_treatment:time",
+            "cluster.1_treatment:time"
         ),
         new = "cluster_slope"
     )
@@ -661,7 +662,8 @@ rename_random_effects <- function(.x) {
                      new = "subject_intercept")
 
     .x <- .rename_rr(.x,
-                     match = c("cluster_(Intercept)"),
+                     match = c("cluster_(Intercept)",
+                               "cluster_treatment"),
                      new = "cluster_intercept")
 
     .x <- .rename_rr(.x,
@@ -676,7 +678,8 @@ rename_random_effects <- function(.x) {
     .x <- .rename_rr(.x,
                      match = c("cluster_(Intercept)_time",
                                "cluster_(Intercept)_treatment:time",
-                               "cluster_(Intercept)_time:treatment"),
+                               "cluster_(Intercept)_time:treatment",
+                               "cluster_treatment_treatment:time"),
                      new = "cor_cluster")
 
 }
@@ -1117,7 +1120,11 @@ summary_random.plcp_multi_sim <- function(res, para, model) {
         para,
         "subject_intercept" = res$paras$sigma_subject_intercept,
         "subject_slope" = res$paras$sigma_subject_slope,
+        "subject_intercept" = res$paras$sigma_subject_intercept,
+        "cor_subject" = res$paras$cor_subject,
+        "cluster_intercept" = res$paras$sigma_cluster_intercept,
         "cluster_slope" = res$paras$sigma_cluster_slope,
+        "cor_cluster" = res$paras$cor_cluster,
         "error" = res$paras$sigma_error
     )
 
