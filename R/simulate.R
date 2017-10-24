@@ -543,7 +543,7 @@ extract_random_effects <- function(fit) {
     vcovs$parameter <- paste(vcovs$grp, vcovs$var1, sep = "_")
     vcovs$sdcor <- NULL
 
-    correlations <-  x[!is.na(x$var2),]
+    correlations <-  x[!is.na(x$var2), ]
     correlations$parameter <- paste(correlations$grp,
                                     correlations$var1,
                                     correlations$var2,
@@ -578,7 +578,6 @@ add_p_value <- function(fit, satterthwaite) {
             p[ind] <- satt$pvalue
         }
 
-
         res <- list("df" = df,
                     "p" = p)
     } else {
@@ -589,6 +588,17 @@ add_p_value <- function(fit, satterthwaite) {
 
     res
 
+}
+fix_sath_NA_pval <- function(x, paras) {
+    ind <- is.na(x$pval)
+    tmp <- x[ind, ]
+    t <- with(tmp, estimate/se)
+    df <- get_tot_n(paras)$total - 2
+    pval <- 2*(1 - pt(abs(t), df = df))
+
+    x[ind, "pval"] <- pval
+
+    x
 }
 extract_results_ <- function(fit, CI, satterthwaite) {
     se <- sqrt(diag(vcov(fit)))
@@ -904,11 +914,19 @@ summary_.plcp_sim  <- function(res, paras) {
         "time" = paras$fixed_slope,
         "time:treatment" = get_slope_diff(paras) / paras$T_end
     )
-    FE <- lapply(unique(res$FE$parameter), function(i, .d, theta) {
+    FE <- lapply(unique(res$FE$parameter), function(i, .d, theta, paras) {
         se <- .d[.d$parameter == i, "se"]
         estimate <- .d[.d$parameter == i, "estimate"]
         pval <- .d[.d$parameter == i, "pval"]
         df <- .d[.d$parameter == i, "df"]
+
+        if(any(!is.na(pval))) {
+
+               Satt_NA <- mean(is.na(pval))
+               x <- .d[.d$parameter == i, ]
+               x <- fix_sath_NA_pval(x, paras)
+               pval <- x$pval
+        } else Satt_NA <- NA
 
         para <- i
         theta <- theta[[i]]
@@ -919,9 +937,9 @@ summary_.plcp_sim  <- function(res, paras) {
             SD_est = sd(estimate),
             Power = mean(get_cover(estimate, se)),
             Power_satt = mean(pval < 0.05, na.rm = TRUE),
-            Satt_NA = mean(is.na(pval))
+            Satt_NA = Satt_NA
         )
-    }, .d = res$FE, theta = theta)
+    }, .d = res$FE, theta = theta, paras = paras)
 
     FE <- do.call(rbind, FE)
 
@@ -1084,6 +1102,9 @@ summary_fixed.plcp_multi_sim <- function(res, para, model) {
     se_hat <- sd(out$estimate)
 
     power <- mean(get_cover(out$estimate, out$se))
+    Satt_NA <-  mean(is.na(out$pval))
+    out <- fix_sath_NA_pval(out, res$paras)
+
     out <- with(
         out,
         data.frame(
@@ -1098,7 +1119,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model) {
             se_rel_bias = (se_est - se_hat) / se_hat,
             Power = power,
             Power_satt = mean(out$pval < 0.05, na.rm = TRUE),
-            Satt_NA = mean(is.na(out$pval))
+            Satt_NA = Satt_NA
 
         )
     )

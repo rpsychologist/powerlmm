@@ -30,3 +30,4 @@ used the wrong print method.
 * More support for summarizing random effects from partially nested formulas,
 e.g. 'cluster_intercept' and 'cluster_slope' is now correctly extracted from
  '(0 + treatment + treatment:time || cluster)' 
+* Simulation, if Satterthwaite's method fails DF are calculated as total n2 - 2.
