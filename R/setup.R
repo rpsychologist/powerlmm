@@ -522,10 +522,10 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
 
     tot_n <- print_per_treatment(tot_n, width = width)
 
-    icc_slope <- get_ICC_slope(x)
-    var_ratio <- get_var_ratio(x)
-    icc_pre_clusters <- get_ICC_pre_clusters(x)
-    icc_pre_subjects <- get_ICC_pre_subjects(x)
+    icc_slope <- round(get_ICC_slope(x), 2)
+    var_ratio <- round(get_var_ratio(x), 2)
+    icc_pre_clusters <- round(get_ICC_pre_clusters(x), 2)
+    icc_pre_subjects <- round(get_ICC_pre_subjects(x), 2)
 
     cohend <- x$cohend
 
