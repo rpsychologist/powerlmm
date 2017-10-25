@@ -80,16 +80,16 @@
 get_power <- function(object, ...) {
     UseMethod("get_power")
 }
-## 2 lvl power
-get_power_2lvl <- function(object, ...) {
-    UseMethod("get_power_2lvl")
 
-}
 #' @export
 get_power.plcp_2lvl <- function(object, ...) {
     get_power_2lvl(object, ...)
 }
 
+get_power_2lvl <- function(object, ...) {
+    UseMethod("get_power_2lvl")
+
+}
 get_power_2lvl.data.frame <- function(object, ...) {
 
     res <- lapply(1:nrow(object), function(i) get_power_2lvl.list(as.plcp(object[i,]), ...))
@@ -501,15 +501,18 @@ get_se_3lvl_matrix <- function(paras, ...) {
 print.plcp_power_3lvl <- function(x, ...) {
    .p <- x
    x <- prepare_print_plcp_3lvl(.p$paras)
-   x$method <- "Power calculation for longitudinal linear mixed model (three-level)\n                           with missing data and unbalanced designs"
+   partially_nested <- .p$paras$partially_nested
+   x$method <- "Power calculation for longitudinal linear mixed model (three-level)\n                  with missing data and unbalanced designs"
+   x$df <- .p$df
+   x$alpha <- .p$alpha
    x$power <- .p$power
-    if(.p$partially_nested) {
+    if(partially_nested) {
         x$note <- "Study is partially-nested. Clustering only in treatment arm"
     }
 
     print(x, digits = 2, ...)
 
-    if(.p$partially_nested) {
+    if(partially_nested) {
         message("N.B: The degrees of freedom for partially nested designs are experimental, see '?get_power'")
     }
 }
@@ -613,7 +616,10 @@ make_random_formula_pn <- function(x0, x01, x1) {
 
 
 
-# new power
+
+# new power func ---------------------------------------------------------------
+
+
 ## lme4:::grad.ctr3
 gradient <- function (fun, x, delta = 1e-04, ...)
 {
@@ -733,6 +739,8 @@ get_power_new <- function(object, df = "balanced", alpha = 0.05, d = NULL) {
         pt(qt(alpha/2, df = df), df = df, ncp = lambda)
 
 
-    list(power = power, df = df, se = se)
+    out <- list(power = power, df = df, paras = object, alpha = alpha)
 
+    class(out) <- append(class(out), "plcp_power_3lvl")
+    out
 }
