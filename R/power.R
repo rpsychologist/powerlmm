@@ -1,6 +1,9 @@
 #' Calculate power for two- and three-level models with missing data.
 #'
 #' @param object An object created by \code{\link{study_parameters}}
+#' @param df Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
+#' Also accepts a \code{numeric} value which will be used as DF.
+#' @param alpha The alpha level, defaults to 0.05.
 #'
 #' @param ... Other potential arguments; currently used to pass progress bar from
 #'  Shiny
@@ -77,43 +80,42 @@
 #'                           cohend = -0.8)
 #'
 #' get_power(paras)
-get_power <- function(object, ...) {
+get_power <- function(object, df = "balanced", alpha = 0.05, ...) {
     UseMethod("get_power")
 }
 
-#' @export
-get_power.plcp_2lvl <- function(object, ...) {
-    get_power_2lvl(object, ...)
-}
 
-get_power_2lvl <- function(object, ...) {
-    UseMethod("get_power_2lvl")
-
-}
-get_power_2lvl.data.frame <- function(object, ...) {
-
-    res <- lapply(1:nrow(object), function(i) get_power_2lvl.list(as.plcp(object[i,]), ...))
-    res <- do.call(rbind, res)
-    res <- as.data.frame(res)
-    res
-
-}
-
-#' @export
-get_power.plcp_3lvl <- function(object, ...) {
-    get_power_3lvl(object, ...)
-}
-
-get_power_3lvl <- function(object, ...) {
-    UseMethod("get_power_3lvl")
-
-}
-get_power_3lvl.data.frame <- function(object, ...) {
-    res <- lapply(1:nrow(object), function(i) get_power_3lvl.list(as.plcp(object[i,]), ...))
-    res <- do.call(rbind, res)
-    res <- as.data.frame(res)
-    res
-}
+# get_power.plcp_2lvl <- function(object, ...) {
+#     get_power_2lvl(object, ...)
+# }
+#
+# get_power_2lvl <- function(object, ...) {
+#     UseMethod("get_power_2lvl")
+#
+# }
+# get_power_2lvl.data.frame <- function(object, ...) {
+#
+#     res <- lapply(1:nrow(object), function(i) get_power_2lvl.list(as.plcp(object[i,]), ...))
+#     res <- do.call(rbind, res)
+#     res <- as.data.frame(res)
+#     res
+#
+# }
+#
+#
+# get_power.plcp_3lvl <- function(object, ...) {
+#     get_power_3lvl(object, ...)
+# }
+#
+# get_power_3lvl <- function(object, ...) {
+#     UseMethod("get_power_3lvl")
+# }
+# get_power_3lvl.data.frame <- function(object, ...) {
+#     res <- lapply(1:nrow(object), function(i) get_power_3lvl.list(as.plcp(object[i,]), ...))
+#     res <- do.call(rbind, res)
+#     res <- as.data.frame(res)
+#     res
+# }
 
 get_power_3lvl_old.list <- function(object, ...) {
     paras <- object
@@ -334,6 +336,42 @@ get_power_3lvl.paras <- function(n1,
 
      res
 }
+
+get_se_classic <- function(object) {
+
+    p_tx <- prepare_paras(object)
+    p_cc <- p_tx$control
+    p_tx <- p_tx$treatment
+
+    n1 <- object$n1
+    T_end <- object$T_end
+    sx <- Vectorize(var_T)(n1, T_end)
+
+
+
+    n2_tx <- unlist(p_tx$n2)
+    n3_tx <- unlist(p_tx$n3)
+    n2_cc <- unlist(p_cc$n2)
+    n3_cc <- unlist(p_cc$n3)
+
+
+    error <- object$sigma_error
+    u1 <- object$sigma_subject_slope
+    v1 <- object$sigma_cluster_slope
+
+    if(object$partially_nested) {
+        se <- sqrt( (error^2 + n1*u1^2*sx)/(n1*n2_cc*n3_cc*sx) + (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx) )
+    } else {
+        var_cc <- (error^2 + n1*u1^2*sx + n1*n2_cc*v1^2*sx) / (n1*n2_cc*n3_cc*sx)
+        var_tx <- (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx)
+        se <- sqrt(var_cc + var_tx)
+    }
+
+
+    se
+
+}
+
 
 
 # Matrix power ------------------------------------------------------------
@@ -707,23 +745,35 @@ setup_power_calc <- function(d, f, object) {
          "Lind" = Lind)
 
 }
-get_power.plcp <- function(object, df = "balanced", alpha = 0.05) {
+#' @export
+get_power.plcp <- function(object, df = "balanced", alpha = 0.05, ...) {
 
    # if(is.null(d)) d <- simulate_data(object)
-    d <- simulate_data(object)
-    f <- lme4::lFormula(formula = create_lmer_formula(object),
-                   data = d)
 
-    pc <- setup_power_calc(d, f, object)
-    pars <- pc$pars
-    X <- pc$X
-    Zt <- pc$Zt
-    L0 <- pc$L0
-    Lambdat <- pc$Lambdat
-    Lind <- pc$Lind
 
-    varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
-    Phi <- varb(Lc = diag(4))
+    use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | df == "satterthwaite"
+
+    if(use_matrix_se) {
+        d <- simulate_data(object)
+        f <- lme4::lFormula(formula = create_lmer_formula(object),
+                       data = d)
+
+        pc <- setup_power_calc(d, f, object)
+        pars <- pc$pars
+        X <- pc$X
+        Zt <- pc$Zt
+        L0 <- pc$L0
+        Lambdat <- pc$Lambdat
+        Lind <- pc$Lind
+
+        varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
+        Phi <- varb(Lc = diag(4))
+        se <- sqrt(Phi[4,4])
+        calc_type <- "matrix"
+    } else {
+        se <- get_se_classic(object)
+        calc_type <- "classic"
+    }
 
     if(df == "satterthwaite") {
         df <- get_satterth_df(object, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
@@ -734,25 +784,26 @@ get_power.plcp <- function(object, df = "balanced", alpha = 0.05) {
     # power
 
     slope_diff <- get_slope_diff(object)/object$T_end
-    se <- sqrt(Phi[4,4])
     lambda <- slope_diff / se
 
     power <- pt(qt(1-alpha/2, df = df), df = df, ncp = lambda, lower.tail = FALSE) +
         pt(qt(alpha/2, df = df), df = df, ncp = lambda)
 
 
-    out <- list(power = power, df = df, paras = object, alpha = alpha)
+    tot_n <- get_tot_n(object)$total
+    out <- list(power = power, df = df, se = se, paras = object, alpha = alpha, calc_type = calc_type, tot_n = tot_n)
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
     if("plcp_3lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
 
     out
 }
-get_power.plcp_multi <- function(object, df = "balanced", alpha = 0.05) {
+#' @export
+get_power.plcp_multi <- function(object, df = "balanced", alpha = 0.05, ...) {
     x <- lapply(1:nrow(object), function(i) {
         p <- as.plcp(object[i,])
         out <- get_power.plcp(p, df = df, alpha = alpha)
-       as.data.frame(out[c("power","df")])
+       as.data.frame(out[c("power","df","tot_n", "se")])
     })
     x <- do.call(rbind, x)
     x <- cbind(object, x)
@@ -763,6 +814,11 @@ get_power.plcp_multi <- function(object, df = "balanced", alpha = 0.05) {
     out <- out[, select_setup_cols(out)]
     out$df <- round(x$df, 2)
     out$power <- paste(round(x$power * 100, 0), "%")
+    out_dense$df <- x$df
+    out_dense$power <- x$power
+    out_dense$tot_n <- x$tot_n
+    out_dense$se <- x$se
+
 
     class(out_dense) <- append("plcp_multi_power", class(out_dense))
     attr(out_dense, "out") <- out

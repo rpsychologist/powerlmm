@@ -26,9 +26,9 @@ test_that("power", {
     expect_equal(nrow(tmp), 2)
 
     # n2
-    x <- unlist(tmp$n2_cc)
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(3*3, 2+3+4+4))
+    expect_equal(x, c("3", "2,3,4,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -63,12 +63,12 @@ test_that("power", {
     # n2 control
     x <- unlist(tmp$n2_cc)
     names(x) <- NULL
-    expect_equal(x, c(3*3, 2+3+4))
+    expect_equal(x, c("3", "2,3,4"))
 
     # n2 treatment
     x <- unlist(tmp$n2_tx)
     names(x) <- NULL
-    expect_equal(x, c(3*3, 2+2+3+4))
+    expect_equal(x, c("3", "2,2,3,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -96,15 +96,20 @@ test_that("power", {
     # nrow object
     expect_equal(nrow(tmp), 2)
 
-    # n2 control
-    x <- unlist(tmp$n2_cc)
+    # n2
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(5*3, 6*3))
+    expect_equal(x, c("5", "6"))
 
-    # n2 treatment
-    x <- unlist(tmp$n2_tx)
+    # n3 tx
+    x <- unlist(tmp$n3_tx)
     names(x) <- NULL
-    expect_equal(x, c(5*50, 6*50))
+    expect_equal(x, c(50,50))
+
+    # n3 cc
+    x <- unlist(tmp$n3_cc)
+    names(x) <- NULL
+    expect_equal(x, c(3, 3))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -137,7 +142,7 @@ test_that("power", {
     # n2
     x <- unlist(tmp$n2_cc)
     names(x) <- NULL
-    expect_equal(x, c(3*3, 3*5))
+    expect_equal(x, c("3", "5"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -175,17 +180,16 @@ test_that("power", {
     # n2 control
     x <- unlist(tmp$n2_cc)
     names(x) <- NULL
-    expect_equal(x, c(3*3, 2+3+4))
+    expect_equal(x, c("3", "2,3,4"))
 
     # n2 treatment
     x <- unlist(tmp$n2_tx)
     names(x) <- NULL
-    expect_equal(x, c(3*3, 2+2+3+4))
+    expect_equal(x, c("3", "2,2,3,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
-
 
 })
 # test df when n3 per_treatment
@@ -209,15 +213,20 @@ test_that("power", {
     # nrow object
     expect_equal(nrow(tmp), 2)
 
-    # n2 control
-    x <- unlist(tmp$n2_cc)
+    # n2
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(5*3, 6*3))
+    expect_equal(x, c("5", "6"))
 
-    # n2 treatment
-    x <- unlist(tmp$n2_tx)
+    # n3 treatment
+    x <- unlist(tmp$n3_tx)
     names(x) <- NULL
-    expect_equal(x, c(5*5, 6*5))
+    expect_equal(x, c(5,5))
+
+    # n3 cc
+    x <- unlist(tmp$n3_cc)
+    names(x) <- NULL
+    expect_equal(x, c(3,3))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -258,9 +267,9 @@ test_that("power", {
     expect_equal(nrow(tmp), 2)
 
     # n2
-    x <- unlist(tmp$n2_cc)
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(9, 13))
+    expect_equal(x, c("3", "2,3,4,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -299,12 +308,12 @@ test_that("power", {
     # n2 control
     x <- unlist(tmp$n2_cc)
     names(x) <- NULL
-    expect_equal(x, c(9, 10))
+    expect_equal(x, c("3", "2,3,5"))
 
     # n2 treatment
     x <- unlist(tmp$n2_tx)
     names(x) <- NULL
-    expect_equal(x, c(9, 11))
+    expect_equal(x, c("3", "2,2,3,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -332,14 +341,19 @@ test_that("power", {
     expect_equal(nrow(tmp), 2)
 
     # n2 control
-    x <- unlist(tmp$n2_cc)
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(5*3, 6*3))
+    expect_equal(x, c("5", "6"))
 
-    # n2 treatment
-    x <- unlist(tmp$n2_tx)
+    # n3 tx
+    x <- unlist(tmp$n3_tx)
     names(x) <- NULL
-    expect_equal(x, c(5*10,6*10))
+    expect_equal(x, c(10, 10))
+
+    # n3 cc
+    x <- unlist(tmp$n3_cc)
+    names(x) <- NULL
+    expect_equal(x, c(3, 3))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -370,9 +384,9 @@ test_that("power", {
     expect_equal(nrow(tmp), 2)
 
     # n2
-    x <- unlist(tmp$n2_cc)
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(9, 13))
+    expect_equal(x, c("3", "2,3,4,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -406,12 +420,12 @@ test_that("power", {
     # n2 control
     x <- unlist(tmp$n2_cc)
     names(x) <- NULL
-    expect_equal(x, c(9, 10))
+    expect_equal(x, c("3", "2,3,5"))
 
     # n2 treatment
     x <- unlist(tmp$n2_tx)
     names(x) <- NULL
-    expect_equal(x, c(9, 11))
+    expect_equal(x, c("3", "2,2,3,4"))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -437,15 +451,20 @@ test_that("power", {
     # nrow object
     expect_equal(nrow(tmp), 2)
 
-    # n2 control
-    x <- unlist(tmp$n2_cc)
+    # n2
+    x <- unlist(tmp$n2)
     names(x) <- NULL
-    expect_equal(x, c(5*3, 6*3))
+    expect_equal(x, c("5", "6"))
 
-    # n2 treatment
-    x <- unlist(tmp$n2_tx)
+    # n3 treatment
+    x <- unlist(tmp$n3_tx)
     names(x) <- NULL
-    expect_equal(x, c(5*10,6*10))
+    expect_equal(x, c(10, 10))
+
+    # n3 cc
+    x <- unlist(tmp$n3_cc)
+    names(x) <- NULL
+    expect_equal(x, c(3, 3))
 
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
@@ -485,8 +504,8 @@ test_that("power partially nested", {
                               icc_slope = 0.1,
                               dropout = dropout_weibull(0.3, 2),
                               cohend = -0.8)
-    x <- get_power(p)
-    expect_equal(x$df, 10-2)
+    x <- get_power(paras)
+    expect_equal(x$df, 15-2)
 
 })
 

@@ -4,10 +4,15 @@
 \alias{get_power}
 \title{Calculate power for two- and three-level models with missing data.}
 \usage{
-get_power(object, ...)
+get_power(object, df = "balanced", alpha = 0.05, ...)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}
+
+\item{df}{Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
+Also accepts a \code{numeric} value which will be used as DF.}
+
+\item{alpha}{The alpha level, defaults to 0.05.}
 
 \item{...}{Other potential arguments; currently used to pass progress bar from
 Shiny}

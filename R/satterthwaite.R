@@ -2,7 +2,6 @@
 ## G matrices
 create_G <- function(p, d) {
 
-
     u01 <- with(p, sigma_subject_intercept * sigma_subject_slope * cor_subject)
     v01 <- with(p, sigma_cluster_intercept * sigma_cluster_slope * cor_cluster)
 

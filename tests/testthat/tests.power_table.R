@@ -15,7 +15,7 @@ test_that("power_table", {
     x <- get_power_table(paras, n2 = 10:15)
     expect_equal(nrow(x), length(10:15))
     expect_equal(colnames(x)[1:2], c("n2", "power"))
-    expect_equal(x$tot_n, 10:15*6)
+    expect_equal(x$tot_n, (10:15)*6*2)
     # expect power to be increasing
     expect_true(all(diff(x$power) > 0))
     expect_is(plot(x), "ggplot")
@@ -42,8 +42,8 @@ test_that("power_table", {
     x_miss <- x[x$dropout == "with missing", ]
     x_c <- x[x$dropout == "no missing", ]
 
-    expect_equal(x_miss$tot_n, 10:15*6)
-    expect_equal(x_c$tot_n, 10:15*6)
+    expect_equal(x_miss$tot_n, 10:15*6*2)
+    expect_equal(x_c$tot_n, 10:15*6*2)
 
     # expect power to be increasing
     expect_true(all(diff(x_miss$power) > 0))
@@ -72,7 +72,7 @@ test_that("power_table 2 pars", {
     expect_equal(nrow(x), length(10:15))
     expect_equal(colnames(x)[1:2], c("n2", "power"))
 
-    expect_equal(x$tot_n, 10:15*6)
+    expect_equal(x$tot_n, (10:15)*2*6)
     # expect power to be increasing
     expect_true(all(diff(x$power) > 0))
     expect_is(plot(x), "ggplot")
@@ -148,7 +148,7 @@ paras <- study_parameters(n1 = 11,
                           icc_slope = 0.1,
                           dropout = dropout_weibull(0.3, 2),
                           cohend = -0.8)
-x <- get_power_table(paras, n2 = 2:5, partially_nested = c(TRUE, FALSE))
+x <- get_power_table(paras, n2 = 2:5, partially_nested = c(TRUE, FALSE), df = 8)
 
 x_part <- x[x$partially_nested == TRUE, ]
 x_full <- x[x$partially_nested == FALSE, ]
@@ -166,7 +166,7 @@ paras <- study_parameters(n1 = 11,
                           var_ratio = 0.03,
                           icc_slope = 0.1,
                           cohend = -0.8)
-x <- get_power_table(paras, n2 = 2:5, partially_nested = c(TRUE, FALSE))
+x <- get_power_table(paras, n2 = 2:5, partially_nested = c(TRUE, FALSE), df = 8)
 
 x_part <- x[x$partially_nested == TRUE, ]
 x_full <- x[x$partially_nested == FALSE, ]

@@ -2,9 +2,10 @@
 
 
 ## New features
+* Analytical power calculations now support using Satterthwaite's degrees of freedom approximation. 
 * Simulate.plcp will now automatically create lmer formulas if none is supplied,
 see ?create_lmer_formula
-* Analytical power calculations now support using Satterthwaite's degrees of freedom approximation.
+* You can now choose what alpha level to use. 
 
 ## Improvements
 * Calculations of the variance of treatment effects is now much faster for designs with 

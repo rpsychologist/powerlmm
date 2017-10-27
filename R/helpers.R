@@ -370,6 +370,9 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #' @param ... Optional named arguments. Up to two extra arguments can be compared.
 #' When used together with the plot method, the first argument will be grouped by
 #' color and the second by facets.
+#' @param df Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
+#' Also accepts a \code{numeric} value which will be used as DF.
+#' @param alpha The alpha level, defaults to 0.05.
 #'
 #' @return A \code{data.frame} with class \code{plcp_power_table}.
 #' @export
@@ -398,7 +401,7 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #'                             n3 = c(3,6,9),
 #'                             icc_slope = c(0, 0.05, 0.1))
 #' plot(x)
-get_power_table <- function(object, n2, ...) {
+get_power_table <- function(object, n2, ..., df = "balanced", alpha = 0.05) {
     paras <- object
     arg <- list(...)
     updateProgress <- arg$updateProgress
@@ -413,7 +416,7 @@ get_power_table <- function(object, n2, ...) {
 
     paras <- do.call(update.plcp, arg)
 
-    res <- get_power(paras, updateProgress = updateProgress)
+    res <- get_power(paras, updateProgress = updateProgress, df = df, alpha = alpha)
 
     tmp <- paras
     tmp$icc_slope <- get_ICC_slope(paras)
@@ -435,7 +438,7 @@ get_power_table <- function(object, n2, ...) {
     res$dropout <- "with missing"
 
     if(is.list(paras$dropout)) {
-        res2 <- get_power(update(paras, dropout = 0))
+        res2 <- get_power(update(paras, dropout = 0), df = df, alpha = alpha)
         res2 <- cbind(tmp, power = unlist(res2$power),
                       tot_n = unlist(res2$tot_n))
         res2$dropout <- "no missing"
@@ -444,7 +447,7 @@ get_power_table <- function(object, n2, ...) {
     } else {
         res$dropout <- "no missing"
     }
-    res$tot_n <- paras$n2  * paras$n3
+    #res$tot_n <- paras$n2  * paras$n3
 
     for(i in extra_args) {
         res[, i] <- factor(res[, i])
