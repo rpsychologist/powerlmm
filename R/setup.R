@@ -596,6 +596,133 @@ get_slope_diff <- function(paras) {
     with(paras, cohend * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
 }
 
+
+# print multi-sim ---------------------------------------------------------
+
+replace_repeating <- function(x, empty) {
+    lagx <- x[seq_len(length(x) - 1)]
+    lagx <- c(NA, lagx)
+    x[x == lagx] <- empty
+
+    x
+}
+get_dropout_post <- function(object) {
+    x <- get_dropout(object)
+    x[nrow(x),]
+}
+prepare_multi_setup <- function(object, empty = ".", digits = 2) {
+    paras <- object
+
+    n2 <- lapply(1:nrow(paras), function(i) {
+        x <- get_n2(as.plcp(paras[i,]))
+        data.frame(treatment = paste(x$treatment, collapse = ","), control = paste(x$control, collapse = ","), stringsAsFactors = FALSE)
+    })
+    n2 <- do.call(rbind, n2)
+
+    n3 <- lapply(1:nrow(paras), function(i) {
+        x <- get_n3(as.plcp(paras[i,]))
+    })
+    n3 <- do.call(rbind, n3)
+
+
+
+    object$icc_pre_cluster <- get_ICC_pre_clusters(object)
+    object$icc_pre_subject <- get_ICC_pre_subjects(object)
+    object$icc_slope <- get_ICC_slope(object)
+    object$var_ratio <- get_var_ratio(object)
+
+    out <- object
+    out$icc_pre_cluster <- round(object$icc_pre_cluster, digits)
+    out$icc_pre_subject <- round(object$icc_pre_subject, digits)
+    out$icc_slope <- round(object$icc_slope, digits)
+    out$var_ratio <- round(object$var_ratio, digits)
+
+    dropout <- lapply(1:nrow(object), function(i) get_dropout_post(object[i, ]))
+    dropout <- do.call(rbind, dropout)
+    if(all(dropout$control == dropout$treatment)) {
+        out$dropout <- dropout$treatment
+    } else {
+        out$dropout_tx <- dropout$treatment
+        out$dropout_cc <- dropout$control
+        out <- subset(out, select = -dropout)
+    }
+    if(all(n2$treatment == n2$control)) {
+        out$n2 <- n2$treatment
+    } else {
+        out$n2_tx <- n2$treatment
+        out$n2_cc <- n2$control
+        out <- subset(out, select = -n2)
+    }
+
+    unequal_clust <- lapply(seq_along(object$n2), function(i) is.unequal_clusters(object$n2[i]))
+    unequal_clust <- unlist(unequal_clust)
+
+    if(any(unequal_clust)) {
+        out <- subset(out, select = -n3)
+    } else {
+        if(all(n3$treatment == n3$control)) {
+            out$n3 <- n3$treatment
+        } else {
+            out$n3_tx <- n3$treatment
+            out$n3_cc <- n3$control
+            out <- subset(out, select = -n3)
+        }
+    }
+
+    out_dense <- out
+    for(i in 1:ncol(out)) {
+        out[,i] <- replace_repeating(out[,i], empty = empty)
+    }
+
+    list(out = out,
+         out_dense = out_dense,
+         object = object)
+}
+
+# prepare
+get_multi_title <- function(object) {
+    UseMethod("get_multi_title")
+}
+get_multi_title.plcp_2lvl <- function(object) {
+    "# Multi-study setup (two-level)"
+}
+get_multi_title.plcp_3lvl <- function(object) {
+   "# Multi-study setup (three-level)"
+}
+
+select_setup_cols <- function(x) {
+    cols <- c("n1",
+              "n2", "n2_tx", "n2_cc",
+              "n3", "n3_tx", "n3_cc",
+              "dropout", "dropout_tx", "dropout_cc",
+              "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "cohend")
+    cols[cols %in% colnames(x)]
+}
+print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2) {
+
+    nr <- nrow(x)
+    if(nr <= print_max) rmax <- nr else rmax <- print_max
+    hidden_row <- nr - print_max
+    x <- x[1:rmax, ]
+    pp <- prepare_multi_setup(x, empty = empty, digits = digits)
+    out <- pp$out
+    out <- as.data.frame(out)
+    cat(get_multi_title(pp$object), "\n")
+
+    print(out[, select_setup_cols(out)])
+    if(hidden_row > 0) {
+        cat("# ...", hidden_row, "setups not shown.")
+    }
+
+    invisible(x)
+}
+
+
+
+
+# helpers -----------------------------------------------------------------
+
+
 prepare_paras <- function(paras) {
     paras_tx <- paras
     if (is.per_treatment(paras$n3)) {
@@ -846,6 +973,7 @@ get_n2.plcp <- function(paras) {
     list(treatment = n2_tx,
                control = n2_cc)
 }
+
 get_n2_ <- function(paras) {
     n2 <- unlist(paras$n2)
     if(length(n2) == 1) {
@@ -881,7 +1009,7 @@ get_n3_ <- function(paras) {
         n3 <- length(n2)
     }
 
-    n3
+    unlist(n3)
 }
 
 get_tot_n <- function(paras, n = 1) {

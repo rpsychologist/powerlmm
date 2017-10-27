@@ -115,7 +115,7 @@ get_power_3lvl.data.frame <- function(object, ...) {
     res
 }
 
-get_power_3lvl.list <- function(object, ...) {
+get_power_3lvl_old.list <- function(object, ...) {
     paras <- object
     dots <- list(...)
      n1 <- paras$n1
@@ -505,12 +505,11 @@ print.plcp_power_3lvl <- function(x, ...) {
    x$method <- "Power calculation for longitudinal linear mixed model (three-level)\n                  with missing data and unbalanced designs"
    x$df <- .p$df
    x$alpha <- .p$alpha
-   x$power <- .p$power
+   x$power <- paste(round(.p$power * 100, 0), "%")
     if(partially_nested) {
         x$note <- "Study is partially-nested. Clustering only in treatment arm"
     }
-
-    print(x, digits = 2, ...)
+    print(x, ...)
 
     if(partially_nested) {
         message("N.B: The degrees of freedom for partially nested designs are experimental, see '?get_power'")
@@ -526,9 +525,11 @@ print.plcp_power_3lvl <- function(x, ...) {
 print.plcp_power_2lvl <- function(x, ...) {
     .p <- x
     x <- prepare_print_plcp_2lvl(.p$paras)
-    x$power <- .p$power
+    x$df <- .p$df
+    x$alpha <- .p$alpha
+    x$power <- paste(round(.p$power * 100, 0), "%")
     x$method <- "Power calculation for longitudinal linear mixed model\n            with missing data and unbalanced designs"
-    print(x, digits = 2)
+    print(x)
 
 }
 
@@ -706,9 +707,10 @@ setup_power_calc <- function(d, f, object) {
          "Lind" = Lind)
 
 }
-get_power_new <- function(object, df = "balanced", alpha = 0.05, d = NULL) {
+get_power.plcp <- function(object, df = "balanced", alpha = 0.05) {
 
-    if(is.null(d)) d <- simulate_data(object)
+   # if(is.null(d)) d <- simulate_data(object)
+    d <- simulate_data(object)
     f <- lme4::lFormula(formula = create_lmer_formula(object),
                    data = d)
 
@@ -741,6 +743,46 @@ get_power_new <- function(object, df = "balanced", alpha = 0.05, d = NULL) {
 
     out <- list(power = power, df = df, paras = object, alpha = alpha)
 
-    class(out) <- append(class(out), "plcp_power_3lvl")
+    if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
+    if("plcp_3lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
+
     out
+}
+get_power.plcp_multi <- function(object, df = "balanced", alpha = 0.05) {
+    x <- lapply(1:nrow(object), function(i) {
+        p <- as.plcp(object[i,])
+        out <- get_power.plcp(p, df = df, alpha = alpha)
+       as.data.frame(out[c("power","df")])
+    })
+    x <- do.call(rbind, x)
+    x <- cbind(object, x)
+
+    prep <- prepare_multi_setup(object)
+    out <- prep$out
+    out_dense <- prep$out_dense
+    out <- out[, select_setup_cols(out)]
+    out$df <- round(x$df, 2)
+    out$power <- paste(round(x$power * 100, 0), "%")
+
+    class(out_dense) <- append("plcp_multi_power", class(out_dense))
+    attr(out_dense, "out") <- out
+    attr(out_dense, "alpha") <- alpha
+    attr(out_dense, "df") <- df
+
+    out_dense
+}
+
+print.plcp_multi_power <- function(x) {
+
+
+    out <- attr(x, "out")
+    alpha <- attr(x, "alpha")
+    df <- attr(x, "df")
+    out <- as.data.frame(out)
+    #cat(get_multi_title(x$object), "\n")
+
+    cat("# Power calculations for longitudinal linear mixed-effect models\n\n")
+    print(out)
+    cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df))
+    invisible(x)
 }
