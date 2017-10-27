@@ -485,7 +485,7 @@ plot.plcp_power_table <- function(x, ...) {
         geom_hline(yintercept = 0.8, linetype = "dotted") +
         labs(linetype = "missing data",
              color = colnames(.d)[2],
-             x = "subjects per treatment arm",
+             x = "total number of subjects in study",
              y = "Power",
              title = "Power curves")
 

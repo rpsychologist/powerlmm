@@ -800,6 +800,12 @@ get_power.plcp <- function(object, df = "balanced", alpha = 0.05, ...) {
 }
 #' @export
 get_power.plcp_multi <- function(object, df = "balanced", alpha = 0.05, ...) {
+    dots <- list(...)
+    if (is.function(dots$updateProgress)) {
+        dots$updateProgress()
+    }
+
+
     x <- lapply(1:nrow(object), function(i) {
         p <- as.plcp(object[i,])
         out <- get_power.plcp(p, df = df, alpha = alpha)
