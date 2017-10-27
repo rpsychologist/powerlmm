@@ -10,7 +10,7 @@ see ?create_lmer_formula
 * Calculations of the variance of treatment effects is now much faster for designs with 
 unequal clusters and/or missing data, when cluster sizes are large. The calculations now
 use the much faster implementation used by lme4.
-
+* Cleaner print-methods for `plcp_multi`-objects
 ## Minor changes and fixes
 * Fixed some typos in the documentation
 * New arguments to simulate.plcp_multi; save_folder, etc
