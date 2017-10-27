@@ -749,7 +749,7 @@ setup_power_calc <- function(d, f, object) {
 get_power.plcp <- function(object, df = "balanced", alpha = 0.05, ...) {
 
    # if(is.null(d)) d <- simulate_data(object)
-
+    print("A ")
 
     use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | df == "satterthwaite"
 

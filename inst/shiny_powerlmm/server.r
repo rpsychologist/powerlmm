@@ -199,9 +199,20 @@ shinyServer(function(input, output, session) {
 
     })
     power_table <- eventReactive(input$pcurve_go_button, {
+        n2_min <- input$pcurve_n2_min
+        n2_max <- input$pcurve_n2_max
+        n2_increment <- input$pcurve_n2_increment
 
+        if(input$multi_des == "2lvl") {
+            n3_list <- 1
+        } else {
+            n3_list <- as.numeric(unlist(strsplit(input$pcurve_n3,",")))
+        }
 
-        progress <- shiny::Progress$new()
+        n2 <- seq(n2_min, n2_max, by = n2_increment)
+        n3 <- n3_list
+
+        progress <- shiny::Progress$new(max = length(n2) * length(n3))
         progress$set(message = "Computing power", value = 0)
         # Close the progress when this reactive exits (even if there's an error)
         on.exit(progress$close())
@@ -210,25 +221,19 @@ shinyServer(function(input, output, session) {
             if (is.null(value)) {
                 value <- progress$getValue()
                 value <- value + (progress$getMax() - value) / 5
-               # print(progress$getMax())
             }
             progress$set(value = value)
         }
 
-        n2_min <- input$pcurve_n2_min
-        n2_max <- input$pcurve_n2_max
-        n2_increment <- input$pcurve_n2_increment
-        if(input$multi_des == "2lvl") {
-            n3_list <- 1
-        } else {
-            n3_list <- as.numeric(unlist(strsplit(input$pcurve_n3,",")))
-        }
 
 
-        res <- get_power_table(p$paras,
-                               n2 = seq(n2_min, n2_max, by = n2_increment),
-                               n3 = n3_list, updateProgress = updateProgress)
+        p <- p$paras
+        ptm <- proc.time()
 
+        res <- get_power_table(p,
+                               n2 = n2,
+                               n3 = n3, updateProgress = updateProgress)
+        print(proc.time() - ptm)
         res
     })
     power_plot <- eventReactive(input$pcurve_go_button, {

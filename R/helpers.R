@@ -402,6 +402,7 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #'                             icc_slope = c(0, 0.05, 0.1))
 #' plot(x)
 get_power_table <- function(object, n2, ..., df = "balanced", alpha = 0.05) {
+
     paras <- object
     arg <- list(...)
     updateProgress <- arg$updateProgress
