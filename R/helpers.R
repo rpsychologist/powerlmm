@@ -370,8 +370,8 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #' @param ... Optional named arguments. Up to two extra arguments can be compared.
 #' When used together with the plot method, the first argument will be grouped by
 #' color and the second by facets.
-#' @param df Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
-#' Also accepts a \code{numeric} value which will be used as DF.
+#' @param df Either "between" or "satterth" for Satterthwaite's DF approximation.
+#' Also accepts a \code{numeric} value which will be used as DF. See \code{\link{get_power}}
 #' @param alpha The alpha level, defaults to 0.05.
 #'
 #' @return A \code{data.frame} with class \code{plcp_power_table}.
@@ -401,7 +401,7 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #'                             n3 = c(3,6,9),
 #'                             icc_slope = c(0, 0.05, 0.1))
 #' plot(x)
-get_power_table <- function(object, n2, ..., df = "balanced", alpha = 0.05) {
+get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05) {
 
     paras <- object
     arg <- list(...)
@@ -521,6 +521,9 @@ make_list_weibull <- function(x) {
 #'
 #' @param object An object created by \code{\link{get_power}}
 #' @param nsim A \code{numeric} indicating the number of simulations
+#' @param power \emph{Optional}. A \code{numeric} indicating the empirical power.
+#' @param ... Currently not used.
+#' Used when \code{object} is \code{NULL}.
 #'
 #' @return A \code{data.frame} with the estimated power, expected standard error
 #'  of the simulated power estimate, and the 95 \% CI of the estimate.
@@ -540,11 +543,18 @@ make_list_weibull <- function(x) {
 #'
 #' x <- get_power(paras)
 #' get_monte_carlo_se(x, nsim = 1000)
-get_monte_carlo_se <- function(object, nsim) {
+#'
+#' # Without an object
+#' get_monte_carlo_se(power = 0.8, nsim = 1000)
+get_monte_carlo_se <- function(object, nsim, power, ...) {
     UseMethod("get_monte_carlo_se")
 }
-get_monte_carlo_se_ <- function(object, nsim) {
-    p <- object$power
+#' @export
+get_monte_carlo_se.default <- function(object, nsim, power, ...) {
+    get_monte_carlo_se_(p = power, nsim)
+}
+
+get_monte_carlo_se_ <- function(p, nsim) {
     se <- sqrt((p * (1-p)/nsim))
 
     res <- data.frame(power = p,
@@ -559,13 +569,15 @@ get_monte_carlo_se_ <- function(object, nsim) {
 
 #' @rdname get_monte_carlo_se
 #' @export
-get_monte_carlo_se.plcp_power_3lvl <- function(object, nsim) {
-    get_monte_carlo_se_(object, nsim)
+get_monte_carlo_se.plcp_power_3lvl <- function(object, nsim, ...) {
+    p <- object$power
+    get_monte_carlo_se_(p, nsim)
 }
 #' @rdname get_monte_carlo_se
 #' @export
-get_monte_carlo_se.plcp_power_2lvl <- function(object, nsim) {
-    get_monte_carlo_se_(object, nsim)
+get_monte_carlo_se.plcp_power_2lvl <- function(object, nsim, ...) {
+    p <- object$power
+    get_monte_carlo_se_(p, nsim)
 }
 #' Print method for \code{get_monte_carlo_se}-objects
 #' @param x An object created with \code{\link{get_monte_carlo_se}}.

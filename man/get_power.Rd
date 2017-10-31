@@ -4,12 +4,12 @@
 \alias{get_power}
 \title{Calculate power for two- and three-level models with missing data.}
 \usage{
-get_power(object, df = "balanced", alpha = 0.05, ...)
+get_power(object, df = "between", alpha = 0.05, ...)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}
 
-\item{df}{Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
+\item{df}{Either "between" or, "satterth" for Satterthwaite's DF approximation.
 Also accepts a \code{numeric} value which will be used as DF.}
 
 \item{alpha}{The alpha level, defaults to 0.05.}
@@ -28,6 +28,7 @@ Calculate power for two- and three-level models with missing data.
 }
 \details{
 \bold{Calculations of standard errors}
+
 Designs with equal cluster sizes, and with no missing data, uses standard closed form equations to
 calculate standard errors. Designs with missing data or unequal cluster sizes uses more
 computationally intensive linear algebra solutions.
@@ -36,7 +37,15 @@ To see a more detailed explanation of the calculations, type
 \code{vignette("technical", package = "powerlmm")}.
 
 \bold{Degrees of freedom}
-Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{d/se}.
+
+Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{b/se},
+and DFs are either based on a the between-subjects or between-cluster DFs, or using Satterthwaite's approximation.
+For the "between" method, \eqn{N_3 - 2} is used for three-level models, and \eqn{N_2 - 2} for two-level models,
+where \eqn{N_3} and \eqn{N_2} is the total number of clusters and subjects in both arms.
+
+\bold{N.B} Satterthwaite's method will be RAM and CPU intensive for large sample sizes.
+The computation time will depend mostly on \code{n1} and \code{n2}. For instance, for a fully nested model with
+\code{n1 = 10}, \code{n2 = 100}, \code{n3 = 4}, computations will likely take 30-60 seconds.
 }
 \examples{
 # Two-level model
@@ -88,6 +97,9 @@ paras <- study_parameters(n1 = 11,
                           cohend = -0.8)
 
 get_power(paras)
+
+# Satterthwaite DFs
+get_power(paras, df = "satterthwaite")
 }
 \seealso{
 \code{\link{study_parameters}}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}

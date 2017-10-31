@@ -1,7 +1,7 @@
 #' Calculate power for two- and three-level models with missing data.
 #'
 #' @param object An object created by \code{\link{study_parameters}}
-#' @param df Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
+#' @param df Either "between" or, "satterth" for Satterthwaite's DF approximation.
 #' Also accepts a \code{numeric} value which will be used as DF.
 #' @param alpha The alpha level, defaults to 0.05.
 #'
@@ -11,6 +11,7 @@
 #' @details
 #'
 #' \bold{Calculations of standard errors}
+#'
 #' Designs with equal cluster sizes, and with no missing data, uses standard closed form equations to
 #' calculate standard errors. Designs with missing data or unequal cluster sizes uses more
 #' computationally intensive linear algebra solutions.
@@ -19,7 +20,15 @@
 #' \code{vignette("technical", package = "powerlmm")}.
 #'
 #' \bold{Degrees of freedom}
-#' Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{d/se}.
+#'
+#' Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{b/se},
+#' and DFs are either based on a the between-subjects or between-cluster DFs, or using Satterthwaite's approximation.
+#' For the "between" method, \eqn{N_3 - 2} is used for three-level models, and \eqn{N_2 - 2} for two-level models,
+#' where \eqn{N_3} and \eqn{N_2} is the total number of clusters and subjects in both arms.
+#'
+#' \bold{N.B} Satterthwaite's method will be RAM and CPU intensive for large sample sizes.
+#' The computation time will depend mostly on \code{n1} and \code{n2}. For instance, for a fully nested model with
+#' \code{n1 = 10}, \code{n2 = 100}, \code{n3 = 4}, computations will likely take 30-60 seconds.
 #'
 #' @seealso \code{\link{study_parameters}}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
 #'
@@ -80,7 +89,10 @@
 #'                           cohend = -0.8)
 #'
 #' get_power(paras)
-get_power <- function(object, df = "balanced", alpha = 0.05, ...) {
+#'
+#' # Satterthwaite DFs
+#' get_power(paras, df = "satterthwaite")
+get_power <- function(object, df = "between", alpha = 0.05, ...) {
     UseMethod("get_power")
 }
 
@@ -710,6 +722,7 @@ varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
         RZX <- Matrix::solve(L0, Matrix::solve(L0, Lambdat %*% ZtX, system = "P"),
                              system = "L")
         RXtRX <- as(XtX - crossprod(RZX), "dpoMatrix")
+
         t(Lc) %*% (sigma2 * solve(RXtRX)) %*% Lc
     }
 }
@@ -746,12 +759,12 @@ setup_power_calc <- function(d, f, object) {
 
 }
 #' @export
-get_power.plcp <- function(object, df = "balanced", alpha = 0.05, ...) {
+get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
 
    # if(is.null(d)) d <- simulate_data(object)
-    print("A ")
 
-    use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | df == "satterthwaite"
+    use_satterth <- (df == "satterthwaite" & df == "satterth")
+    use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
 
     if(use_matrix_se) {
         d <- simulate_data(object)
@@ -777,7 +790,7 @@ get_power.plcp <- function(object, df = "balanced", alpha = 0.05, ...) {
 
     if(df == "satterthwaite") {
         df <- get_satterth_df(object, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
-    } else if(df == "balanced") {
+    } else if(df == "between") {
         df <- get_balanced_df(object)
     } else if(is.numeric(df)) df <- df
 
@@ -799,7 +812,7 @@ get_power.plcp <- function(object, df = "balanced", alpha = 0.05, ...) {
     out
 }
 #' @export
-get_power.plcp_multi <- function(object, df = "balanced", alpha = 0.05, ...) {
+get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, ...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
         dots$updateProgress()

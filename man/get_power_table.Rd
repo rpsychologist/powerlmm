@@ -4,7 +4,7 @@
 \alias{get_power_table}
 \title{Create a power table for a combination of parameter values}
 \usage{
-get_power_table(object, n2, ..., df = "balanced", alpha = 0.05)
+get_power_table(object, n2, ..., df = "between", alpha = 0.05)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}
@@ -15,8 +15,8 @@ get_power_table(object, n2, ..., df = "balanced", alpha = 0.05)
 When used together with the plot method, the first argument will be grouped by
 color and the second by facets.}
 
-\item{df}{Either "balanced" or "satterthwaite" for Satterthwaite's DF approximation.
-Also accepts a \code{numeric} value which will be used as DF.}
+\item{df}{Either "between" or "satterth" for Satterthwaite's DF approximation.
+Also accepts a \code{numeric} value which will be used as DF. See \code{\link{get_power}}}
 
 \item{alpha}{The alpha level, defaults to 0.05.}
 }

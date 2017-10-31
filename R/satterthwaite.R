@@ -68,9 +68,7 @@ create_G <- function(p, d) {
         ind <- c(ind_cc, ind_tx)
     }
 
-
     ## G4 intercept cluster
-
     if(p$sigma_cluster_intercept != 0) {
         X3 <- X %*% Z2
         X3i <- X3[, ind - 1]
@@ -149,6 +147,7 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     attr(WW, "P") <- PP
     WW
 }
+# from package pbkrtest
 .indexSymmat2vec <- function (i, j, N)
 {
     k <- if (i <= j) {
