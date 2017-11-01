@@ -552,7 +552,7 @@ print.plcp_power_3lvl <- function(x, ...) {
    .p <- x
    x <- prepare_print_plcp_3lvl(.p$paras)
    partially_nested <- .p$paras$partially_nested
-   x$method <- "Power calculation for longitudinal linear mixed model (three-level)\n                  with missing data and unbalanced designs"
+   x$method <- "Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)\n                  with missing data and unbalanced designs"
    x$df <- .p$df
    x$alpha <- .p$alpha
    x$power <- paste(round(.p$power * 100, 0), "%")
@@ -578,7 +578,7 @@ print.plcp_power_2lvl <- function(x, ...) {
     x$df <- .p$df
     x$alpha <- .p$alpha
     x$power <- paste(round(.p$power * 100, 0), "%")
-    x$method <- "Power calculation for longitudinal linear mixed model\n            with missing data and unbalanced designs"
+    x$method <- "Power Analysis for Longitudinal Linear Mixed-Effects Models\n            with missing data and unbalanced designs"
     print(x)
 
 }
@@ -847,6 +847,7 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, ...) {
     out_dense
 }
 
+#' @export
 print.plcp_multi_power <- function(x) {
 
 
@@ -856,7 +857,7 @@ print.plcp_multi_power <- function(x) {
     out <- as.data.frame(out)
     #cat(get_multi_title(x$object), "\n")
 
-    cat("# Power calculations for longitudinal linear mixed-effect models\n\n")
+    cat("# Power Analysis for Longitudinal Linear Mixed-Effect Models\n\n")
     print(out)
     cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df))
     invisible(x)
