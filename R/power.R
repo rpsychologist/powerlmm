@@ -118,8 +118,8 @@ print.plcp_power_3lvl <- function(x, ...) {
     }
     print(x, ...)
 
-    if(partially_nested) {
-        message("N.B: The degrees of freedom for partially nested designs are experimental, see '?get_power'")
+    if(partially_nested & !.p$satterth) {
+        message("N.B: Satterthwaite DFs are recommended for partially-nested models, or calculate power with 'simulate.plcp'")
     }
 }
 
@@ -343,7 +343,7 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
         calc_type <- "classic"
     }
 
-    if(df == "satterthwaite") {
+    if(use_satterth) {
         df <- get_satterth_df(object, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
     } else if(df == "between") {
         df <- get_balanced_df(object)
@@ -359,7 +359,7 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
 
 
     tot_n <- get_tot_n(object)$total
-    out <- list(power = power, df = df, se = se, paras = object, alpha = alpha, calc_type = calc_type, tot_n = tot_n)
+    out <- list(power = power, df = df, satterth = use_satterth, se = se, paras = object, alpha = alpha, calc_type = calc_type, tot_n = tot_n)
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
     if("plcp_3lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
