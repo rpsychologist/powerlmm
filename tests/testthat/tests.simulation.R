@@ -138,6 +138,20 @@ test_that("simulation summary", {
                  tolerance = 0.001)
 
 })
+
+test_that("simulation summary alpha", {
+
+    set.seed(5446)
+    formula <- list("correct" = "y ~ treatment * time + (1  | subject)")
+    res <- simulate(p, nsim = 10, formula = formula, satterthwaite = FALSE,
+                    progress = FALSE)
+    tmp <- summary(res)[[1]]$correct$FE[, "Power"]
+
+    tmp2 <- summary(res, alpha = 0.5)[[1]]$correct$FE[, "Power"]
+
+    expect_true(all(tmp < tmp2))
+})
+
 test_that("simulation partially nested", {
     set.seed(45443)
     p <- study_parameters(n1 = 11,
