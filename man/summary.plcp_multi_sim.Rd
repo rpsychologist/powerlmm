@@ -5,7 +5,7 @@
 \title{Summarize simulations based on a combination of multiple parameter values}
 \usage{
 \method{summary}{plcp_multi_sim}(object, para = "time:treatment",
-  type = "fixed", model = "correct", ...)
+  type = "fixed", model = "correct", alpha = 0.05, ...)
 }
 \arguments{
 \item{object}{A multiple simulation object created with
@@ -18,6 +18,9 @@
 
 \item{model}{Specifies which model should be summarized. Used when models are
 simulated from formulas named "correct" and "wrong".}
+
+\item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
+one-tailed tests are not yet implemented.}
 
 \item{...}{Optional arguments.}
 }

@@ -4,10 +4,13 @@
 \alias{summary.plcp_sim}
 \title{Summarize the results from a simulation of a single study design-object}
 \usage{
-\method{summary}{plcp_sim}(object, ...)
+\method{summary}{plcp_sim}(object, alpha = 0.05, ...)
 }
 \arguments{
 \item{object}{A \code{simulate.plcp}-object}
+
+\item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
+one-tailed tests are not yet implemented.}
 
 \item{...}{Currently not used}
 }

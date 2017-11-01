@@ -610,7 +610,6 @@ extract_results_ <- function(fit, CI, satterthwaite) {
         "df" = tmp_p$df
     )
 
-
     rnames <- rownames(FE)
     parm_id <- which(c("time:treatment", "treatment:time") %in% rnames)
     CI_parm <- c("time:treatment", "treatment:time")[parm_id]
@@ -630,8 +629,6 @@ extract_results_ <- function(fit, CI, satterthwaite) {
         FE[FE$parameter == "time:treatment", "CI_wald_upr"] <- CI_wald[2]
 
     }
-
-
     RE <- extract_random_effects(fit)
 
     conv <- is.null(fit@optinfo$conv$lme4$code)
@@ -640,10 +637,6 @@ extract_results_ <- function(fit, CI, satterthwaite) {
          "FE" = FE,
          "conv" = conv)
 }
-
-
-
-
 
 .rename_rr <- function(.x, match, new) {
     .x[.x$parameter %in% match, "parameter"] <- new
@@ -758,7 +751,7 @@ print.plcp_sim_summary <- function(x, ...) {
     tot_n <- get_tot_n(res$paras)$total
     n3 <- get_n3(res$paras)
     lapply(seq_along(x), print_model, x)
-    cat("Number of simulations:", res$nsim)
+    cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
     cat("\nTime points (n1): ", res$paras$n1)
     cat(" | Subjects per cluster (n2): ", unlist(res$paras$n2))
     cat(" | Clusters per treatment (n3): ", unlist(n3[c("treatment", "control")]))
@@ -821,7 +814,8 @@ print.plcp_sim <- function(x, ...) {
 
 #' Summarize the results from a simulation of a single study design-object
 #' @param object A \code{simulate.plcp}-object
-#'
+#' @param alpha Indicates the significance level. Default is 0.05 (two-tailed),
+#' one-tailed tests are not yet implemented.
 #' @param ... Currently not used
 #'
 #' @return Object with class \code{plcp_sim_summary}. It contains
@@ -844,16 +838,17 @@ print.plcp_sim <- function(x, ...) {
 #'
 #' @method summary plcp_sim
 #' @export
-summary.plcp_sim <- function(object, ...) {
+summary.plcp_sim <- function(object, alpha = 0.05, ...) {
     res <- object
-    x <- lapply(res$res, summary_.plcp_sim, paras = res$paras)
+    x <- lapply(res$res, summary_.plcp_sim, paras = res$paras, alpha = alpha)
     x <- list(summary = x,
               nsim = res$nsim,
-              paras = res$paras)
+              paras = res$paras,
+              alpha = alpha)
     class(x) <- append("plcp_sim_summary", class(x))
     x
 }
-summary_.plcp_sim  <- function(res, paras) {
+summary_.plcp_sim  <- function(res, paras, alpha) {
     RE_params <-
         data.frame(
             parameter = c(
@@ -914,14 +909,13 @@ summary_.plcp_sim  <- function(res, paras) {
         "time" = paras$fixed_slope,
         "time:treatment" = get_slope_diff(paras) / paras$T_end
     )
-    FE <- lapply(unique(res$FE$parameter), function(i, .d, theta, paras) {
+    FE <- lapply(unique(res$FE$parameter), function(i, .d, theta, paras, alpha) {
         se <- .d[.d$parameter == i, "se"]
         estimate <- .d[.d$parameter == i, "estimate"]
         pval <- .d[.d$parameter == i, "pval"]
         df <- .d[.d$parameter == i, "df"]
 
         if(any(!is.na(pval))) {
-
                Satt_NA <- mean(is.na(pval))
                x <- .d[.d$parameter == i, ]
                x <- fix_sath_NA_pval(x, paras)
@@ -935,11 +929,11 @@ summary_.plcp_sim  <- function(res, paras) {
             M_est = mean(estimate),
             M_se = mean(se),
             SD_est = sd(estimate),
-            Power = mean(get_cover(estimate, se)),
-            Power_satt = mean(pval < 0.05, na.rm = TRUE),
+            Power = mean(get_cover(estimate, se, alpha = alpha)),
+            Power_satt = mean(pval < alpha, na.rm = TRUE),
             Satt_NA = Satt_NA
         )
-    }, .d = res$FE, theta = theta, paras = paras)
+    }, .d = res$FE, theta = theta, paras = paras, alpha = alpha)
 
     FE <- do.call(rbind, FE)
 
@@ -1012,6 +1006,8 @@ summary_.plcp_sim  <- function(res, paras) {
 #' "random" or "fixed".
 #' @param model Specifies which model should be summarized. Used when models are
 #' simulated from formulas named "correct" and "wrong".
+#' @param alpha Indicates the significance level. Default is 0.05 (two-tailed),
+#' one-tailed tests are not yet implemented.
 #' @param ... Optional arguments.
 #'
 #' @method summary plcp_multi_sim
@@ -1042,7 +1038,9 @@ summary_.plcp_sim  <- function(res, paras) {
 summary.plcp_multi_sim <- function(object,
                                    para = "time:treatment",
                                    type = "fixed",
-                                   model = "correct", ...) {
+                                   model = "correct",
+                                   alpha = 0.05,
+                                   ...) {
     res <- object
     if (!model %in% (names(res[[1]][[1]])))
         stop("No model named: ", model)
@@ -1053,7 +1051,7 @@ summary.plcp_multi_sim <- function(object,
         stop("Para should be one of: 'intercept' 'time', 'treatment', 'time:treatment'")
     }
     if (type == "fixed") {
-        out <- lapply(res, summary_fixed.plcp_multi_sim, para, model)
+        out <- lapply(res, summary_fixed.plcp_multi_sim, para, model, alpha = alpha)
     } else {
         out <- lapply(res, summary_random.plcp_multi_sim, para, model)
     }
@@ -1083,7 +1081,7 @@ print.plcp_multi_sim_summary <- function(x, ...) {
 }
 
 ## random effect
-summary_fixed.plcp_multi_sim <- function(res, para, model) {
+summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
 
     theta <- switch(
         para,
@@ -1101,7 +1099,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model) {
     se_est <- mean(out$se)
     se_hat <- sd(out$estimate)
 
-    power <- mean(get_cover(out$estimate, out$se))
+    power <- mean(get_cover(out$estimate, out$se, alpha = alpha))
     Satt_NA <-  mean(is.na(out$pval))
     out <- fix_sath_NA_pval(out, res$paras)
 
@@ -1118,7 +1116,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model) {
             SD_est = se_hat,
             se_rel_bias = (se_est - se_hat) / se_hat,
             Power = power,
-            Power_satt = mean(out$pval < 0.05, na.rm = TRUE),
+            Power_satt = mean(out$pval < alpha, na.rm = TRUE),
             Satt_NA = Satt_NA
 
         )
@@ -1171,9 +1169,9 @@ summary_random.plcp_multi_sim <- function(res, para, model) {
 }
 
 # power -------------------------------------------------------------------
-get_cover <- function(est, se) {
-    # 95 % CI cover
-    abs(est) - qnorm(0.975) * se > 0
+get_cover <- function(est, se, alpha) {
+    # CI cover
+    abs(est) - qnorm(1 - (alpha/2)) * se > 0
 }
 
 get_p_val_df <- function(t, df, parameter) {
