@@ -4,12 +4,12 @@ powerlmm
 
 [![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/powerlmm)](https://cran.r-project.org/package=powerlmm)
 
-Power Calculations for Longitudinal Multilevel/Linear Mixed Models.
+Power Analysis for Longitudinal Multilevel/Linear Mixed Models.
 
 Overview
 --------
 
-The purpose of `powerlmm` is to help design longitudinal treatment studies, with or without higher-level clustering (e.g. by therapists, groups, or physician), and missing data. The main features of the package are:
+The purpose of `powerlmm` is to help design longitudinal treatment studies, with or without higher-level clustering (e.g. longitudinally clustered by therapists, groups, or physician), and missing data. The main features of the package are:
 
 -   Longitudinal two- and three-level (nested) linear mixed models, and partially nested designs.
 -   Random slopes at the subject- and cluster-level.
@@ -17,7 +17,8 @@ The purpose of `powerlmm` is to help design longitudinal treatment studies, with
 -   Unbalanced designs (both unequal cluster sizes, and treatment groups).
 -   Design effect, and estimated type I error when the third-level is ignored.
 -   Fast analytical power calculations for all designs.
--   Explore bias, type 1 error and model misspecification using convenient simulation methods.
+-   Power for small samples sizes using Satterthwaite's degrees of freedom approximation.
+-   Explore bias, Type 1 errors and model misspecification using convenient simulation methods.
 
 Installation
 ------------
@@ -81,10 +82,10 @@ plot(p)
 ![](http://rpsychologist.com/img/powerlmm/README-three-level-setup-1.png)
 
 ``` r
-get_power(p)
+get_power(p, df = "satterthwaite")
 #> 
-#>      Power calculation for longitudinal linear mixed model (three-level)
-#>                            with missing data and unbalanced designs 
+#>      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
+#>                   with missing data and unbalanced designs 
 #> 
 #>               n1 = 11
 #>               n2 = 10  (treatment)
@@ -103,7 +104,9 @@ get_power(p)
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>           cohend = -0.8
-#>            power = 0.68
+#>               df = 8.8139
+#>            alpha = 0.05
+#>            power = 69 %
 ```
 
 Several convenience functions are also included, e.g. for creating power curves.
