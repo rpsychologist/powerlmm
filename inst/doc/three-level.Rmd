@@ -147,6 +147,9 @@ To calcalute power for the study, we use the `get_power`-method using the object
 get_power(p)
 ```
 
+### Degrees of freedom
+By default `get_power` uses the between-cluster degrees of freedom for three-level models. However, unless sample sizes are large it is probably recommended to use `df = "satterthwaite"`.
+
 ## Understanding the model
 Several helper functions are available to help you explore the implications of the model's parameters. For instance, we can calculate the variance partitioning coefficients (VPC), to see how the proportion of variance at each level change over time. 
 
