@@ -165,4 +165,41 @@ test_that("satterth df 2lvl", {
     expect_equal(ddf, totn$total - 2)
 })
 
+# power calc
+test_that("satterth df 2lvl", {
+p <- study_parameters(n1 = 5,
+                      n2 = c(4,5),
+                      n3 = 4,
+                      T_end = 10,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      cor_subject = -0.4,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      sigma_error = 100,
+                      partially_nested = c(TRUE, FALSE),
+                      dropout = dropout_weibull(0.05, 0.5),
+                      cohend = 0.5)
+
+
+p1 <- study_parameters(n1 = 5,
+                       n2 = c(4,5),
+                       n3 = 4,
+                       T_end = 10,
+                       icc_pre_subject = 0.5,
+                       icc_pre_cluster = 0,
+                       cor_subject = -0.4,
+                       icc_slope = 0.05,
+                       var_ratio = 0.02,
+                       sigma_error = 100,
+                       partially_nested = c(TRUE, FALSE),
+                       dropout = 0,
+                       cohend = 0.5)
+
+x1 <- get_power(p)$power < get_power(p1)$power
+expect_true(all(x1))
+
+x2 <- get_power(p, df = "satterthwaite")$power < get_power(p1, df = "satterthwaite")$power
+expect_true(all(x2))
+})
 
