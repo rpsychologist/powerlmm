@@ -21,8 +21,10 @@ p2 <- study_parameters(n1 = 11,
 
 
 # three-level, only random slope
+
+n2 <- c(10, unequal_clusters(4,5,6,7,25))
 p3s <- study_parameters(n1 = 11,
-                        n2 = 10,
+                        n2 = n2,
                         n3 = c(4, 8),
                         T_end = 10,
                         fixed_intercept = 37,
