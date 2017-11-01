@@ -36,7 +36,7 @@
 #' and slopes.
 #' @param cor_within Correlation of the level 1 residual. Currently ignored in
 #' the analytical power calculations.
-#' @param cohend Standardized between-groups treatment effect at the last time point,
+#' @param cohend Standardized between-group treatment effect at the last time point,
 #' see \emph{Details}.
 #' @param partially_nested \code{logical}; indicates if there's clustering in both
 #' arms or only in the treatment arm.
@@ -46,7 +46,7 @@
 #' \code{dropout} will be treated as stochastic and dropout will sampled
 #' from a multinomial distribution.
 #' @return A \code{list} or \code{data.frame} of parameters values, either of
-#' class \code{plcp} or \code{plcp_muli} if multiple parameters are compared.
+#' class \code{plcp} or \code{plcp_multi} if multiple parameters are compared.
 #'
 #' @details
 #'
@@ -71,7 +71,9 @@
 #'
 #' \bold{Cohen's d calculation}
 #'
-#' Cohen's \emph{d} is calculated by using the baseline standard deviation as the standardizer.
+#' Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
+#' The choice of denominator differs between fields, and other options will be added in
+#' future realeses.
 #'
 #' \bold{Two- or three-level models}
 #'
@@ -302,8 +304,14 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
     #     args$dropout <- list(dropout)
     # }
 
+    unequal_clust <- lapply(seq_along(n2), function(i) is.unequal_clusters(n2[i]))
+    unequal_clust <- unlist(unequal_clust)
+
+    if(any(unequal_clust) & length(n3) > 1) stop("Can't combine `unequal_clusters` with different `n3` values.")
+
 
     tmp_args <- args[!vapply(args, is.null, logical(1))]
+
     tmp <- expand.grid(tmp_args)
     if(is.null(args$T_end)) tmp$T_end <- tmp$n1 - 1
 
@@ -698,8 +706,16 @@ select_setup_cols <- function(x) {
               "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "cohend")
     cols[cols %in% colnames(x)]
 }
-print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2) {
 
+#' Print method for \code{study_parameters}-multiobjects
+#' @param x An object of class \code{plcp_multi}.
+#' @param print_max The number of rows to show
+#' @param empty Symbol used to replace repeating non-unqique parameters
+#' @param digits Digits to show
+#' @param ... Optional arguments.
+#' @method print plcp_multi
+#' @export
+print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2) {
     nr <- nrow(x)
     if(nr <= print_max) rmax <- nr else rmax <- print_max
     hidden_row <- nr - print_max

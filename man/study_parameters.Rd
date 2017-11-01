@@ -59,7 +59,7 @@ variance at the subject level. N.B. this is not really an ICC.}
 \item{icc_pre_cluster}{Amount of baseline
 variance at the cluster level.}
 
-\item{cohend}{Standardized between-groups treatment effect at the last time point,
+\item{cohend}{Standardized between-group treatment effect at the last time point,
 see \emph{Details}.}
 
 \item{partially_nested}{\code{logical}; indicates if there's clustering in both
@@ -74,7 +74,7 @@ from a multinomial distribution.}
 }
 \value{
 A \code{list} or \code{data.frame} of parameters values, either of
-class \code{plcp} or \code{plcp_muli} if multiple parameters are compared.
+class \code{plcp} or \code{plcp_multi} if multiple parameters are compared.
 }
 \description{
 Setup the parameters for calculating power for longitudinal multilevel studies
@@ -107,7 +107,9 @@ the two-level and three-level vignettes.
 
 \bold{Cohen's d calculation}
 
-Cohen's \emph{d} is calculated by using the baseline standard deviation as the standardizer.
+Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
+The choice of denominator differs between fields, and other options will be added in
+future realeses.
 
 \bold{Two- or three-level models}
 
