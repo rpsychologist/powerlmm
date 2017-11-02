@@ -20,7 +20,7 @@ This vignette shows how to setup and calculate power for three-level models with
 Currently, `powerlmm` support three-level models that are fully nested or partially nested; crossed designs are not yet supported. 
 
 ## Model formulation
-In standard multilevel notation the fully *nested* three-level model is
+In standard multilevel notation the fully *nested* three-level linear mixed-effects model is
 $$
 \begin{align}
 \text{Level 1}& \notag\\\

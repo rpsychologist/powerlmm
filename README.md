@@ -4,14 +4,14 @@ powerlmm
 
 [![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/powerlmm)](https://cran.r-project.org/package=powerlmm)
 
-Power Analysis for Longitudinal Multilevel/Linear Mixed Models.
+Power Analysis for Longitudinal Multilevel/Linear Mixed-Effects Models.
 
 Overview
 --------
 
 The purpose of `powerlmm` is to help design longitudinal treatment studies, with or without higher-level clustering (e.g. longitudinally clustered by therapists, groups, or physician), and missing data. The main features of the package are:
 
--   Longitudinal two- and three-level (nested) linear mixed models, and partially nested designs.
+-   Longitudinal two- and three-level (nested) linear mixed-effects models, and partially nested designs.
 -   Random slopes at the subject- and cluster-level.
 -   Missing data.
 -   Unbalanced designs (both unequal cluster sizes, and treatment groups).
@@ -104,7 +104,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>           cohend = -0.8
-#>               df = 8.8139
+#>               df = 8.803349
 #>            alpha = 0.05
 #>            power = 69 %
 ```

@@ -36,7 +36,7 @@ Unbalanced designs are supported; e.g. treatments can have different number of s
 The power calculations can account for missing data, either by manually specifying dropout per time point, or by using a Weibull survival function. 
 
 
-# Two-level longitudinal linear mixed model with random slopes
+# Two-level longitudinal linear mixed-effects model with random slopes
 This is the typical longitudinal linear mixed model, which in multilevel notion is written as
 
 ## Model formulation
