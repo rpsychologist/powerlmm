@@ -73,7 +73,7 @@
 #'
 #' Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
 #' The choice of denominator differs between fields, and other options will be added in
-#' future realeses.
+#' future releases.
 #'
 #' \bold{Two- or three-level models}
 #'
@@ -187,6 +187,8 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
                              partially_nested = FALSE,
                              dropout = 0L,
                              deterministic_dropout = TRUE) {
+
+    #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
 
     # drop out checks
     if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'")
@@ -304,12 +306,10 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
     #     args$dropout <- list(dropout)
     # }
 
-    unequal_clust <- lapply(seq_along(n2), function(i) is.unequal_clusters(n2[i]))
-    unequal_clust <- unlist(unequal_clust)
+#    unequal_clust <- lapply(seq_along(n2), function(i) is.unequal_clusters(n2[i]))
+ #   unequal_clust <- unlist(unequal_clust)
 
-    if(any(unequal_clust) & length(n3) > 1) stop("Can't combine `unequal_clusters` with different `n3` values.")
-
-
+  #  if(any(unequal_clust) & length(n3) > 1) stop("Can't combine `unequal_clusters` with different `n3` values.")
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
     tmp <- expand.grid(tmp_args)
@@ -516,9 +516,19 @@ print_per_treatment_ <- function(i, x) {
     x <- x[[i]]
     paste(paste(unlist(x), collapse = ", "), sep ="")
 }
+
+deparse_n2 <- function(n2) {
+    n2_attr <- attr(n2, "func")
+    if(!is.null(n2_attr) && (n2_attr != "manual")) {
+        n2 <- deparse(n2_attr)
+    }
+    n2
+}
 prepare_print_plcp <- function(x, two_level = FALSE) {
     n1 <- x$n1
     n2 <- get_n2(x)
+    n2$treatment <- deparse_n2(n2$treatment)
+    n2$control <- deparse_n2(n2$control)
     n3 <- get_n3(x)
     tot_n <- get_tot_n(x)
     width <- max(nchar(print_per_treatment_(1, n2)),
@@ -574,6 +584,24 @@ prepare_print_plcp_3lvl <- function(x) {
     res <- prepare_print_plcp(x)
     if(!is.list(x$dropout)) res$dropout <- "No missing data"
     if(x$partially_nested) res$method <- "Study setup (three-level, partially nested)"
+    if(is.unequal_clusters(x$n2)) {
+        if(is.per_treatment(x$n2)) {
+            if(class(x$n2[[1]]$treatment[[1]]) == "plcp_unequal_clusters") {
+                n2 <- x$n2[[1]]$treatment[[1]]()
+                n2_attr <- attr(n2, "func")
+            } else {
+                n2 <- x$n2[[1]]$control[[1]]()
+                n2_attr <- attr(n2, "func")
+            }
+        } else {
+            n2 <- x$n2[[1]]()
+            n2_attr <- attr(n2, "func")
+        }
+
+        if(!is.null(n2_attr) & n2_attr != "manual") res$note <- "n2 is randomly sampled"
+
+    }
+
 
     res
 
@@ -710,12 +738,12 @@ select_setup_cols <- function(x) {
 #' Print method for \code{study_parameters}-multiobjects
 #' @param x An object of class \code{plcp_multi}.
 #' @param print_max The number of rows to show
-#' @param empty Symbol used to replace repeating non-unqique parameters
+#' @param empty Symbol used to replace repeating non-unique parameters
 #' @param digits Digits to show
 #' @param ... Optional arguments.
 #' @method print plcp_multi
 #' @export
-print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2) {
+print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
     nr <- nrow(x)
     if(nr <= print_max) rmax <- nr else rmax <- print_max
     hidden_row <- nr - print_max
@@ -738,6 +766,21 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2) {
 
 # helpers -----------------------------------------------------------------
 
+eval_n2 <- function(n2) {
+    n2 <- n2[[1]]()
+    n2 <- round(n2, 0)
+    func <- attr(n2, "func")
+    if(func != "manual") {
+        trunc <- attr(n2, "trunc")
+        repl <- attr(n2, "replace")
+
+        n2[n2 < trunc] <- repl
+    }
+    n2 <- n2[n2 > 0]
+    if(length(n2) < 1) stop("All clusters of size 0")
+    attr(n2, "func") <- func
+    n2
+}
 
 prepare_paras <- function(paras) {
     paras_tx <- paras
@@ -755,25 +798,27 @@ prepare_paras <- function(paras) {
 
 
         if(is.unequal_clusters(paras$n2)) {
-            paras$n2 <- as.numeric(unlist(paras$n2))
+            paras$n2 <- eval_n2(paras$n2)
             paras$n3 <- length(paras$n2)
 
         }
         if(is.unequal_clusters(paras_tx$n2)) {
-            paras_tx$n2 <- as.numeric(unlist(paras_tx$n2))
+            paras_tx$n2 <- eval_n2(paras_tx$n2)
             paras_tx$n3 <- length(paras_tx$n2)
 
         }
     }
     if(is.unequal_clusters(paras$n2)) {
+        paras$n2 <- eval_n2(paras$n2)
+        paras_tx$n2 <- paras$n2
         paras$n3 <- length(unlist(paras$n2))
-        paras_tx$n3 <- length(unlist(paras$n2))
+        paras_tx$n3 <-  paras$n3
     }
 
-    if(is.unequal_clusters(paras$n2)) {
-        paras$n3 <- length(unlist(paras$n2))
-        paras_tx$n3 <- length(unlist(paras$n2))
-    }
+    # if(is.unequal_clusters(paras$n2)) {
+    #     paras$n3 <- length(unlist(paras$n2))
+    #     paras_tx$n3 <- length(unlist(paras$n2))
+    # }
     if(paras$partially_nested) {
         paras$sigma_cluster_intercept <- 0L
         paras$cor_cluster <- 0L
@@ -799,6 +844,19 @@ prepare_paras <- function(paras) {
 #'
 #' @param ... Any number of separate numeric arguments specifying
 #' each cluster's size
+#' @param func A function that generates cluster sizes, used instead of \code{...}. See \emph{Details}.
+#' @param trunc Cutoff for values generated by \code{func}, \code{x < trunc} are replaced,
+#' used to avoid negative or 0 values.
+#' @param replace Indicates what value to replace cluster sizes less than \code{trunc} with.
+#'
+#' @details
+#' If \code{func} is used together with a function that generates random draws, e.g.
+#' \code{rnorm} or \code{rpois}, then cluster sizes  (and possible the number of clusters),
+#' will be threated as a random variable. This is mostly intended for simulations. However, if a
+#' random function is used with \code{get_power}, power will
+#' vary each time the function is called, and you would have to average over repeated calls
+#' to get the expected power. Functions that output decimal numbers will be rounded
+#' to the closest integer.
 #'
 #' @return An object of type 'plcp_unequal_clusters'
 #' @seealso \code{\link{per_treatment}}
@@ -825,6 +883,18 @@ prepare_paras <- function(paras) {
 #'     group_by(treatment, cluster) %>%
 #'     summarise(n = n())
 #'
+#' # Poisson distributed cluster sizes
+#' n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = n2,
+#'                       T_end = 10,
+#'                       icc_pre_subject = 0.5,
+#'                       icc_pre_cluster = 0,
+#'                       sigma_error = 1,
+#'                       var_ratio = 0.03,
+#'                       icc_slope = 0.05,
+#'                       cohend = -0.8)
+#'
 #' # Use per_treatment() to specify per treatment ------------------------------
 #' n2 <- per_treatment(unequal_clusters(2, 2, 2, 2, 3, 4, 5),
 #'                      unequal_clusters(10, 15))
@@ -844,13 +914,29 @@ prepare_paras <- function(paras) {
 #'     filter(time == 0) %>%
 #'     group_by(treatment, cluster) %>%
 #'     summarise(n = n())
-unequal_clusters <- function(...) {
-    x <- list(cluster_sizes = ...)
+unequal_clusters <- function(..., func = NULL, trunc = 1, replace = 1) {
+    if(length(list(...)) > 0 & !is.null(func)) stop("Can't combine manual cluster sizes and 'func'.")
+    if(is.null(func)) {
+        x <- list(cluster_sizes = ...)
+        tmp <- "manual"
+    } else {
+        x <- as.list(match.call())$func
+        tmp <- x
+    }
 
-    class(x) <- "plcp_unequal_clusters"
-    x <- list(unequal_clusters=x)
+    out <- function() {
+        if(is.call(x)) x <- eval(x)
+        x <- unlist(x)
+        attr(x, "func") <- tmp
+        attr(x, "trunc") <- trunc
+        attr(x, "replace") <- replace
+        x
+    }
+
+    class(out) <- "plcp_unequal_clusters"
+   # x <- list(unequal_clusters=x)
     #class(x) <- "unequal_clusters"
-    x
+    list(out)
 }
 is.unequal_clusters <- function(x) {
     if(is.per_treatment(x)) {
@@ -906,7 +992,9 @@ per_treatment  <- function(control, treatment) {
     x
 }
 is.per_treatment <- function(x) {
-    class(x[[1]]) == "plcp_per_treatment"
+    if(!is.function(x)) {
+        return(class(x[[1]]) == "plcp_per_treatment")
+    } else return(FALSE)
 }
 as.plcp <- function(.p) {
     paras <- .p
@@ -981,7 +1069,7 @@ get_n2.plcp <- function(paras) {
     n2_cc <- unlist(tmp$control$n2)
     if(tmp$control$partially_nested) {
         if(length(n2_cc) == 1) {
-            n2_cc<- tmp$control$n3 * tmp$control$n2
+            n2_cc<- tmp$control$n3 * n2_cc
             } else n2_cc <- sum(n2_cc)
     }
     n2_tx <- unlist(tmp$treatment$n2)
@@ -1032,11 +1120,9 @@ get_tot_n <- function(paras, n = 1) {
     UseMethod("get_tot_n")
 }
 get_tot_n.plcp <- function(paras, n = NULL) {
-
     tmp <- prepare_paras(paras)
     paras_cc <- tmp$control
     paras_tx <- tmp$treatment
-
 
     n_cc <- get_tot_n_(paras_cc)
     n_tx <- get_tot_n_(paras_tx)
@@ -1050,6 +1136,8 @@ get_tot_n.plcp_multi <- function(paras, n = 1) {
 }
 get_tot_n_ <- function(paras) {
     n2 <- unlist(paras$n2)
+    if(is.unequal_clusters(n2)) n2 <- n2[[1]]()
+
     if(length(n2) == 1) {
         tot_n <- paras$n3 * n2
     } else {

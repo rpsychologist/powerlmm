@@ -750,10 +750,18 @@ print.plcp_sim_summary <- function(x, ...) {
 
     tot_n <- get_tot_n(res$paras)$total
     n3 <- get_n3(res$paras)
+    n2 <- get_n2(res$paras)
+    if(is.per_treatment(res$paras$n2)) {
+        n2$treatment <- deparse_n2(n2$treatment)
+        n2$control <- deparse_n2(n2$control)
+        n2 <- unlist(n2)
+    } else n2 <- deparse_n2(n2$treatment)
+
+
     lapply(seq_along(x), print_model, x)
     cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
     cat("\nTime points (n1): ", res$paras$n1)
-    cat(" | Subjects per cluster (n2): ", unlist(res$paras$n2))
+    cat(" | Subjects per cluster (n2): ", unlist(n2))
     cat(" | Clusters per treatment (n3): ", unlist(n3[c("treatment", "control")]))
     cat("\nTotal number of subjects: ", tot_n)
     convergence <- lapply(x, function(d)

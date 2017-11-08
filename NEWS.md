@@ -6,7 +6,10 @@
 * Simulate.plcp will now automatically create lmer formulas if none is supplied,
 see ?create_lmer_formula
 * You can now choose what alpha level to use. 
-
+* Threat cluster sizes as a random variable. `uneqal_clusters` now accepts
+ a function indicating the distribution of cluster sizes, via the new argument
+`func`, e.g. `rpois` or `rnorm` could be used to draw cluster sizes.
+  
 ## Improvements
 * Calculations of the variance of treatment effects is now much faster for designs with 
 unequal clusters and/or missing data, when cluster sizes are large. The calculations now

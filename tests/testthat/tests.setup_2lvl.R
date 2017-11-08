@@ -406,7 +406,9 @@ test_that("multi with unequal_clusters", {
                           sigma_subject_slope = c(0.1224745),
                           icc_pre_subject = c(0.1, 0.22),
                           var_ratio = c(0.01, 0.03))
-    expect_equal(sum(unlist(p$n2)), (4+10+25)*4)
+    n2 <- lapply(seq_along(p$n2), function(i) eval_n2(p$n2[1]))
+
+    expect_equal(sum(unlist(n2)), (4+10+25)*4)
     expect_equal(get_var_ratio(p), c(0.01, 0.03, 0.01, 0.03), tolerance = 0.001)
     expect_equal(get_ICC_slope(p), c(0, 0, 0, 0), tolerance = 0.001)
     expect_equal(get_ICC_pre_subjects(p), c(0.1, 0.1, 0.22, 0.22), tolerance = 0.001)

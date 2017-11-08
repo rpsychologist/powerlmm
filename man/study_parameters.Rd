@@ -109,7 +109,7 @@ the two-level and three-level vignettes.
 
 Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
 The choice of denominator differs between fields, and other options will be added in
-future realeses.
+future releases.
 
 \bold{Two- or three-level models}
 
