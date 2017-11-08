@@ -14,7 +14,7 @@ Description: Calculate power for two- and three-level multilevel longitudinal
     calculations extends the method described in Galbraith et al. (2002)
     <doi:10.1016/S0197-2456(02)00205-2>, to three-level models.
     Additionally, the simulation tools provides flexible ways to investigate
-    bias, type I errors and the consequences of model misspecification.
+    bias, Type I errors and the consequences of model misspecification.
 License: GPL (>= 3)
 URL: https://github.com/rpsychologist/powerlmm
 BugReports: https://github.com/rpsychologist/powerlmm/issues
