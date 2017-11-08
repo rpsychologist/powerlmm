@@ -451,7 +451,7 @@ simulate.plcp_data_frame <-
 simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     d <- simulate_data(paras)
     fit <- analyze_data(formula, d)
-    res <- extract_results(fit, CI, satterthwaite = satterthwaite)
+    res <- extract_results(fit, CI, satterthwaite = satterthwaite, paras = paras)
     res
 }
 
@@ -533,8 +533,8 @@ analyze_data <- function(formula, d) {
     fit
 }
 
-extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE) {
-    lapply(fit, extract_results_, CI = CI, satterthwaite = satterthwaite)
+extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, paras) {
+    lapply(fit, extract_results_, CI = CI, satterthwaite = satterthwaite, paras = paras)
 }
 extract_random_effects <- function(fit) {
     x <- as.data.frame(lme4::VarCorr(fit))
@@ -600,7 +600,7 @@ fix_sath_NA_pval <- function(x, paras) {
 
     x
 }
-extract_results_ <- function(fit, CI, satterthwaite) {
+extract_results_ <- function(fit, CI, satterthwaite, paras = NULL) {
     se <- sqrt(diag(vcov(fit)))
     tmp_p <- add_p_value(fit, satterthwaite)
     FE <- data.frame(
@@ -616,6 +616,9 @@ extract_results_ <- function(fit, CI, satterthwaite) {
     rnames <- gsub("treatment:time", "time:treatment", rnames)
     rownames(FE) <- NULL
     FE <- cbind(data.frame(parameter = rnames), FE)
+
+    # Fix DF when clusters are random
+    FE[FE$parameter == "time:treatment", "df_bw"] <- get_balanced_df(paras)
 
     if (CI) {
         CI <- tryCatch(stats::confint(fit, parm = CI_parm),
@@ -945,7 +948,6 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
 
     FE <- do.call(rbind, FE)
 
-    ## Fix this, remove dplyr
     if ("CI_lwr" %in% colnames(res$FE)) {
         diff <- get_slope_diff(paras) / paras$T_end
 
