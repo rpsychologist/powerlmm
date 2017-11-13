@@ -35,3 +35,5 @@ used the wrong print method.
 e.g. 'cluster_intercept' and 'cluster_slope' is now correctly extracted from
  '(0 + treatment + treatment:time || cluster)' 
 * Simulation, if Satterthwaite's method fails DF are calculated as total n2 - 2.
+* Power.plcp_multi is now exported
+* Get_power.plcp_multi now shows a progress bar

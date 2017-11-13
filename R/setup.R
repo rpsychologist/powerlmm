@@ -1048,6 +1048,7 @@ update.plcp <- function(object, ...) {
 
     paras
 }
+#' @export
 update.plcp_multi <- function(object, ...) {
     update.plcp(object, ...)
 }
