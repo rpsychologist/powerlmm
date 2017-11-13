@@ -4,7 +4,7 @@
 \alias{get_power}
 \title{Calculate power for two- and three-level models with missing data.}
 \usage{
-get_power(object, df = "between", alpha = 0.05, ...)
+get_power(object, df = "between", alpha = 0.05, progress = TRUE, ...)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}
@@ -13,6 +13,9 @@ get_power(object, df = "between", alpha = 0.05, ...)
 Also accepts a \code{numeric} value which will be used as DF.}
 
 \item{alpha}{The alpha level, defaults to 0.05.}
+
+\item{progress}{\code{logical}; displays a progress bar when > 1 power analysis
+is performed.}
 
 \item{...}{Other potential arguments; currently used to pass progress bar from
 Shiny}

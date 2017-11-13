@@ -4,6 +4,8 @@
 #' @param df Either "between" or, "satterth" for Satterthwaite's DF approximation.
 #' Also accepts a \code{numeric} value which will be used as DF.
 #' @param alpha The alpha level, defaults to 0.05.
+#' @param progress \code{logical}; displays a progress bar when > 1 power analysis
+#' is performed.
 #'
 #' @param ... Other potential arguments; currently used to pass progress bar from
 #'  Shiny
@@ -92,7 +94,7 @@
 #'
 #' # Satterthwaite DFs
 #' get_power(paras, df = "satterthwaite")
-get_power <- function(object, df = "between", alpha = 0.05, ...) {
+get_power <- function(object, df = "between", alpha = 0.05, progress = TRUE, ...) {
     UseMethod("get_power")
 }
 
@@ -367,18 +369,26 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
     out
 }
 #' @export
-get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, ...) {
+#' @importFrom utils txtProgressBar setTxtProgressBar
+get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, ...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
         dots$updateProgress()
     }
 
 
-    x <- lapply(1:nrow(object), function(i) {
+    nr <- nrow(object)
+    if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
+    x <- vector(mode = "list", length = nr)
+    for(i in 1:nrow(object)) {
         p <- as.plcp(object[i,])
         out <- get_power.plcp(p, df = df, alpha = alpha)
-       as.data.frame(out[c("power","df","tot_n", "se")])
-    })
+
+        out <- as.data.frame(out[c("power","df","tot_n", "se")])
+        if(progress) setTxtProgressBar(pb, i)
+        x[[i]] <- out
+    }
+    if(progress) close(pb)
     x <- do.call(rbind, x)
     x <- cbind(object, x)
 
