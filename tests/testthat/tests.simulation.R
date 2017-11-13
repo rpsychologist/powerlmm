@@ -64,7 +64,7 @@ test_that("extract results", {
     d <- simulate_data(p)
     fit <- lme4::lmer(y ~ treatment * time + (1 + time | subject) +
                           (0 + time | cluster), data = d)
-    tmp <- extract_results(list(fit), CI = FALSE)
+    tmp <- extract_results(list(fit), CI = FALSE, paras = p)
 
     x <- tmp[[1]]$RE
     expect_equal(x$vcov, c(2.330233, 0.032569, 0.008725, 2.070966, -0.193),
@@ -79,7 +79,7 @@ test_that("extract results satterthwaite", {
     d <- simulate_data(p)
     fit <- lmerTest::lmer(y ~ treatment * time + (1 + time | subject) +
                               (0 + time | cluster), data = d)
-    tmp <- extract_results(list(fit), CI = FALSE)
+    tmp <- extract_results(list(fit), CI = FALSE, paras = p)
 
     x <- tmp[[1]]$RE
     expect_equal(x$vcov, c(2.330233, 0.032569, 0.008725, 2.070966, -0.193),
