@@ -62,8 +62,11 @@ get_DEFT_3lvl.data.frame <- function(object) {
 get_DEFT_3lvl.list <- function(object) {
     p1 <- object
     p2 <- p1
-    p2 <- update(p2, sigma_subject_slope = sqrt(p2$sigma_cluster_slope^2 + p2$sigma_subject_slope^2),
-                 sigma_cluster_slope = 0)
+    p2$sigma_subject_slope <- sqrt(p2$sigma_cluster_slope^2 +
+                                       p2$sigma_subject_slope^2)
+    p2$sigma_cluster_slope <- 0
+    class(p2) <- gsub("3lvl", "2lvl", class(p2))
+
 
     x1 <- get_power(p1)
     x2 <- get_power(p2)
