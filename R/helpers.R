@@ -290,6 +290,7 @@ sum_missing_tx_time <- function(.d) {
 #' @import ggplot2
 #' @export
 plot.plcp <- function(x, n = 1, type = "both", ...) {
+    check_installed("ggplot2")
     paras <- x
      if(is.data.frame(paras)) {
           paras <- as.list(paras[n,])
@@ -346,6 +347,7 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
             ylim(0,1)
 
      if(type == "both") {
+         check_installed("gridExtra")
         return(gridExtra::grid.arrange(p1,p2, ncol=2))
      } else if(type == "effect") {
          return(p1)
@@ -466,6 +468,7 @@ get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05) {
 #' @param ... Optional arguments.
 #' @export
 plot.plcp_power_table <- function(x, ...) {
+    check_installed("ggplot2")
     .d <- x
     x <- .d[, which(!colnames(.d) %in% c("n2","power", "dropout", "tot_n")), drop = FALSE]
      .d$id <- interaction(cbind(x, .d$dropout))
@@ -479,7 +482,6 @@ plot.plcp_power_table <- function(x, ...) {
         geom_line() +
         geom_point(aes_string(alpha = "dropout")) +
         theme_minimal() +
-        scale_color_d3() +
         scale_y_continuous(breaks = scales::pretty_breaks(10)) +
         scale_x_continuous(breaks = scales::pretty_breaks(10)) +
         scale_alpha_manual(values = c("with missing" = 0, "no missing" = 1), guide = FALSE) +
@@ -490,6 +492,8 @@ plot.plcp_power_table <- function(x, ...) {
              y = "Power",
              title = "Power curves")
 
+
+    if(requireNamespace(ggsci, quietly = TRUE)) p <- p + scale_color_d3()
     if(!is.na(facet)) p <- p + facet_grid(as.formula(paste("~", facet)), labeller = "label_both")
 
     p

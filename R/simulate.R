@@ -345,6 +345,7 @@ simulate.plcp_list <-
         ptm <- proc.time()
         is_windows <- .Platform$OS.type == "windows"
         if (progress & !is_windows) {
+            check_installed("pbmcapply")
             res <-
                 pbmcapply::pbmclapply(
                     1:nsim,
@@ -560,7 +561,7 @@ add_p_value <- function(fit, satterthwaite) {
 
     ## satterthwaite
     if(satterthwaite) {
-
+        check_installed("lmerTest")
         ff <- rownames(tmp)
         ind <- which(ff %in%  c("treatment:time", "time:treatment"))
 
