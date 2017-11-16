@@ -112,7 +112,7 @@ plot.plcp_VPC <- function(x, ...) {
                x = "Time point",
                y = "Proportion of total variance")
 
-    if(requireNamespace(ggsci, quietly = TRUE)) {
+    if(requireNamespace("ggsci", quietly = TRUE)) {
        p <- p + ggsci::scale_fill_d3() +
             ggsci::scale_color_d3()
     }
@@ -360,7 +360,7 @@ plot.plcp_ICC2 <- function(x, ...) {
              title = "Subject-level correlation matrix") +
         theme_minimal()
 
-    if(requireNamespace(viridis)) {
+    if(requireNamespace("viridis", quietly = TRUE)) {
         p <- p + scale_fill_viridis() +
             scale_color_viridis()
     }
