@@ -282,14 +282,14 @@ sum_missing_tx_time <- function(.d) {
 #' @param x An object of class \code{plcp}.
 #' @param n specifies which row \code{n} should be used if \code{object}
 #'  is a \code{data.frame} containing multiple setups.
-#' @param plot indicated what plot to show. If \code{1} the plot showing the treatment groups
-#' change over time will be shown, if \code{2} the missing data pattern will be shown,
-#' if \code{NULL} both plots will be shown.
+#' @param type indicated what plot to show. If \code{effect} the plot showing the treatment groups
+#' change over time will be shown, if \code{dropout} the missing data pattern will be shown,
+#' if \code{both} both plots will be shown.
 #'
 #' @param ... Optional arguments.
 #' @import ggplot2
 #' @export
-plot.plcp <- function(x, n = 1, plot = NULL, ...) {
+plot.plcp <- function(x, n = 1, type = "both", ...) {
     paras <- x
      if(is.data.frame(paras)) {
           paras <- as.list(paras[n,])
@@ -345,11 +345,11 @@ plot.plcp <- function(x, n = 1, plot = NULL, ...) {
             labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
             ylim(0,1)
 
-     if(is.null(plot)) {
+     if(type == "both") {
         return(gridExtra::grid.arrange(p1,p2, ncol=2))
-     } else if(plot == 1) {
+     } else if(type == "effect") {
          return(p1)
-     } else if(plot == 2) {
+     } else if(type == "dropout") {
          return(p2)
      }
 

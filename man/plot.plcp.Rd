@@ -4,7 +4,7 @@
 \alias{plot.plcp}
 \title{Plot method for \code{study_parameters}-objects}
 \usage{
-\method{plot}{plcp}(x, n = 1, plot = NULL, ...)
+\method{plot}{plcp}(x, n = 1, type = "both", ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp}.}
@@ -12,9 +12,9 @@
 \item{n}{specifies which row \code{n} should be used if \code{object}
 is a \code{data.frame} containing multiple setups.}
 
-\item{plot}{indicated what plot to show. If \code{1} the plot showing the treatment groups
-change over time will be shown, if \code{2} the missing data pattern will be shown,
-if \code{NULL} both plots will be shown.}
+\item{type}{indicated what plot to show. If \code{effect} the plot showing the treatment groups
+change over time will be shown, if \code{dropout} the missing data pattern will be shown,
+if \code{both} both plots will be shown.}
 
 \item{...}{Optional arguments.}
 }
