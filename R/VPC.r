@@ -88,6 +88,7 @@ get_VPC.plcp_multi <- function(object) {
 #' @export
 
 plot.plcp_VPC <- function(x, ...) {
+     check_installed("ggplot2")
      res <- x
      res$tot_var <- NULL
 
@@ -104,15 +105,18 @@ plot.plcp_VPC <- function(x, ...) {
                                     "between-subjects (L2)",
                                     "within-subjects (L1)"))
 
-    ggplot2::ggplot(res, aes_string("time", "proportion", color = "level", fill = "level")) +
-        ggsci::scale_fill_d3() +
-        ggsci::scale_color_d3() +
+    p <- ggplot2::ggplot(res, aes_string("time", "proportion", color = "level", fill = "level")) +
           geom_line() +
           geom_point() +
           labs(title = "Variance partitioning",
                x = "Time point",
                y = "Proportion of total variance")
 
+    if(requireNamespace(ggsci, quietly = TRUE)) {
+       p <- p + ggsci::scale_fill_d3() +
+            ggsci::scale_color_d3()
+    }
+    p
 }
 
 #' Print method for \code{get_vpc}-objects
@@ -229,6 +233,7 @@ get_sds_ <- function(sigma_subject_intercept,
 #' @param ... Optional arguments.
 #' @export
 plot.plcp_sds <- function(x, ...) {
+     check_installed("ggplot2")
     .res <- x
      cs <- .res$SD_no_random_slopes[1]
 
@@ -324,6 +329,43 @@ get_correlation_matrix.plcp <- function(object) {
     class(V) <- append(class(V), "plcp_ICC2")
 
     V
+}
+
+
+#' Plot method for \code{get_correlation_matrix}-objects
+#'
+#' @param x An object created with \code{\link{get_correlation_matrix}}
+#' @param ... Optional arguments, currently ignored.
+#'
+#' @export
+
+
+plot.plcp_ICC2 <- function(x, ...) {
+    check_installed("ggplot2")
+    res <- get_correlation_matrix(p)
+    res <- as.data.frame(res)
+
+    res <- reshape(res, varying = 1:ncol(res), v.names = "cor", idvar = "time1", timevar = "time2", direction = "long")
+    res$time1 <- res$time1 - 1
+    res$time2 <- res$time2 - 1
+
+
+
+    p <- ggplot(res, aes(time1, time2, color = cor, fill = cor)) + geom_tile() +
+        geom_text(aes(label = round(cor,2)), hjust = "center", color = "black") +
+        scale_x_continuous(breaks = get_time_vector(p)) +
+        scale_y_continuous(breaks = get_time_vector(p)) +
+        labs(color = "correlation", fill = "correlation",
+             x = "Time", y = "Time",
+             title = "Subject-level correlation matrix") +
+        theme_minimal()
+
+    if(requireNamespace(viridis)) {
+        p <- p + scale_fill_viridis() +
+            scale_color_viridis()
+    }
+    p
+
 }
 
 #' Print method for \code{get_correlation_matrix}-objects
