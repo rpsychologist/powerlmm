@@ -13,7 +13,7 @@
 #'  will be a quadratic function of time. \code{tot_var} is the
 #'  percentage increase or decrease in total variance relative to baseline variance.
 #'
-#' The \code{plot} method returns a \code{\link{ggplot}} object.
+#' The \code{plot} method returns a \code{ggplot2::ggplot} object.
 #' @seealso \code{\link{plot.plcp_VPC}}
 #'
 #' @references Goldstein, H., Browne, W., & Rasbash, J. (2002).
@@ -84,7 +84,6 @@ get_VPC.plcp_multi <- function(object) {
 #' @param x An object created with \code{\link{get_VPC}}
 #' @param ... Optional arguments, currently ignored.
 #'
-#' @importFrom ggsci scale_fill_d3 scale_color_d3
 #' @export
 
 plot.plcp_VPC <- function(x, ...) {
@@ -105,10 +104,10 @@ plot.plcp_VPC <- function(x, ...) {
                                     "between-subjects (L2)",
                                     "within-subjects (L1)"))
 
-    p <- ggplot2::ggplot(res, aes_string("time", "proportion", color = "level", fill = "level")) +
-          geom_line() +
-          geom_point() +
-          labs(title = "Variance partitioning",
+    p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "proportion", color = "level", fill = "level")) +
+        ggplot2::geom_line() +
+        ggplot2::geom_point() +
+        ggplot2::labs(title = "Variance partitioning",
                x = "Time point",
                y = "Proportion of total variance")
 
@@ -240,13 +239,13 @@ plot.plcp_sds <- function(x, ...) {
      res <- .res
      res$time <- round(res$time,1)
 
-     p <- ggplot(res, aes_string("time", "SD_with_random_slopes")) +
-          geom_hline(aes_string(color = "'Random slopes = 0'",
+     p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "SD_with_random_slopes")) +
+         ggplot2::geom_hline(ggplot2::aes_string(color = "'Random slopes = 0'",
                          yintercept = "SD_no_random_slopes")) +
-          geom_line(aes(color = "With random slopes")) +
-          geom_point(aes(color = "With random slopes")) +
-          scale_x_continuous(breaks = unique(res$time)) +
-          labs(y = "SD", x = "Time point",
+         ggplot2::geom_line(ggplot2::aes(color = "With random slopes")) +
+         ggplot2::geom_point(ggplot2::aes(color = "With random slopes")) +
+         ggplot2::scale_x_continuous(breaks = unique(res$time)) +
+         ggplot2::labs(y = "SD", x = "Time point",
                title = "SD per time point",
                color = "Model")
      # facet_grid(~cor_cluster + cor_subject, labeller = label_both)
@@ -345,24 +344,28 @@ plot.plcp_ICC2 <- function(x, ...) {
     res <- get_correlation_matrix(p)
     res <- as.data.frame(res)
 
-    res <- reshape(res, varying = 1:ncol(res), v.names = "cor", idvar = "time1", timevar = "time2", direction = "long")
+    res <- reshape(res, varying = 1:ncol(res),
+                   v.names = "cor",
+                   idvar = "time1",
+                   timevar = "time2",
+                   direction = "long")
     res$time1 <- res$time1 - 1
     res$time2 <- res$time2 - 1
+    res$cor2 <- round(res$cor, 2)
 
-
-
-    p <- ggplot(res, aes(time1, time2, color = cor, fill = cor)) + geom_tile() +
-        geom_text(aes(label = round(cor,2)), hjust = "center", color = "black") +
-        scale_x_continuous(breaks = get_time_vector(p)) +
-        scale_y_continuous(breaks = get_time_vector(p)) +
-        labs(color = "correlation", fill = "correlation",
+    p <- ggplot2::ggplot(res, ggplot2::aes_string("time1", "time2", color = "cor", fill = "cor")) +
+        ggplot2::geom_tile() +
+        ggplot2::geom_text(ggplot2::aes_string(label = "cor2"), hjust = "center", color = "black") +
+        ggplot2::scale_x_continuous(breaks = get_time_vector(p)) +
+        ggplot2::scale_y_continuous(breaks = get_time_vector(p)) +
+        ggplot2::labs(color = "Correlation", fill = "Correlation",
              x = "Time", y = "Time",
              title = "Subject-level correlation matrix") +
-        theme_minimal()
+        ggplot2::theme_minimal()
 
     if(requireNamespace("viridis", quietly = TRUE)) {
-        p <- p + scale_fill_viridis() +
-            scale_color_viridis()
+        p <- p + viridis::scale_fill_viridis() +
+            viridis::scale_color_viridis()
     }
     p
 

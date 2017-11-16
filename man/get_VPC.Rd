@@ -21,7 +21,7 @@ a \code{data.frame} with class \code{plcp_VPC} containing the
  will be a quadratic function of time. \code{tot_var} is the
  percentage increase or decrease in total variance relative to baseline variance.
 
-The \code{plot} method returns a \code{\link{ggplot}} object.
+The \code{plot} method returns a \code{ggplot2::ggplot} object.
 }
 \description{
 Calculate the variance partitioning coefficient

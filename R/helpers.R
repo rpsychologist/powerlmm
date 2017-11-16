@@ -287,7 +287,6 @@ sum_missing_tx_time <- function(.d) {
 #' if \code{both} both plots will be shown.
 #'
 #' @param ... Optional arguments.
-#' @import ggplot2
 #' @export
 plot.plcp <- function(x, n = 1, type = "both", ...) {
     check_installed("ggplot2")
@@ -309,10 +308,10 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
                      treatment = rep(c(0, 1), each = length(y)))
      d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
 
-     p1 <- ggplot(d, aes_string("time", "y", color = "treatment")) +
-          geom_line(show.legend = TRUE) +
-          geom_point(show.legend = FALSE) +
-          labs(title = "Treatment effects", y = "Outcome", x = "Time point",
+     p1 <- ggplot2::ggplot(d, ggplot2::aes_string("time", "y", color = "treatment")) +
+         ggplot2::geom_line(show.legend = TRUE) +
+         ggplot2::geom_point(show.legend = FALSE) +
+         ggplot2::labs(title = "Treatment effects", y = "Outcome", x = "Time point",
                subtitle = paste("Difference at endpoint is equal to Cohen's d =", paras$cohend),
                caption = "N.B Cohen's d is calculated using baseline standard deviations")
 
@@ -337,18 +336,18 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
                                              labels = c("Control", "Treatment"))
 
 
-    p2 <- ggplot(d, aes_string("time", "missing", color = "treatment", group = "treatment")) +
-            geom_point() +
-            geom_line(data = theoretical_missing,
-                      aes_string("time", "missing",
+    p2 <- ggplot2::ggplot(d, ggplot2::aes_string("time", "missing", color = "treatment", group = "treatment")) +
+            ggplot2::geom_point() +
+            ggplot2::geom_line(data = theoretical_missing,
+                        ggplot2::aes_string("time", "missing",
                           color = "treatment", group = "treatment"),
                       linetype = "dashed") +
-            labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
-            ylim(0,1)
+        ggplot2::labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
+        ggplot2::ylim(0,1)
 
      if(type == "both") {
          check_installed("gridExtra")
-        return(gridExtra::grid.arrange(p1,p2, ncol=2))
+        return(gridExtra::grid.arrange(p1, p2, ncol=2))
      } else if(type == "effect") {
          return(p1)
      } else if(type == "dropout") {
@@ -478,23 +477,23 @@ plot.plcp_power_table <- function(x, ...) {
     color <- colnames(x)[1]
     if(is.na(color)) color <- NULL
     .d$dropout <- factor(.d$dropout)
-    p <- ggplot(.d, aes_string("tot_n", "power", group = "id", color = color, linetype = "dropout")) +
-        geom_line() +
-        geom_point(aes_string(alpha = "dropout")) +
-        theme_minimal() +
-        scale_y_continuous(breaks = scales::pretty_breaks(10)) +
-        scale_x_continuous(breaks = scales::pretty_breaks(10)) +
-        scale_alpha_manual(values = c("with missing" = 0, "no missing" = 1), guide = FALSE) +
-        geom_hline(yintercept = 0.8, linetype = "dotted") +
-        labs(linetype = "missing data",
+    p <- ggplot2::ggplot(.d, ggplot2::aes_string("tot_n", "power", group = "id", color = color, linetype = "dropout")) +
+        ggplot2::geom_line() +
+        ggplot2::geom_point(ggplot2::aes_string(alpha = "dropout")) +
+        ggplot2::theme_minimal() +
+        ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(10)) +
+        ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(10)) +
+        ggplot2::scale_alpha_manual(values = c("with missing" = 0, "no missing" = 1), guide = FALSE) +
+        ggplot2::geom_hline(yintercept = 0.8, linetype = "dotted") +
+        ggplot2::labs(linetype = "missing data",
              color = colnames(.d)[2],
              x = "total number of subjects in study",
              y = "Power",
              title = "Power curves")
 
 
-    if(requireNamespace(ggsci, quietly = TRUE)) p <- p + scale_color_d3()
-    if(!is.na(facet)) p <- p + facet_grid(as.formula(paste("~", facet)), labeller = "label_both")
+    if(requireNamespace("ggsci", quietly = TRUE)) p <- p + ggsci::scale_color_d3()
+    if(!is.na(facet)) p <- p + ggplot2::facet_grid(as.formula(paste("~", facet)), labeller = "label_both")
 
     p
 }

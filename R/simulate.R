@@ -111,7 +111,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' simulations with multiple setups.
 #' @param ... Optional arguments, see \emph{Saving} in \emph{Details} section.
 #'
-#' @importFrom stats simulate as.formula confint pnorm pt qnorm qt rmultinom sd time vcov
+#' @importFrom stats simulate as.formula confint pnorm pt qnorm qt rmultinom sd time vcov reshape
 #'
 #' @details
 #'
