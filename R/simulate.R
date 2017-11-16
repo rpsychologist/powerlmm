@@ -925,6 +925,7 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
         estimate <- .d[.d$parameter == i, "estimate"]
         pval <- .d[.d$parameter == i, "pval"]
         df <- .d[.d$parameter == i, "df"]
+        df_bw <- .d[.d$parameter == i, "df_bw"]
 
         if(any(!is.na(pval))) {
                Satt_NA <- mean(is.na(pval))
@@ -941,6 +942,7 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
             M_se = mean(se),
             SD_est = sd(estimate),
             Power = mean(get_cover(estimate, se, alpha = alpha)),
+            Power_bw = mean(get_p_val_df(t = estimate/se, df = df_bw, parameter = i) < alpha),
             Power_satt = mean(pval < alpha, na.rm = TRUE),
             Satt_NA = Satt_NA
         )
@@ -1110,6 +1112,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
     se_hat <- sd(out$estimate)
 
     power <- mean(get_cover(out$estimate, out$se, alpha = alpha))
+    power_bw <- get_p_val_df(t = out$estimate/out$se, df = out$df_bw, parameter = para)
     Satt_NA <-  mean(is.na(out$pval))
     out <- fix_sath_NA_pval(out, res$paras)
 
@@ -1126,6 +1129,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
             SD_est = se_hat,
             se_rel_bias = (se_est - se_hat) / se_hat,
             Power = power,
+            Power_bw = mean(power_bw < alpha),
             Power_satt = mean(out$pval < alpha, na.rm = TRUE),
             Satt_NA = Satt_NA
 
