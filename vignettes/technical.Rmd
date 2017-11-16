@@ -160,7 +160,7 @@ $$\lambda = \delta_{101} / \sqrt{\text{V}(\delta_{101})},$$
 and $\nu$ is the appropriate degrees of freedom of the *t* distribution. For the balanced fully nested three-level model, the degrees of freedom are $N3 - 2$, where $N3$ is the total number of clusters in both treatment arms.
 
 ### Satterthwaite's degrees of freedom approximation
-For small samples, the choice of degrees of freedom will potentially influence the accuracy of the power analysis a lot. In **powerlmm** it is therfore possible to use Satterthwaite's DF approximation in the power analysis. The degrees of freedom of the *t* distribution is approximated as,
+For small samples, the choice of degrees of freedom will potentially influence the accuracy of the power analysis a lot. In **powerlmm** it is therefore possible to use Satterthwaite's DF approximation in the power analysis. The degrees of freedom of the *t* distribution is approximated as,
 $$ \nu = \frac{2(\textbf{L}^{\top} \text{V}(\bm{\beta}) \textbf{L})^2}{ V(\textbf{L}^{\top}\text{V}(\bm{\beta})\textbf{L})},$$
 and \textbf{L} specifies the linear contrast we are testing. Moreover, $V(\textbf{L}^{\top} \text{V}(\bm{\beta}) \textbf{L})$ is approximated using the delta method
 
