@@ -504,16 +504,19 @@ sim_parameters <- function(...) {
 }
 
 
-print_per_treatment <- function(n, width = 0) {
-    x <- lapply(seq_along(n), print_per_treatment_, x = n)
+print_per_treatment <- function(n, width = 0, n2 = FALSE) {
+    x <- lapply(seq_along(n), print_per_treatment_, x = n, n2 = n2)
     x <- format(x, width = width)
     x <- paste(x, " (", names(n), ")", sep ="")
     x <- paste(unlist(x), collapse = "\n                   ")
     x
 }
-print_per_treatment_ <- function(i, x) {
+print_per_treatment_ <- function(i, x, n2 = FALSE) {
     name <- names(x)[i]
     x <- x[[i]]
+    if(n2 & length(unique(x)) == 1) {
+        x <- paste(unique(x),"x", length(x))
+    }
     paste(paste(unlist(x), collapse = ", "), sep ="")
 }
 
@@ -531,11 +534,11 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     n2$control <- deparse_n2(n2$control)
     n3 <- get_n3(x)
     tot_n <- get_tot_n(x)
-    width <- max(nchar(print_per_treatment_(1, n2)),
-                 nchar(print_per_treatment_(2, n2)),
+    width <- max(nchar(print_per_treatment_(1, n2, n2 = TRUE)),
+                 nchar(print_per_treatment_(2, n2, n2 = TRUE)),
                  nchar(print_per_treatment_(3, tot_n)))
     if(two_level) width <- max(vapply(tot_n, nchar, numeric(1)))
-    n2 <- print_per_treatment(n2, width = width)
+    n2 <- print_per_treatment(n2, width = width, n2 = TRUE)
     n3 <- print_per_treatment(n3, width = width)
 
     tot_n <- print_per_treatment(tot_n, width = width)
@@ -651,7 +654,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
 
     n2 <- lapply(1:nrow(paras), function(i) {
         x <- get_n2(as.plcp(paras[i,]))
-        data.frame(treatment = paste(x$treatment, collapse = ","), control = paste(x$control, collapse = ","), stringsAsFactors = FALSE)
+        data.frame(treatment = print_per_treatment_(1, x, n2 = TRUE), control = print_per_treatment_(2, x, n2 = TRUE), stringsAsFactors = FALSE)
     })
     n2 <- do.call(rbind, n2)
 
@@ -800,7 +803,6 @@ prepare_paras <- function(paras) {
         if(is.unequal_clusters(paras$n2)) {
             paras$n2 <- eval_n2(paras$n2)
             paras$n3 <- length(paras$n2)
-
         }
         if(is.unequal_clusters(paras_tx$n2)) {
             paras_tx$n2 <- eval_n2(paras_tx$n2)
@@ -829,8 +831,20 @@ prepare_paras <- function(paras) {
         paras$dropout <- paras$dropout[[1]][[2]]
     }
 
-    list(control = paras,
-         treatment = paras_tx)
+    if(length(paras_tx$n2) == 1) {
+        paras_tx$n2 <- rep(paras_tx$n2, paras_tx$n3)
+    }
+    if(length(paras$n2) == 1) {
+        paras$n2 <- rep(paras$n2, paras$n3)
+    }
+
+
+    out <- list(control = paras,
+         treatment = paras_tx,
+         prepared = TRUE)
+
+    class(out) <- class(paras)
+    out
 }
 
 

@@ -70,7 +70,7 @@ test_that("G matrices", {
                           partially_nested = TRUE,
                           cohend = -0.8)
     d <- simulate_data(p)
-    G <- create_G(p, d )
+    G <- create_G(p, d)
 
     # all have same dim
     x <- unique(unlist(lapply(G, dim)))

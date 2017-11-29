@@ -2,21 +2,27 @@
 ## G matrices
 create_G <- function(p, d) {
 
+
+    if(is.null(p$prepared)) {
+        pp <- prepare_paras(p)
+    } else {
+        pp <- p
+        p <- p$treatment
+    }
+
     u01 <- with(p, sigma_subject_intercept * sigma_subject_slope * cor_subject)
     v01 <- with(p, sigma_cluster_intercept * sigma_cluster_slope * cor_cluster)
 
-    pp <- prepare_paras(p)
 
     n1 <- p$n1
-    tot_n2 <- get_tot_n(p)
     n2_cc <- unlist(pp$control$n2)
     n2_tx <- unlist(pp$treatment$n2)
-
-    n3 <- get_n3(p)
-    n3_cc <- n3$control
-    n3_tx <- n3$treatment
+    tot_n2 <- sum(n2_cc) + sum(n2_tx)
+    n3_cc <- length(n2_cc)
+    n3_tx <- length(n2_tx)
     if(p$partially_nested) {
-        n2_cc <- tot_n2$control
+        n2_cc <- sum(n2_cc)
+        n3_cc <- 1
     } else {
         if(length(n2_cc) == 1) n2_cc <- rep(n2_cc, n3_cc)
     }
@@ -24,10 +30,10 @@ create_G <- function(p, d) {
         n2_tx <- rep(n2_tx, n3_tx)
     }
 
-
+    tot_n <- sum(n2_tx) + sum(n2_cc)
     time <- get_time_vector(p)
 
-    A <- Matrix::Diagonal(tot_n2$total)
+    A <- Matrix::Diagonal(tot_n)
     B <- array(c(rep(1, n1), time), dim=c(n1, 2))
     X <- kronecker(A, B)
 
@@ -37,7 +43,7 @@ create_G <- function(p, d) {
     G <- list()
     ## G 1 intercept
     if(p$sigma_subject_intercept != 0) {
-        X1 <- X[, c(1, 1 + (1:(tot_n2$total-1)) * 2)]
+        X1 <- X[, c(1, 1 + (1:(tot_n-1)) * 2)]
         G1 <- tcrossprod(X1)
 
         G <- c(G, G1)
@@ -46,13 +52,13 @@ create_G <- function(p, d) {
     Z <- matrix(c(0,1,1,0), ncol = 2)
     ## G 2 cov
     if(u01 != 0) {
-        G2 <- X %*% kronecker(Diagonal(tot_n2$total), Z) %*% t(X)
+        G2 <- X %*% kronecker(Diagonal(tot_n), Z) %*% t(X)
         G <- c(G, G2)
     }
 
     ## G 3 slope
     if(p$sigma_subject_slope != 0) {
-        X2 <- X[, c((1:(tot_n2$total))*2)]
+        X2 <- X[, c((1:(tot_n))*2)]
         G3 <- tcrossprod(X2)
         G <- c(G, G3)
     }
@@ -159,7 +165,10 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
 }
 
 get_balanced_df <- function(object) {
-    pp <- prepare_paras(object)
+
+    if(is.null(object$prepared)) {
+        pp <- prepare_paras(object)
+    } else pp <- object
 
     tot_n2 <- get_tot_n(object)
     n2_cc <- tot_n2$control

@@ -12,8 +12,8 @@ test_that("sampple size helpers", {
     n <-5*7
     expect_equivalent(get_tot_n(p), c(n, n, 2*n))
     expect_equivalent(get_n3(p), c(7, 7, 14))
-    expect_equivalent(get_n2(p)$treatment, 5)
-    expect_equivalent(get_n2(p)$control, 5)
+    expect_equivalent(get_n2(p)$treatment, rep(5,7))
+    expect_equivalent(get_n2(p)$control, rep(5,7))
 
     # unequal clusters
     p <- study_parameters(n1 = 11,
@@ -40,8 +40,8 @@ test_that("sampple size helpers", {
     n_cc <- 2*3
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(3,3,6))
-    expect_equivalent(get_n2(p)$treatment, 10)
-    expect_equivalent(get_n2(p)$control, 2)
+    expect_equivalent(get_n2(p)$treatment, rep(10,3))
+    expect_equivalent(get_n2(p)$control, rep(2,3))
 
     # per_treatment n2, unequal_clusters control
     p <- study_parameters(n1 = 11,
@@ -55,7 +55,7 @@ test_that("sampple size helpers", {
     n_cc <- 2+3
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(3, 2, 5))
-    expect_equivalent(get_n2(p)$treatment, 10)
+    expect_equivalent(get_n2(p)$treatment, rep(10, 3))
     expect_equivalent(get_n2(p)$control, c(2,3))
 
     # per_treatment n2, unequal_clusters treatment
@@ -71,7 +71,7 @@ test_that("sampple size helpers", {
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(2, 3, 5))
     expect_equivalent(get_n2(p)$treatment, c(3,5))
-    expect_equivalent(get_n2(p)$control, 10)
+    expect_equivalent(get_n2(p)$control, rep(10,3))
 
     # per_treatment n2, unequal_clusters treatment and control
     p <- study_parameters(n1 = 11,
@@ -101,8 +101,8 @@ test_that("sampple size helpers", {
     n_cc <- 2*5
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(10,2,12))
-    expect_equivalent(get_n2(p)$treatment, 5)
-    expect_equivalent(get_n2(p)$control, 5)
+    expect_equivalent(get_n2(p)$treatment, rep(5, 10))
+    expect_equivalent(get_n2(p)$control, rep(5, 2))
 
     # per_treatment n2 and n3
     p <- study_parameters(n1 = 11,
@@ -116,8 +116,8 @@ test_that("sampple size helpers", {
     n_cc <- 2*7
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(10,2,12))
-    expect_equivalent(get_n2(p)$treatment, 6)
-    expect_equivalent(get_n2(p)$control, 7)
+    expect_equivalent(get_n2(p)$treatment, rep(6, 10))
+    expect_equivalent(get_n2(p)$control, rep(7,2))
 })
 
 
@@ -136,7 +136,7 @@ test_that("partially nested", {
     n <-5*7
     expect_equivalent(get_tot_n(p), c(n, n, 2*n))
     expect_equivalent(get_n3(p), c(7, 0, 7))
-    expect_equivalent(get_n2(p)$treatment, 5)
+    expect_equivalent(get_n2(p)$treatment, rep(5,7))
     expect_equivalent(get_n2(p)$control, 5*7)
 
     # unequal clusters
@@ -166,7 +166,7 @@ test_that("partially nested", {
     n_cc <- 2*3
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(3,0,3))
-    expect_equivalent(get_n2(p)$treatment, 10)
+    expect_equivalent(get_n2(p)$treatment, rep(10,3))
     expect_equivalent(get_n2(p)$control, 2*3)
 
     # per_treatment n2, unequal_clusters control
@@ -182,7 +182,7 @@ test_that("partially nested", {
     n_cc <- 2+3
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(3, 0, 3))
-    expect_equivalent(get_n2(p)$treatment, 10)
+    expect_equivalent(get_n2(p)$treatment, rep(10,3))
     expect_equivalent(get_n2(p)$control, c(2+3))
 
     # per_treatment n2, unequal_clusters treatment
@@ -231,7 +231,7 @@ test_that("partially nested", {
     n_cc <- 2*5
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(10, 0, 10))
-    expect_equivalent(get_n2(p)$treatment, 5)
+    expect_equivalent(get_n2(p)$treatment, rep(5,10))
     expect_equivalent(get_n2(p)$control, 2*5)
 
     # per_treatment n2 and n3
@@ -247,7 +247,7 @@ test_that("partially nested", {
     n_cc <- 2*7
     expect_equivalent(get_tot_n(p), c(n_tx, n_cc, n_tx + n_cc))
     expect_equivalent(get_n3(p), c(10,0,10))
-    expect_equivalent(get_n2(p)$treatment, 6)
+    expect_equivalent(get_n2(p)$treatment, rep(6, 10))
     expect_equivalent(get_n2(p)$control, 7*2)
 })
 

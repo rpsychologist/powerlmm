@@ -31,16 +31,21 @@ simulate_data <- function(paras, n = 1) {
     UseMethod("simulate_data")
 }
 
+
 #' @rdname simulate_data
 #' @export
 simulate_data.plcp <- function(paras, n = NULL) {
     if (is.data.frame(paras))
         paras <- as.list(paras)
-    slope_diff <- get_slope_diff(paras) / paras$T_end
-    paras$cohend <- NULL
-    tmp <- prepare_paras(paras)
+    if(is.null(paras$prepared)) {
+        tmp <- prepare_paras(paras)
+    } else tmp <- paras
     paras <- tmp$control
     paras_tx <- tmp$treatment
+
+    slope_diff <- get_slope_diff(paras) / paras$T_end
+    paras$cohend <- NULL
+    paras_tx$cohend <- NULL
 
     paras_tx$fixed_slope <- paras_tx$fixed_slope + slope_diff
 
@@ -381,6 +386,7 @@ simulate.plcp_list <-
                 time = time["elapsed"],
                 formula = formula
             )
+        #saveRDS(out, "sim_debug.rds")
         out <- munge_results(out)
         class(out) <- append(class(out), "plcp_sim")
 
@@ -450,9 +456,11 @@ simulate.plcp_data_frame <-
         res
     }
 simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
-    d <- simulate_data(paras)
+    prepped <- prepare_paras(paras)
+    d <- simulate_data(prepped)
+    tot_n <- length(unique(d[d$time == 0,]$subject))
     fit <- analyze_data(formula, d)
-    res <- extract_results(fit, CI, satterthwaite = satterthwaite, paras = paras)
+    res <- extract_results(fit, CI, satterthwaite = satterthwaite, tot_n = tot_n)
     res
 }
 
@@ -534,8 +542,8 @@ analyze_data <- function(formula, d) {
     fit
 }
 
-extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, paras) {
-    lapply(fit, extract_results_, CI = CI, satterthwaite = satterthwaite, paras = paras)
+extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, tot_n) {
+    lapply(fit, extract_results_, CI = CI, satterthwaite = satterthwaite, tot_n = tot_n)
 }
 extract_random_effects <- function(fit) {
     x <- as.data.frame(lme4::VarCorr(fit))
@@ -555,7 +563,7 @@ extract_random_effects <- function(fit) {
 
     rbind(vcovs, correlations)
 }
-add_p_value <- function(fit, satterthwaite) {
+add_p_value <- function(fit, satterthwaite, tot_n = NULL) {
     tmp <- tryCatch(summary(fit))
     tmp <- tmp$coefficients
 
@@ -578,6 +586,11 @@ add_p_value <- function(fit, satterthwaite) {
             df[ind] <- satt$denom
             p[ind] <- satt$pvalue
         }
+        if(is.na(p[ind])) {
+            #saveRDS(list(fit = fit, tmp = tmp, satt=satt, df = df, ind = ind, p = p, tot_n = tot_n), "sim_debug_satterth.rds")
+            tval <- tmp[ind, "t value"]
+            p[ind] <- 2*(1 - pt(abs(tval), df = tot_n - 2))
+        }
 
         res <- list("df" = df,
                     "p" = p)
@@ -590,20 +603,19 @@ add_p_value <- function(fit, satterthwaite) {
     res
 
 }
-fix_sath_NA_pval <- function(x, paras) {
+fix_sath_NA_pval <- function(x, df) {
     ind <- is.na(x$pval)
     tmp <- x[ind, ]
     t <- with(tmp, estimate/se)
-    df <- get_tot_n(paras)$total - 2
     pval <- 2*(1 - pt(abs(t), df = df))
 
     x[ind, "pval"] <- pval
 
     x
 }
-extract_results_ <- function(fit, CI, satterthwaite, paras = NULL) {
+extract_results_ <- function(fit, CI, satterthwaite, tot_n) {
     se <- sqrt(diag(vcov(fit)))
-    tmp_p <- add_p_value(fit, satterthwaite)
+    tmp_p <- add_p_value(fit = fit, satterthwaite = satterthwaite, tot_n = tot_n)
     FE <- data.frame(
         "estimate" = lme4::fixef(fit),
         "se" = se,
@@ -619,7 +631,7 @@ extract_results_ <- function(fit, CI, satterthwaite, paras = NULL) {
     FE <- cbind(data.frame(parameter = rnames), FE)
 
     # Fix DF when clusters are random
-    FE[FE$parameter == "time:treatment", "df_bw"] <- get_balanced_df(paras)
+    FE[FE$parameter == "time:treatment", "df_bw"] <- tot_n - 2
 
     if (CI) {
         CI <- tryCatch(stats::confint(fit, parm = CI_parm),
@@ -639,6 +651,7 @@ extract_results_ <- function(fit, CI, satterthwaite, paras = NULL) {
 
     list("RE" = RE,
          "FE" = FE,
+         "tot_n" = tot_n,
          "conv" = conv)
 }
 
@@ -699,6 +712,7 @@ munge_results <- function(res) {
     FE <- lapply(models, munge_results_, x, "FE")
 
     convergence <- lapply(models, munge_results_, x, "conv")
+    tot_n <- lapply(models, munge_results_, x, "tot_n")
 
     RE <- lapply(RE, rename_random_effects)
 
@@ -707,6 +721,7 @@ munge_results <- function(res) {
     for (i in seq_along(models)) {
         x[[i]] <- list("RE" = RE[[i]],
                        "FE" = FE[[i]],
+                       "tot_n" = tot_n[[i]],
                        "convergence" = convergence[[i]])
     }
 
@@ -742,6 +757,21 @@ print_model <- function(i, x) {
     cat("---\n")
 
 }
+
+#' @importFrom stats median
+tot_n_ <- function(x) {
+
+     x <- as.numeric(x)
+    if(length(unique(x)) > 1) {
+        x_mean <- mean(x)
+        x_median <- median(x)
+        x_sd <- sd(x)
+
+        x <- paste(round(x_mean, 1), "(mean)", round(x_median, 1), "(median)", round(x_sd, 2), "(SD)")
+    }
+
+    x
+}
 #' Print method for \code{summary.plcp_sim}-objects
 #' @param x An object of class \code{plcp_sim_summary}
 #' @param ... Optional arguments.
@@ -752,7 +782,8 @@ print.plcp_sim_summary <- function(x, ...) {
     #print
     x <- res$summary
 
-    tot_n <- get_tot_n(res$paras)$total
+    tot_n <- tot_n_(res$tot_n)
+    if(length(unique(tot_n)) == 1) tot_n <- unique(tot_n)
     n3 <- get_n3(res$paras)
     n2 <- get_n2(res$paras)
     if(is.per_treatment(res$paras$n2)) {
@@ -856,6 +887,7 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
     x <- list(summary = x,
               nsim = res$nsim,
               paras = res$paras,
+              tot_n = x[[1]]$tot_n,
               alpha = alpha)
     class(x) <- append("plcp_sim_summary", class(x))
     x
@@ -912,7 +944,7 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
         mean(abs(false_conv - 0 < .Machine$double.eps ^ 0.5))
 
 
-    df <- ifelse(false_conv, get_tot_n(paras) - 2, get_n3(paras) - 2)
+    #df <- ifelse(false_conv, get_tot_n(paras) - 2, get_n3(paras) - 2)
 
 
     theta = list(
@@ -929,10 +961,10 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
         df_bw <- .d[.d$parameter == i, "df_bw"]
 
         if(any(!is.na(pval))) {
-               Satt_NA <- mean(is.na(pval))
-               x <- .d[.d$parameter == i, ]
-               x <- fix_sath_NA_pval(x, paras)
-               pval <- x$pval
+               Satt_NA <- mean(is.na(df))
+               # x <- .d[.d$parameter == i, ]
+               # x <- fix_sath_NA_pval(x, paras)
+               # pval <- x$pval
         } else Satt_NA <- NA
 
         para <- i
@@ -991,6 +1023,7 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
 
     list("RE" = RE,
          "FE" = FE,
+         "tot_n" = res$tot_n,
          "convergence" = convergence)
 }
 
@@ -1114,8 +1147,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
 
     power <- mean(get_cover(out$estimate, out$se, alpha = alpha))
     power_bw <- get_p_val_df(t = out$estimate/out$se, df = out$df_bw, parameter = para)
-    Satt_NA <-  mean(is.na(out$pval))
-    out <- fix_sath_NA_pval(out, res$paras)
+    Satt_NA <-  mean(is.na(out$df))
 
     out <- with(
         out,

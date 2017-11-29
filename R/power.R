@@ -322,9 +322,9 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
 
     use_satterth <- (df == "satterthwaite" | df == "satterth")
     use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
-
+    prepped <- prepare_paras(object)
     if(use_matrix_se) {
-        d <- simulate_data(object)
+        d <- simulate_data(prepped)
         f <- lme4::lFormula(formula = create_lmer_formula(object),
                        data = d)
 
@@ -341,12 +341,12 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
         se <- sqrt(Phi[4,4])
         calc_type <- "matrix"
     } else {
-        se <- get_se_classic(object)
+        se <- get_se_classic(prepped)
         calc_type <- "classic"
     }
 
     if(use_satterth) {
-        df <- get_satterth_df(object, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
+        df <- get_satterth_df(prepped, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
     } else if(df == "between") {
         df <- get_balanced_df(object)
     } else if(is.numeric(df)) df <- df
@@ -360,7 +360,7 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
         pt(qt(alpha/2, df = df), df = df, ncp = lambda)
 
 
-    tot_n <- get_tot_n(object)$total
+    tot_n <- sum(unlist(prepped$control$n2)) + sum(unlist(prepped$treatment$n2))
     out <- list(power = power, df = df, satterth = use_satterth, se = se, paras = object, alpha = alpha, calc_type = calc_type, tot_n = tot_n)
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
@@ -692,7 +692,13 @@ get_power_3lvl.paras <- function(n1,
 
 get_se_classic <- function(object) {
 
-    p_tx <- prepare_paras(object)
+    if(is.null(object$prepared)) {
+        p_tx <- prepare_paras(object)
+    } else {
+        p_tx <- object
+        object <- p_tx$treatment
+    }
+
     p_cc <- p_tx$control
     p_tx <- p_tx$treatment
 
@@ -702,9 +708,9 @@ get_se_classic <- function(object) {
 
 
 
-    n2_tx <- unlist(p_tx$n2)
+    n2_tx <- unique(unlist(p_tx$n2))
     n3_tx <- unlist(p_tx$n3)
-    n2_cc <- unlist(p_cc$n2)
+    n2_cc <- unique(unlist(p_cc$n2))
     n3_cc <- unlist(p_cc$n3)
 
 

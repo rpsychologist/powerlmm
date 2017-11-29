@@ -72,9 +72,9 @@ test_that("setup print", {
 
     expect_output(str(print(p)),  "Study setup \\(three-level\\)")
     expect_output(str(print(p)), "n1 = 10")
-    expect_output(str(print(p)), "n2 = 10000")
-    expect_output(str(print(p)), "n3 = 5     \\(treatment\\)")
-    expect_output(str(print(p)), "50050 \\(total\\)")
+    expect_output(str(print(p)), "n2 = 10000 x 5")
+    expect_output(str(print(p)), "n3 = 5")
+    expect_output(str(print(p)), "50050")
 
     #  partially nesting, total_n should not chabnge
     p <- study_parameters(n1 = 10,
@@ -90,10 +90,9 @@ test_that("setup print", {
 
     expect_output(str(print(p)),  "Study setup \\(three-level, partially nested\\)")
     expect_output(str(print(p)), "n1 = 10")
-    expect_output(str(print(p)), "n2 = 10000")
-    expect_output(str(print(p)), "n3 = 5     \\(treatment\\)")
-    expect_output(str(print(p)), "0     \\(control\\)")
-    expect_output(str(print(p)), "50050 \\(total\\)")
+    expect_output(str(print(p)), "n2 = 10000 x 5")
+    expect_output(str(print(p)), "n3 = 5")
+    expect_output(str(print(p)), "50050")
 
     # with dropout
     p <- study_parameters(n1 = 10,
@@ -108,8 +107,8 @@ test_that("setup print", {
                           cohend = 0.5)
 
     expect_output(str(print(p)),  "Study setup \\(three-level\\)")
-    expect_output(str(print(p)), "n2 = 10000")
-    expect_output(str(print(p)), "50050 \\(total\\)")
+    expect_output(str(print(p)), "n2 = 10000 x 5")
+    expect_output(str(print(p)), "50050")
     expect_output(str(print(p)), " 0,  0,  2,  4,  7, 10, 15, 19, 25, 30 \\(%, control\\)")
 })
 
