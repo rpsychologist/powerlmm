@@ -361,7 +361,13 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
 
 
     tot_n <- sum(unlist(prepped$control$n2)) + sum(unlist(prepped$treatment$n2))
-    out <- list(power = power, df = df, satterth = use_satterth, se = se, paras = object, alpha = alpha, calc_type = calc_type, tot_n = tot_n)
+    out <- list(power = power,
+                df = df,
+                satterth = use_satterth,
+                se = se, paras = object,
+                alpha = alpha,
+                calc_type = calc_type,
+                tot_n = tot_n)
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
     if("plcp_3lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
