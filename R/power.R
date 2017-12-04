@@ -111,6 +111,14 @@ print.plcp_power_3lvl <- function(x, ...) {
    .p <- x
    x <- prepare_print_plcp_3lvl(.p$paras)
    partially_nested <- .p$paras$partially_nested
+
+   if(.p$R > 1) {
+       .p$power <- mean(unlist(.p$power))
+       #x$tot_n <- mean(unlist(.p$tot_n))
+       .p$df <- mean(unlist(.p$df))
+       #x$se <- mean(unlist(x$se))
+   }
+
    x$method <- "Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)\n                  with missing data and unbalanced designs"
    x$df <- .p$df
    x$alpha <- .p$alpha
@@ -315,88 +323,146 @@ setup_power_calc <- function(d, f, object) {
          "Lind" = Lind)
 
 }
+
+power_worker <- function(object, df, alpha, use_satterth) {
+
+    function(i = NULL) {
+        use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
+        prepped <- prepare_paras(object)
+        if(use_matrix_se) {
+            d <- simulate_data(prepped)
+            f <- lme4::lFormula(formula = create_lmer_formula(object),
+                                data = d)
+
+            pc <- setup_power_calc(d, f, object)
+            pars <- pc$pars
+            X <- pc$X
+            Zt <- pc$Zt
+            L0 <- pc$L0
+            Lambdat <- pc$Lambdat
+            Lind <- pc$Lind
+
+            varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
+            Phi <- varb(Lc = diag(4))
+            se <- sqrt(Phi[4,4])
+            calc_type <- "matrix"
+        } else {
+            se <- get_se_classic(prepped)
+            calc_type <- "classic"
+        }
+
+        if(use_satterth) {
+            df <- get_satterth_df(prepped, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
+        } else if(df == "between") {
+            df <- get_balanced_df(object)
+        } else if(is.numeric(df)) df <- df
+
+        # power
+
+        slope_diff <- get_slope_diff(object)/object$T_end
+        lambda <- slope_diff / se
+
+        power <- pt(qt(1-alpha/2, df = df), df = df, ncp = lambda, lower.tail = FALSE) +
+            pt(qt(alpha/2, df = df), df = df, ncp = lambda)
+        tot_n <- sum(unlist(prepped$control$n2)) + sum(unlist(prepped$treatment$n2))
+        list(power = power,
+             tot_n = tot_n,
+             se = se,
+             calc_type = calc_type)
+    }
+}
+
 #' @export
-get_power.plcp <- function(object, df = "between", alpha = 0.05, ...) {
+get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 1, cl = NULL) {
 
    # if(is.null(d)) d <- simulate_data(object)
-
     use_satterth <- (df == "satterthwaite" | df == "satterth")
-    use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
-    prepped <- prepare_paras(object)
-    if(use_matrix_se) {
-        d <- simulate_data(prepped)
-        f <- lme4::lFormula(formula = create_lmer_formula(object),
-                       data = d)
 
-        pc <- setup_power_calc(d, f, object)
-        pars <- pc$pars
-        X <- pc$X
-        Zt <- pc$Zt
-        L0 <- pc$L0
-        Lambdat <- pc$Lambdat
-        Lind <- pc$Lind
-
-        varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
-        Phi <- varb(Lc = diag(4))
-        se <- sqrt(Phi[4,4])
-        calc_type <- "matrix"
-    } else {
-        se <- get_se_classic(prepped)
-        calc_type <- "classic"
-    }
-
-    if(use_satterth) {
-        df <- get_satterth_df(prepped, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
-    } else if(df == "between") {
-        df <- get_balanced_df(object)
-    } else if(is.numeric(df)) df <- df
-
-    # power
-
-    slope_diff <- get_slope_diff(object)/object$T_end
-    lambda <- slope_diff / se
-
-    power <- pt(qt(1-alpha/2, df = df), df = df, ncp = lambda, lower.tail = FALSE) +
-        pt(qt(alpha/2, df = df), df = df, ncp = lambda)
+    power_fun <- power_worker(object = object,
+                              df = df,
+                              alpha = alpha,
+                              use_satterth = use_satterth)
+    if(is.null(cl)) {
+        cl <- makeCluster(getOption("cl.cores", min(R, cores)))
+        stop_cluster <- TRUE
+    } else stop_cluster <- FALSE
+    parallel::clusterEvalQ(cl, expr =
+                               suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+    #clusterExport(cl = cl, envir = environment())
+    tmp <- parLapply(cl, X = 1:R, power_fun)
+    tmp <- as.data.frame(do.call(rbind, tmp))
+    if(stop_cluster) stopCluster(cl)
 
 
-    tot_n <- sum(unlist(prepped$control$n2)) + sum(unlist(prepped$treatment$n2))
+
+
+
+    # tmp <- power_worker(object = object,
+    #                     df = df,
+    #                     alpha = alpha,
+    #                     use_satterth = use_satterth,
+    #                     ...)
+
+    power <- tmp$power
+    df <- tmp$df
+    se <- tmp$se
+    calc_type <- tmp$calc_type
+    tot_n <- tmp$tot_n
+
     out <- list(power = power,
                 df = df,
                 satterth = use_satterth,
-                se = se, paras = object,
+                se = se,
+                paras = object,
                 alpha = alpha,
                 calc_type = calc_type,
-                tot_n = tot_n)
+                tot_n = tot_n,
+                R = R)
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
     if("plcp_3lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
 
     out
 }
+
+
+
 #' @export
 #' @importFrom utils txtProgressBar setTxtProgressBar
-get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, ...) {
+get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, ncores = 1, ...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
         dots$updateProgress()
     }
-
-
     nr <- nrow(object)
-    if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
-    x <- vector(mode = "list", length = nr)
-    for(i in 1:nrow(object)) {
-        p <- as.plcp(object[i,])
-        out <- get_power.plcp(p, df = df, alpha = alpha)
+    if(ncores == 1) {
 
-        out <- as.data.frame(out[c("power","df","tot_n", "se")])
-        if(progress) setTxtProgressBar(pb, i)
-        x[[i]] <- out
+        if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
+        x <- vector(mode = "list", length = nr)
+        for(i in 1:nrow(object)) {
+            p <- as.plcp(object[i,])
+            out <- get_power.plcp(p, df = df, alpha = alpha)
+
+            out <- as.data.frame(out[c("power","df","tot_n", "se")])
+            if(progress) setTxtProgressBar(pb, i)
+            x[[i]] <- out
+        }
+        if(progress) close(pb)
+    } else {
+        par_call_power <- function(i) {
+            p <- as.plcp(object[i,])
+            out <- get_power.plcp(p, df = df, alpha = alpha)
+            as.data.frame(out[c("power","df","tot_n", "se")])
+        }
+        cl <- parallel::makeCluster(min(cores, nr))
+        on.exit(parallel::stopCluster(cl))
+        parallel::clusterEvalQ(cl, expr = suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
     }
-    if(progress) close(pb)
+
     x <- do.call(rbind, x)
     x <- cbind(object, x)
+
+    # parallel
 
     prep <- prepare_multi_setup(object)
     out <- prep$out

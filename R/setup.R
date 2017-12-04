@@ -585,6 +585,9 @@ prepare_print_plcp_2lvl <- function(x) {
 }
 prepare_print_plcp_3lvl <- function(x) {
     res <- prepare_print_plcp(x)
+
+
+
     if(!is.list(x$dropout)) res$dropout <- "No missing data"
     if(x$partially_nested) res$method <- "Study setup (three-level, partially nested)"
     if(is.unequal_clusters(x$n2)) {
