@@ -569,6 +569,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                           cohend = cohend,
                           method = "Study setup (three-level)"),
                      class = "power.htest")
+    attr(res, "width") <- width
     res
 }
 prepare_print_plcp_2lvl <- function(x) {
@@ -1089,7 +1090,11 @@ get_n2.plcp <- function(paras) {
     if(tmp$control$partially_nested) {
         if(length(n2_cc) == 1) {
             n2_cc<- tmp$control$n3 * n2_cc
-            } else n2_cc <- sum(n2_cc)
+            } else {
+                attrib <- attributes(n2_cc)
+                n2_cc <- sum(n2_cc)
+                attributes(n2_cc) <- attrib
+                }
     }
     n2_tx <- unlist(tmp$treatment$n2)
 

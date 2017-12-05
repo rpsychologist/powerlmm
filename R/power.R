@@ -109,22 +109,48 @@ get_power <- function(object, df = "between", alpha = 0.05, progress = TRUE, ...
 #' @export
 print.plcp_power_3lvl <- function(x, ...) {
    .p <- x
-   x <- prepare_print_plcp_3lvl(.p$paras)
-   partially_nested <- .p$paras$partially_nested
 
-   if(.p$R > 1) {
+   partially_nested <- .p$paras$partially_nested
+   if(.p$R > 0) {
+       tot_n <- as.data.frame(do.call(rbind, .p$tot_n))
+       tot_n <- data.frame(control = mean(unlist(tot_n$control)),
+                           treatment = mean(unlist(tot_n$treatment)),
+                           total = mean(unlist(tot_n$total)))
+       n3 <- as.data.frame(do.call(rbind, .p$n3))
+
+       .p$paras$n3 <- per_treatment(mean(unlist(n3$control)),
+                                    mean(unlist(n3$treatment)))
+       x <- prepare_print_plcp_3lvl(.p$paras)
+       width <- attr(x, "width")
+
+      #.p$paras$n2 <- per_treatment(mean(unlist(tot_n$control)),
+      #                                mean(unlist(tot_n$treatment)))
+
+       x$total_n <- print_per_treatment(tot_n, width = width)
+
        .p$power <- mean(unlist(.p$power))
        #x$tot_n <- mean(unlist(.p$tot_n))
        .p$df <- mean(unlist(.p$df))
        #x$se <- mean(unlist(x$se))
-   }
+   } else x <- prepare_print_plcp_3lvl(.p$paras)
+
 
    x$method <- "Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)\n                  with missing data and unbalanced designs"
    x$df <- .p$df
    x$alpha <- .p$alpha
-   x$power <- paste(round(.p$power * 100, 0), "%")
+   x$power <- paste(round(unlist(.p$power) * 100, 0), "%")
+
+   if(x$note == "n2 is randomly sampled") {
+       txt <- "n2 is randomly sampled"
+       x$note <- paste0(txt, ". Values are the mean from R = ", .p$R, " realizations.")
+   }
     if(partially_nested) {
-        x$note <- "Study is partially-nested. Clustering only in treatment arm"
+        if(is.null(x$note)) {
+            x$note <- "Study is partially-nested. Clustering only in treatment arm"
+        } else {
+            x$note <- paste(x$note, "Study is partially-nested. Clustering only in treatment arm", sep = "\n      ")
+        }
+
     }
     print(x, ...)
 
@@ -342,7 +368,12 @@ power_worker <- function(object, df, alpha, use_satterth) {
             Lambdat <- pc$Lambdat
             Lind <- pc$Lind
 
-            varb <- varb_func(para = pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
+            varb <- varb_func(para = pars,
+                              X = X,
+                              Zt = Zt,
+                              L0 = L0,
+                              Lambdat = Lambdat,
+                              Lind = Lind)
             Phi <- varb(Lc = diag(4))
             se <- sqrt(Phi[4,4])
             calc_type <- "matrix"
@@ -352,20 +383,37 @@ power_worker <- function(object, df, alpha, use_satterth) {
         }
 
         if(use_satterth) {
-            df <- get_satterth_df(prepped, d = d, pars = pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
+            df <- get_satterth_df(prepped,
+                                  d = d,
+                                  pars = pars,
+                                  Lambdat = Lambdat,
+                                  X = X,
+                                  Zt = Zt,
+                                  L0 = L0,
+                                  Phi = Phi,
+                                  varb = varb)
         } else if(df == "between") {
             df <- get_balanced_df(object)
         } else if(is.numeric(df)) df <- df
 
         # power
-
         slope_diff <- get_slope_diff(object)/object$T_end
         lambda <- slope_diff / se
 
         power <- pt(qt(1-alpha/2, df = df), df = df, ncp = lambda, lower.tail = FALSE) +
             pt(qt(alpha/2, df = df), df = df, ncp = lambda)
-        tot_n <- sum(unlist(prepped$control$n2)) + sum(unlist(prepped$treatment$n2))
+        tot_n <- list(control = sum(unlist(prepped$control$n2)),
+                      treatment = sum(unlist(prepped$treatment$n2)))
+        n2 <- list(control = prepped$control$n2,
+                   treatment = prepped$treatment$n2)
+        n3 <- list(control = prepped$control$n3,
+                   treatment = prepped$treatment$n3)
+
+        tot_n$total <- tot_n$control + tot_n$treatment
         list(power = power,
+             df = df,
+             n2 = n2,
+             n3 = n3,
              tot_n = tot_n,
              se = se,
              calc_type = calc_type)
@@ -382,16 +430,22 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
                               df = df,
                               alpha = alpha,
                               use_satterth = use_satterth)
-    if(is.null(cl)) {
-        cl <- makeCluster(getOption("cl.cores", min(R, cores)))
-        stop_cluster <- TRUE
-    } else stop_cluster <- FALSE
-    parallel::clusterEvalQ(cl, expr =
-                               suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
-    #clusterExport(cl = cl, envir = environment())
-    tmp <- parLapply(cl, X = 1:R, power_fun)
+
+    if(cores > 1) {
+        if(is.null(cl)) {
+            cl <- makeCluster(getOption("cl.cores", min(R, cores)))
+            stop_cluster <- TRUE
+        } else stop_cluster <- FALSE
+        parallel::clusterEvalQ(cl, expr =
+                                   suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+        #clusterExport(cl = cl, envir = environment())
+        tmp <- parLapply(cl, X = 1:R, power_fun)
+
+        if(stop_cluster) stopCluster(cl)
+    } else {
+        tmp <- lapply(1:R, power_fun)
+    }
     tmp <- as.data.frame(do.call(rbind, tmp))
-    if(stop_cluster) stopCluster(cl)
 
 
 
@@ -408,6 +462,8 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
     se <- tmp$se
     calc_type <- tmp$calc_type
     tot_n <- tmp$tot_n
+    n2 <- tmp$n2
+    n3 <- tmp$n3
 
     out <- list(power = power,
                 df = df,
@@ -417,6 +473,8 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
                 alpha = alpha,
                 calc_type = calc_type,
                 tot_n = tot_n,
+                n2 = n2,
+                n3 = n3,
                 R = R)
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
