@@ -658,6 +658,8 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
 
     n2 <- lapply(1:nrow(paras), function(i) {
         x <- get_n2(as.plcp(paras[i,]))
+        x$control <- deparse_n2(x$control)
+        x$treatment <- deparse_n2(x$treatment)
         data.frame(treatment = print_per_treatment_(1, x, n2 = TRUE), control = print_per_treatment_(2, x, n2 = TRUE), stringsAsFactors = FALSE)
     })
     n2 <- do.call(rbind, n2)

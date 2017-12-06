@@ -167,11 +167,32 @@ print.plcp_power_3lvl <- function(x, ...) {
 #' @export
 print.plcp_power_2lvl <- function(x, ...) {
     .p <- x
-    x <- prepare_print_plcp_2lvl(.p$paras)
+    if(.p$R > 0) {
+        tot_n <- as.data.frame(do.call(rbind, .p$tot_n))
+        tot_n <- data.frame(control = mean(unlist(tot_n$control)),
+                            treatment = mean(unlist(tot_n$treatment)),
+                            total = mean(unlist(tot_n$total)))
+
+        .p$paras$n2 <- per_treatment(mean(unlist(tot_n$control)),
+                                     mean(unlist(tot_n$treatment)))
+        x <- prepare_print_plcp_2lvl(.p$paras)
+        width <- attr(x, "width")
+
+        #.p$paras$n2 <- per_treatment(mean(unlist(tot_n$control)),
+        #                                mean(unlist(tot_n$treatment)))
+
+        #x$total_n <- print_per_treatment(tot_n, width = width)
+
+        .p$power <- mean(unlist(.p$power))
+        #x$tot_n <- mean(unlist(.p$tot_n))
+        .p$df <- mean(unlist(.p$df))
+        #x$se <- mean(unlist(x$se))
+    }
     x$df <- .p$df
     x$alpha <- .p$alpha
     x$power <- paste(round(.p$power * 100, 0), "%")
     x$method <- "Power Analysis for Longitudinal Linear Mixed-Effects Models\n            with missing data and unbalanced designs"
+    if(.p$R > 1) x$note <- paste0("Sample size is random. Values are the mean from R = ", .p$R, " realizations.")
     print(x)
 
 }
@@ -421,8 +442,8 @@ power_worker <- function(object, df, alpha, use_satterth) {
 }
 
 #' @export
-get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 1, cl = NULL) {
-
+get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 3, cores = 1, progress = TRUE, cl = NULL) {
+    if(R == 1) progress <- FALSE
    # if(is.null(d)) d <- simulate_data(object)
     use_satterth <- (df == "satterthwaite" | df == "satterth")
 
@@ -430,7 +451,6 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
                               df = df,
                               alpha = alpha,
                               use_satterth = use_satterth)
-
     if(cores > 1) {
         if(is.null(cl)) {
             cl <- makeCluster(getOption("cl.cores", min(R, cores)))
@@ -443,7 +463,13 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
 
         if(stop_cluster) stopCluster(cl)
     } else {
-        tmp <- lapply(1:R, power_fun)
+        if(progress) pb <- txtProgressBar(style = 3, min = 1, max = R)
+        tmp <- vector(mode = "list", length = R)
+        for(i in 1:R) {
+            if(progress) setTxtProgressBar(pb, i)
+            tmp[[i]] <- power_fun(i)
+        }
+        if(progress) close(pb)
     }
     tmp <- as.data.frame(do.call(rbind, tmp))
 
@@ -484,40 +510,97 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
 }
 
 
+multi_power_worker <- function(object, df, alpha, R, ...) {
+
+    out <- get_power.plcp(object,
+                          df = df,
+                          alpha = alpha,
+                          R = R,
+                          ...)
+    #totn <- do.call(rbind, out$tot_n)
+    #out <- as.data.frame(out[c("power","df","tot_n", "se")])
+    power <- unlist(out$power)
+
+    out <- list(power = mean(power),
+                power_SD = sd(power),
+                power_list = power,
+                df = mean(unlist(out$df)),
+                #tot_n = as.data.frame(totn),
+                se = mean(unlist(out$se)))
+}
+loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, R, ...) {
+    if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
+    x <- vector(mode = "list", length = nr)
+    for(i in 1:nrow(object)) {
+        p <- powerlmm:::as.plcp(object[i,])
+        out <- multi_power_worker(object = p,
+                                df = df,
+                                alpha = alpha,
+                                R = R,
+                                progress = progress_inner,
+                                ...)
+        if(progress) setTxtProgressBar(pb, i)
+        x[[i]] <- out
+    }
+    if(progress) close(pb)
+
+    x
+}
 
 #' @export
 #' @importFrom utils txtProgressBar setTxtProgressBar
-get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, ncores = 1, ...) {
+get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, cores = 1, R = 1, ...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
         dots$updateProgress()
     }
     nr <- nrow(object)
-    if(ncores == 1) {
+    if(cores == 1) {
+        progress_inner <- progress
+        progress <- FALSE
+        x <- loop_power(object = object,
+                        df = df,
+                        alpha = alpha,
+                        nr = nr,
+                        progress = progress,
+                        progress_inner = progress_inner,
+                        R = R)
 
-        if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
-        x <- vector(mode = "list", length = nr)
-        for(i in 1:nrow(object)) {
-            p <- as.plcp(object[i,])
-            out <- get_power.plcp(p, df = df, alpha = alpha)
-
-            out <- as.data.frame(out[c("power","df","tot_n", "se")])
-            if(progress) setTxtProgressBar(pb, i)
-            x[[i]] <- out
-        }
-        if(progress) close(pb)
     } else {
-        par_call_power <- function(i) {
-            p <- as.plcp(object[i,])
-            out <- get_power.plcp(p, df = df, alpha = alpha)
-            as.data.frame(out[c("power","df","tot_n", "se")])
-        }
         cl <- parallel::makeCluster(min(cores, nr))
         on.exit(parallel::stopCluster(cl))
-        parallel::clusterEvalQ(cl, expr = suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+        parallel::clusterEvalQ(cl, expr =
+                                   suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+        parallel::clusterExport(cl, "multi_power_worker", envir = parent.env(environment()))
+        #parallel::clusterExport(cl, "R", envir = environment())
+
+        if(R > nr) {
+            x <- loop_power(object = object,
+                            df = df,
+                            alpha = alpha,
+                            nr = nr,
+                            progress = progress,
+                            cl = cl,
+                            R = R,
+                            cores = cores)
+        } else {
+            print("test")
+            p <- vector("list", nr)
+            for(i in 1:nrow(object)) {
+                p[[i]] <- as.plcp(object[i,])
+            }
+            factory <- function(df, alpha, R) {
+                function(p) {
+                    multi_power_worker(p, df=df, alpha=alpha, R1=3)
+                }
+            }
+            func <- factory(df, alpha, R=3)
+            x <- parLapply(cl, X = p, fun = multi_power_worker, df = df, alpha = alpha, R = R)
+        }
     }
 
     x <- do.call(rbind, x)
+    x <- x[, c("power", "power_SD", "power_list","df", "se")]
     x <- cbind(object, x)
 
     # parallel
@@ -526,16 +609,20 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
     out <- prep$out
     out_dense <- prep$out_dense
     out <- out[, select_setup_cols(out)]
-    out$df <- round(x$df, 2)
-    out$power <- paste(round(x$power * 100, 0), "%")
-    out_dense$df <- x$df
-    out_dense$power <- x$power
-    out_dense$tot_n <- x$tot_n
+    out$df <- round(unlist(x$df), 2)
+    out$power <- paste(round(unlist(x$power) * 100, 0), "%")
+    if(R > 1) out$power_SD <- paste(round(unlist(x$power_SD) * 100, 0), "%")
+    out_dense$df <- unlist(x$df)
+    out_dense$power <- unlist(x$power)
+    out_dense$power_SD <- unlist(x$power_SD)
+    out_dense$power_list <- x$power_list
+    #out_dense$tot_n <- x$tot_n
     out_dense$se <- x$se
 
 
     class(out_dense) <- append("plcp_multi_power", class(out_dense))
     attr(out_dense, "out") <- out
+    attr(out_dense, "R") <- R
     attr(out_dense, "alpha") <- alpha
     attr(out_dense, "df") <- df
 
@@ -552,12 +639,13 @@ print.plcp_multi_power <- function(x, ...) {
     out <- attr(x, "out")
     alpha <- attr(x, "alpha")
     df <- attr(x, "df")
+    R <- attr(x, "R")
     out <- as.data.frame(out)
     #cat(get_multi_title(x$object), "\n")
 
     cat("# Power Analysis for Longitudinal Linear Mixed-Effect Models\n\n")
     print(out)
-    cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df))
+    cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df, "; R = ", R))
     invisible(x)
 }
 
