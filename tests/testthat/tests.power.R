@@ -490,7 +490,7 @@ test_that("power partially nested", {
     x <- get_power(p)
     x_m <- get_se_3lvl_matrix(p)
     # compare class se and matrix se
-    expect_equal(x$se, x_m$se)
+    expect_equal(as.numeric(x$se), x_m$se)
 
 
     # Test df when per_treatment
@@ -505,7 +505,7 @@ test_that("power partially nested", {
                               dropout = dropout_weibull(0.3, 2),
                               cohend = -0.8)
     x <- get_power(paras)
-    expect_equal(x$df, 15-2)
+    expect_equal(as.numeric(x$df), 15-2)
 
 })
 

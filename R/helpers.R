@@ -402,7 +402,7 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #'                             n3 = c(3,6,9),
 #'                             icc_slope = c(0, 0.05, 0.1))
 #' plot(x)
-get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05) {
+get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05, R = 1, cores = 1) {
 
     paras <- object
     arg <- list(...)
@@ -418,7 +418,7 @@ get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05) {
 
     paras <- do.call(update.plcp, arg)
 
-    res <- get_power(paras, updateProgress = updateProgress, df = df, alpha = alpha)
+    res <- get_power(paras, updateProgress = updateProgress, df = df, alpha = alpha, R = R, cores = cores)
 
     tmp <- paras
     tmp$icc_slope <- get_ICC_slope(paras)
@@ -434,15 +434,20 @@ get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05) {
 
     tmp <- tmp[, c("n2", extra_args), drop = FALSE]
 
-
+    tot_n <- lapply(res$tot_n, colMeans)
+    tot_n <- do.call(rbind, tot_n)
+    tot_n <- as.data.frame(tot_n)
     res <- cbind(tmp, power = unlist(res$power),
-                 tot_n = unlist(res$tot_n))
+                 tot_n = tot_n$total)
     res$dropout <- "with missing"
 
     if(is.list(paras$dropout)) {
-        res2 <- get_power(update(paras, dropout = 0), df = df, alpha = alpha)
+        res2 <- get_power(update(paras, dropout = 0), df = df, alpha = alpha, R = R, cores = cores)
+        tot_n <- lapply(res2$tot_n, colMeans)
+        tot_n <- do.call(rbind, tot_n)
+        tot_n <- as.data.frame(tot_n)
         res2 <- cbind(tmp, power = unlist(res2$power),
-                      tot_n = unlist(res2$tot_n))
+                      tot_n = tot_n$total)
         res2$dropout <- "no missing"
 
         res <- rbind(res, res2)

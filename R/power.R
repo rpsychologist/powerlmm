@@ -112,7 +112,7 @@ print.plcp_power_3lvl <- function(x, ...) {
 
    partially_nested <- .p$paras$partially_nested
    if(.p$R > 0) {
-       tot_n <- as.data.frame(do.call(rbind, .p$tot_n))
+       tot_n <- as.data.frame(.p$tot_n)
        tot_n <- data.frame(control = mean(unlist(tot_n$control)),
                            treatment = mean(unlist(tot_n$treatment)),
                            total = mean(unlist(tot_n$total)))
@@ -140,7 +140,7 @@ print.plcp_power_3lvl <- function(x, ...) {
    x$alpha <- .p$alpha
    x$power <- paste(round(unlist(.p$power) * 100, 0), "%")
 
-   if(x$note == "n2 is randomly sampled") {
+   if(!is.null(x$note) && x$note == "n2 is randomly sampled") {
        txt <- "n2 is randomly sampled"
        x$note <- paste0(txt, ". Values are the mean from R = ", .p$R, " realizations.")
    }
@@ -442,7 +442,7 @@ power_worker <- function(object, df, alpha, use_satterth) {
 }
 
 #' @export
-get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 3, cores = 1, progress = TRUE, cl = NULL) {
+get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 1, progress = TRUE, cl = NULL) {
     if(R == 1) progress <- FALSE
    # if(is.null(d)) d <- simulate_data(object)
     use_satterth <- (df == "satterthwaite" | df == "satterth")
@@ -473,10 +473,6 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 3, cores = 
     }
     tmp <- as.data.frame(do.call(rbind, tmp))
 
-
-
-
-
     # tmp <- power_worker(object = object,
     #                     df = df,
     #                     alpha = alpha,
@@ -487,7 +483,11 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 3, cores = 
     df <- tmp$df
     se <- tmp$se
     calc_type <- tmp$calc_type
-    tot_n <- tmp$tot_n
+    tot_n <-  do.call(rbind, tmp$tot_n)
+    tot_n <- as.data.frame(tot_n)
+    for(i in 1:ncol(tot_n)) {
+        tot_n[ ,i] <- unlist(tot_n[,i])
+    }
     n2 <- tmp$n2
     n3 <- tmp$n3
 
@@ -517,7 +517,7 @@ multi_power_worker <- function(object, df, alpha, R, ...) {
                           alpha = alpha,
                           R = R,
                           ...)
-    #totn <- do.call(rbind, out$tot_n)
+    totn <- out$tot_n
     #out <- as.data.frame(out[c("power","df","tot_n", "se")])
     power <- unlist(out$power)
 
@@ -525,7 +525,7 @@ multi_power_worker <- function(object, df, alpha, R, ...) {
                 power_SD = sd(power),
                 power_list = power,
                 df = mean(unlist(out$df)),
-                #tot_n = as.data.frame(totn),
+                tot_n = as.data.frame(totn),
                 se = mean(unlist(out$se)))
 }
 loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, R, ...) {
@@ -549,6 +549,7 @@ loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, 
 
 #' @export
 #' @importFrom utils txtProgressBar setTxtProgressBar
+
 get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, cores = 1, R = 1, ...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
@@ -589,18 +590,12 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
             for(i in 1:nrow(object)) {
                 p[[i]] <- as.plcp(object[i,])
             }
-            factory <- function(df, alpha, R) {
-                function(p) {
-                    multi_power_worker(p, df=df, alpha=alpha, R1=3)
-                }
-            }
-            func <- factory(df, alpha, R=3)
             x <- parLapply(cl, X = p, fun = multi_power_worker, df = df, alpha = alpha, R = R)
         }
     }
 
     x <- do.call(rbind, x)
-    x <- x[, c("power", "power_SD", "power_list","df", "se")]
+    x <- x[, c("power", "power_SD", "tot_n", "power_list","df", "se")]
     x <- cbind(object, x)
 
     # parallel
@@ -616,7 +611,7 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
     out_dense$power <- unlist(x$power)
     out_dense$power_SD <- unlist(x$power_SD)
     out_dense$power_list <- x$power_list
-    #out_dense$tot_n <- x$tot_n
+    out_dense$tot_n <- x$tot_n
     out_dense$se <- x$se
 
 
