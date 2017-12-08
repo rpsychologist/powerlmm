@@ -3,14 +3,14 @@
 \name{get_DEFT}
 \alias{get_DEFT}
 \alias{get_DEFT.plcp_3lvl}
-\title{Calculate the design effect and type 1 errors}
+\title{Calculate the design effect and Type I errors}
 \usage{
 get_DEFT(object)
 
 \method{get_DEFT}{plcp_3lvl}(object)
 }
 \arguments{
-\item{object}{An \code{plcp_3lvl}-object created by \code{\link{study_parameters}}}
+\item{object}{A \code{plcp_3lvl}-object created by \code{\link{study_parameters}}}
 }
 \value{
 A \code{data.frame} with the columns \code{n1, n2, n3, icc_slope,

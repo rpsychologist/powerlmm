@@ -106,12 +106,13 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' the \code{lmerTest}-package. See \emph{Details}.
 #' @param CI Logical; if \code{TRUE} coverage rates for confidence intervals
 #' will be calculated. See \emph{Details}.
-#' @param cores Number of CPU cores to use. Parallelization is done using
-#' parallel::mclapply() which does not support \strong{Windows}. Use \code{cores = 1}
-#' if you're on Windows.
+#' @param cores Number of CPU cores to use. If called from a GUI environment (e.g. RStudio) or
+#' a computer running Microsoft Windows, PSOCK clusters will be used. If called from a
+#' non-interactive Unix environment forking is utilized.
 #' @param progress \code{logical}; will display progress if \code{TRUE}. Currently
-#' ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress.
-#' \strong{N.B} using a progress bar will noticeably increase the simulation time.
+#' ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress,
+#' which relies on forking. \strong{N.B} using a progress bar will noticeably
+#' increase the simulation time, due to the added overhead.
 #' @param batch_progress \code{logical}; if \code{TRUE} progress will be shown for
 #' simulations with multiple setups.
 #' @param ... Optional arguments, see \emph{Saving} in \emph{Details} section.
@@ -342,7 +343,6 @@ simulate.plcp_list <-
              satterthwaite = FALSE,
              CI = FALSE,
              cores = 1,
-             progress = FALSE,
              save = FALSE,
              save_folder = NULL,
              save_folder_create = NULL,
@@ -362,18 +362,39 @@ simulate.plcp_list <-
                     mc.cores = cores,
                     ...
                 )
+        } else if (cores > 1) {
+            if(.Platform$OS.type == "unix" && !interactive()) {
+                res <- mclapply(X = 1:nsim,
+                                 FUN = simulate_,
+                                 paras = object,
+                                 formula = formula,
+                                 satterthwaite = satterthwaite,
+                                 CI = CI,
+                                 mc.cores = cores,
+                                 ...)
+            } else {
+                cl <- parallel::makeCluster(min(cores, nsim))
+                on.exit(parallel::stopCluster(cl))
+                parallel::clusterEvalQ(cl, expr =
+                                           suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+                res <- parLapply(cl,
+                                 X = 1:nsim,
+                                 fun = simulate_,
+                                 paras = object,
+                                 formula = formula,
+                                 satterthwaite = satterthwaite,
+                                 CI = CI,
+                                 ...)
+            }
         } else {
-            res <-
-                parallel::mclapply(
-                    1:nsim,
-                    simulate_,
-                    paras = object,
-                    formula = formula,
-                    satterthwaite = satterthwaite,
-                    CI = CI,
-                    mc.cores = cores,
-                    ...
-                )
+            res <- lapply(1:nsim,
+                             FUN = simulate_,
+                             paras = object,
+                             formula = formula,
+                             satterthwaite = satterthwaite,
+                             CI = CI,
+                             ...)
+
         }
         time <- proc.time() - ptm
 
@@ -529,21 +550,21 @@ check_formula_terms <- function(f) {
 
 analyze_data <- function(formula, d) {
 
-        fit <-
-            lapply(formula, function(f)
-                tryCatch(
-                    #do.call(lme4::lmer, list(formula=f, data=d))
-                    lme4::lmer(formula = as.formula(f), data = d)
-                    )
+    fit <-
+        lapply(formula, function(f)
+            tryCatch(
+                #do.call(lme4::lmer, list(formula=f, data=d))
+                lme4::lmer(formula = as.formula(f), data = d)
                 )
-
-
-
+            )
     fit
 }
 
 extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, tot_n) {
-    lapply(fit, extract_results_, CI = CI, satterthwaite = satterthwaite, tot_n = tot_n)
+    lapply(fit, extract_results_,
+           CI = CI,
+           satterthwaite = satterthwaite,
+           tot_n = tot_n)
 }
 extract_random_effects <- function(fit) {
     x <- as.data.frame(lme4::VarCorr(fit))
@@ -615,7 +636,9 @@ fix_sath_NA_pval <- function(x, df) {
 }
 extract_results_ <- function(fit, CI, satterthwaite, tot_n) {
     se <- sqrt(diag(vcov(fit)))
-    tmp_p <- add_p_value(fit = fit, satterthwaite = satterthwaite, tot_n = tot_n)
+    tmp_p <- add_p_value(fit = fit,
+                         satterthwaite = satterthwaite,
+                         tot_n = tot_n)
     FE <- data.frame(
         "estimate" = lme4::fixef(fit),
         "se" = se,
@@ -767,7 +790,12 @@ tot_n_ <- function(x) {
         x_median <- median(x)
         x_sd <- sd(x)
 
-        x <- paste(round(x_mean, 1), "(mean)", round(x_median, 1), "(median)", round(x_sd, 2), "(SD)")
+        x <- paste(round(x_mean, 1),
+                   "(mean)",
+                   round(x_median, 1),
+                   "(median)",
+                   round(x_sd, 2),
+                   "(SD)")
     }
 
     x
@@ -797,7 +825,8 @@ print.plcp_sim_summary <- function(x, ...) {
     cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
     cat("\nTime points (n1): ", res$paras$n1)
     cat(" | Subjects per cluster (n2): ", unlist(n2))
-    cat(" | Clusters per treatment (n3): ", unlist(n3[c("treatment", "control")]))
+    cat(" | Clusters per treatment (n3): ",
+        unlist(n3[c("treatment", "control")]))
     cat("\nTotal number of subjects: ", tot_n)
     convergence <- lapply(x, function(d)
         d$convergence)

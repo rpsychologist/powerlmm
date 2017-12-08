@@ -35,13 +35,14 @@ the \code{lmerTest}-package. See \emph{Details}.}
 \item{CI}{Logical; if \code{TRUE} coverage rates for confidence intervals
 will be calculated. See \emph{Details}.}
 
-\item{cores}{Number of CPU cores to use. Parallelization is done using
-parallel::mclapply() which does not support \strong{Windows}. Use \code{cores = 1}
-if you're on Windows.}
+\item{cores}{Number of CPU cores to use. If called from a GUI environment (e.g. RStudio) or
+a computer running Microsoft Windows, PSOCK clusters will be used. If called from a
+non-interactive Unix environment forking is utilized.}
 
 \item{progress}{\code{logical}; will display progress if \code{TRUE}. Currently
-ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress.
-\strong{N.B} using a progress bar will noticeably increase the simulation time.}
+ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress,
+which relies on forking. \strong{N.B} using a progress bar will noticeably
+increase the simulation time, due to the added overhead.}
 
 \item{batch_progress}{\code{logical}; if \code{TRUE} progress will be shown for
 simulations with multiple setups.}

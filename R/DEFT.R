@@ -4,12 +4,12 @@ approx_type1 <- function(bias) {
 }
 
 
-#' Calculate the design effect and type 1 errors
+#' Calculate the design effect and Type I errors
 #'
 #' This functions helps to evaluate the consequences of ignoring a random slope
 #' at the cluster level.
 #'
-#' @param object An \code{plcp_3lvl}-object created by \code{\link{study_parameters}}
+#' @param object A \code{plcp_3lvl}-object created by \code{\link{study_parameters}}
 #'
 #' @return A \code{data.frame} with the columns \code{n1, n2, n3, icc_slope,
 #' var_ratio, DEFT}, and, \code{approx_type1}. The number of rows of the
@@ -71,10 +71,12 @@ get_DEFT_3lvl.list <- function(object) {
     x1 <- get_power(p1)
     x2 <- get_power(p2)
 
-    se1 <- x1$se
-    se2 <- x2$se
+    se1 <- unlist(x1$se)
+    se2 <- unlist(x2$se)
 
     DEFT <- se1/se2
+
+    if(is.unequal_clusters(p1$n2)) warning("DEFT for designs with unequal clusters is highly experimental. Check your results using simulation, see ?simulate.plcp")
 
     data.frame(icc_slope = get_ICC_slope(p1),
                var_ratio = get_var_ratio(p1),

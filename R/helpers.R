@@ -374,6 +374,10 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #' @param df Either "between" or "satterth" for Satterthwaite's DF approximation.
 #' Also accepts a \code{numeric} value which will be used as DF. See \code{\link{get_power}}
 #' @param alpha The alpha level, defaults to 0.05.
+#' @param R An \code{integer} indicating how many realizations to base power on.
+#' Useful when dropout or cluster sizes are sampled (i.e. are random variables).
+#' @param cores An \code{integer} indicating how many CPU cores to use.
+#'
 #'
 #' @return A \code{data.frame} with class \code{plcp_power_table}.
 #' @export
@@ -402,7 +406,7 @@ plot.plcp_multi <- function(x, n = 1, ...) {
 #'                             n3 = c(3,6,9),
 #'                             icc_slope = c(0, 0.05, 0.1))
 #' plot(x)
-get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05, R = 1, cores = 1) {
+get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05, R = 1L, cores = 1L) {
 
     paras <- object
     arg <- list(...)

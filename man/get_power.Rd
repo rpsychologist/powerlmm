@@ -4,7 +4,8 @@
 \alias{get_power}
 \title{Calculate power for two- and three-level models with missing data.}
 \usage{
-get_power(object, df = "between", alpha = 0.05, progress = TRUE, ...)
+get_power(object, df = "between", alpha = 0.05, progress = TRUE, R = 1L,
+  cores = 1L, ...)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}
@@ -16,6 +17,11 @@ Also accepts a \code{numeric} value which will be used as DF.}
 
 \item{progress}{\code{logical}; displays a progress bar when > 1 power analysis
 is performed.}
+
+\item{R}{An \code{integer} indicating how many realizations to base power on.
+Useful when dropout or cluster sizes are sampled (i.e. are random variables).}
+
+\item{cores}{An \code{integer} indicating how many CPU cores to use.}
 
 \item{...}{Other potential arguments; currently used to pass progress bar from
 Shiny}
@@ -49,6 +55,16 @@ where \eqn{N_3} and \eqn{N_2} is the total number of clusters and subjects in bo
 \bold{N.B} Satterthwaite's method will be RAM and CPU intensive for large sample sizes.
 The computation time will depend mostly on \code{n1} and \code{n2}. For instance, for a fully nested model with
 \code{n1 = 10}, \code{n2 = 100}, \code{n3 = 4}, computations will likely take 30-60 seconds.
+
+\bold{Cluster sizes or dropout pattern that are random (sampled)}
+
+If \code{deterministic_dropout = FALSE} the proportion that dropout at each time point will be sampled
+from a multinomial distribution. However, if it is \code{TRUE}, the proportion of subjects that dropout will be non-random,
+but which subjects dropout will still be random. Both scenarios often lead to small variations in the estimated power. Moreover,
+using cluster sizes that are random, \code{unequal_clusters(func = ...)}, can lead to large variations in the power estimated
+for a single realization of cluster sizes. In both scenarios the expected power can be calculated by repeatedly recalculating
+power for different new realizations of the random variables. This is done be using the argument \code{R} -- power, sample size, and DFs,
+is then reported by averaging over the \code{R} realizations.
 }
 \examples{
 # Two-level model

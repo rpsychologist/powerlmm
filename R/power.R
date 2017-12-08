@@ -6,6 +6,9 @@
 #' @param alpha The alpha level, defaults to 0.05.
 #' @param progress \code{logical}; displays a progress bar when > 1 power analysis
 #' is performed.
+#' @param R An \code{integer} indicating how many realizations to base power on.
+#' Useful when dropout or cluster sizes are sampled (i.e. are random variables).
+#' @param cores An \code{integer} indicating how many CPU cores to use.
 #'
 #' @param ... Other potential arguments; currently used to pass progress bar from
 #'  Shiny
@@ -31,6 +34,16 @@
 #' \bold{N.B} Satterthwaite's method will be RAM and CPU intensive for large sample sizes.
 #' The computation time will depend mostly on \code{n1} and \code{n2}. For instance, for a fully nested model with
 #' \code{n1 = 10}, \code{n2 = 100}, \code{n3 = 4}, computations will likely take 30-60 seconds.
+#'
+#' \bold{Cluster sizes or dropout pattern that are random (sampled)}
+#'
+#' If \code{deterministic_dropout = FALSE} the proportion that dropout at each time point will be sampled
+#' from a multinomial distribution. However, if it is \code{TRUE}, the proportion of subjects that dropout will be non-random,
+#' but which subjects dropout will still be random. Both scenarios often lead to small variations in the estimated power. Moreover,
+#' using cluster sizes that are random, \code{unequal_clusters(func = ...)}, can lead to large variations in the power estimated
+#' for a single realization of cluster sizes. In both scenarios the expected power can be calculated by repeatedly recalculating
+#' power for different new realizations of the random variables. This is done be using the argument \code{R} -- power, sample size, and DFs,
+#' is then reported by averaging over the \code{R} realizations.
 #'
 #' @seealso \code{\link{study_parameters}}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
 #'
@@ -94,7 +107,8 @@
 #'
 #' # Satterthwaite DFs
 #' get_power(paras, df = "satterthwaite")
-get_power <- function(object, df = "between", alpha = 0.05, progress = TRUE, ...) {
+#' @importFrom parallel makeCluster parLapply stopCluster
+get_power <- function(object, df = "between", alpha = 0.05, progress = TRUE, R = 1L, cores = 1L, ...) {
     UseMethod("get_power")
 }
 
@@ -168,7 +182,7 @@ print.plcp_power_3lvl <- function(x, ...) {
 print.plcp_power_2lvl <- function(x, ...) {
     .p <- x
     if(.p$R > 0) {
-        tot_n <- as.data.frame(do.call(rbind, .p$tot_n))
+        tot_n <- .p$tot_n
         tot_n <- data.frame(control = mean(unlist(tot_n$control)),
                             treatment = mean(unlist(tot_n$treatment)),
                             total = mean(unlist(tot_n$total)))
@@ -441,9 +455,31 @@ power_worker <- function(object, df, alpha, use_satterth) {
     }
 }
 
+
+unnest_tot_n <- function(x) {
+    x <- do.call(rbind, x)
+    x <- as.data.frame(x)
+    for(i in 1:ncol(x)) {
+        x[ ,i] <- unlist(x[,i])
+    }
+    x
+}
+unnest_n2 <- function(x) {
+    x <- do.call(rbind, x)
+    x <- as.data.frame(x)
+    tmp <- vector("list", ncol(x))
+    for(i in 1:ncol(x)) {
+        tmp[[i]] <-  do.call(rbind, x[,i])
+    }
+    names(tmp) <- colnames(x)
+    tmp
+}
+
 #' @export
-get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 1, progress = TRUE, cl = NULL) {
+get_power.plcp <- function(object, df = "between", alpha = 0.05, progress = TRUE, R = 1L, cores = 1L, ...) {
     if(R == 1) progress <- FALSE
+    dots <- list(...)
+    cl <- dots$cl
    # if(is.null(d)) d <- simulate_data(object)
     use_satterth <- (df == "satterthwaite" | df == "satterth")
 
@@ -473,28 +509,29 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, R = 1, cores = 
     }
     tmp <- as.data.frame(do.call(rbind, tmp))
 
-    # tmp <- power_worker(object = object,
-    #                     df = df,
-    #                     alpha = alpha,
-    #                     use_satterth = use_satterth,
-    #                     ...)
-
-    power <- tmp$power
-    df <- tmp$df
-    se <- tmp$se
+    power <- unlist(tmp$power)
+    power_list <- power
+    power <- mean(power)
+    df <- unlist(tmp$df)
+    df_list <- df
+    df <- mean(df)
+    se <- unlist(tmp$se)
+    se_list <- se
+    se <- mean(se)
     calc_type <- tmp$calc_type
-    tot_n <-  do.call(rbind, tmp$tot_n)
-    tot_n <- as.data.frame(tot_n)
-    for(i in 1:ncol(tot_n)) {
-        tot_n[ ,i] <- unlist(tot_n[,i])
-    }
-    n2 <- tmp$n2
+    n2 <- unnest_n2(tmp$n2)
+    tot_n <- unnest_tot_n(tmp$tot_n)
+
+
     n3 <- tmp$n3
 
     out <- list(power = power,
+                power_list = power_list,
                 df = df,
+                df_list = df_list,
                 satterth = use_satterth,
                 se = se,
+                se_list = se_list,
                 paras = object,
                 alpha = alpha,
                 calc_type = calc_type,
@@ -517,22 +554,29 @@ multi_power_worker <- function(object, df, alpha, R, ...) {
                           alpha = alpha,
                           R = R,
                           ...)
-    totn <- out$tot_n
-    #out <- as.data.frame(out[c("power","df","tot_n", "se")])
+    tot_n <- out$tot_n
+    tot_n <- as.data.frame(tot_n)
     power <- unlist(out$power)
-
-    out <- list(power = mean(power),
-                power_SD = sd(power),
-                power_list = power,
-                df = mean(unlist(out$df)),
-                tot_n = as.data.frame(totn),
-                se = mean(unlist(out$se)))
+    power_list <- unlist(out$power_list)
+    se <- unlist(out$se)
+    se_list <- out$se_list
+    df <- unlist(out$df)
+    df_list <- out$df_list
+    out <- list(power = power,
+                power_SD = sd(power_list),
+                power_list = power_list,
+                df = df,
+                df_list = df_list,
+                tot_n = tot_n,
+                se = se,
+                se_list = se_list,
+                n2_list = out$n2)
 }
 loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, R, ...) {
     if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
     x <- vector(mode = "list", length = nr)
     for(i in 1:nrow(object)) {
-        p <- powerlmm:::as.plcp(object[i,])
+        p <- as.plcp(object[i,])
         out <- multi_power_worker(object = p,
                                 df = df,
                                 alpha = alpha,
@@ -550,7 +594,7 @@ loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, 
 #' @export
 #' @importFrom utils txtProgressBar setTxtProgressBar
 
-get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, cores = 1, R = 1, ...) {
+get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, R = 1, cores = 1,...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
         dots$updateProgress()
@@ -585,20 +629,28 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
                             R = R,
                             cores = cores)
         } else {
-            print("test")
             p <- vector("list", nr)
             for(i in 1:nrow(object)) {
                 p[[i]] <- as.plcp(object[i,])
             }
-            x <- parLapply(cl, X = p, fun = multi_power_worker, df = df, alpha = alpha, R = R)
+            x <- parLapply(cl,
+                           X = p,
+                           fun = multi_power_worker,
+                           df = df,
+                           alpha = alpha,
+                           R = R)
         }
     }
 
     x <- do.call(rbind, x)
-    x <- x[, c("power", "power_SD", "tot_n", "power_list","df", "se")]
+    x <- x[, c("power",
+               "power_SD",
+               "tot_n",
+               "power_list",
+               "df",
+               "se",
+               "n2_list")]
     x <- cbind(object, x)
-
-    # parallel
 
     prep <- prepare_multi_setup(object)
     out <- prep$out
@@ -612,8 +664,8 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
     out_dense$power_SD <- unlist(x$power_SD)
     out_dense$power_list <- x$power_list
     out_dense$tot_n <- x$tot_n
-    out_dense$se <- x$se
-
+    out_dense$se <- unlist(x$se)
+    out_dense$n2_list <- x$n2_list
 
     class(out_dense) <- append("plcp_multi_power", class(out_dense))
     attr(out_dense, "out") <- out
@@ -649,39 +701,7 @@ print.plcp_multi_power <- function(x, ...) {
 
 
 # OLD ---------------------------------------------------------------------
-# kept for testing
 
-# get_power.plcp_2lvl <- function(object, ...) {
-#     get_power_2lvl(object, ...)
-# }
-#
-# get_power_2lvl <- function(object, ...) {
-#     UseMethod("get_power_2lvl")
-#
-# }
-# get_power_2lvl.data.frame <- function(object, ...) {
-#
-#     res <- lapply(1:nrow(object), function(i) get_power_2lvl.list(as.plcp(object[i,]), ...))
-#     res <- do.call(rbind, res)
-#     res <- as.data.frame(res)
-#     res
-#
-# }
-#
-#
-# get_power.plcp_3lvl <- function(object, ...) {
-#     get_power_3lvl(object, ...)
-# }
-#
-# get_power_3lvl <- function(object, ...) {
-#     UseMethod("get_power_3lvl")
-# }
-# get_power_3lvl.data.frame <- function(object, ...) {
-#     res <- lapply(1:nrow(object), function(i) get_power_3lvl.list(as.plcp(object[i,]), ...))
-#     res <- do.call(rbind, res)
-#     res <- as.data.frame(res)
-#     res
-# }
 
 get_power_3lvl_old.list <- function(object, ...) {
     paras <- object

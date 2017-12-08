@@ -9,12 +9,17 @@ see ?create_lmer_formula
 * Threat cluster sizes as a random variable. `uneqal_clusters` now accepts
  a function indicating the distribution of cluster sizes, via the new argument
 `func`, e.g. `rpois` or `rnorm` could be used to draw cluster sizes.
+* Expected power for designs with parameters that are random variables, 
+can be calculated by averaging over multiple realizations, using the argument `R`. 
+* Support for parallel computions on Microsoft Windows, and in GUIs/interactive environments,
+using `parallel::makeCluster`. Forking is still used for non-interactive Unix environments.
   
 ## Improvements
 * Calculations of the variance of treatment effects is now much faster for designs with 
 unequal clusters and/or missing data, when cluster sizes are large. The calculations now
 use the much faster implementation used by lme4.
 * Cleaner print-methods for `plcp_multi`-objects
+
 ## Minor changes and fixes
 * Fixed some typos in the documentation
 * New arguments to simulate.plcp_multi; save_folder, etc
