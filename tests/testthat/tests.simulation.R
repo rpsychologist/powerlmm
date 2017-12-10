@@ -64,7 +64,7 @@ test_that("extract results", {
     d <- simulate_data(p)
     fit <- lme4::lmer(y ~ treatment * time + (1 + time | subject) +
                           (0 + time | cluster), data = d)
-    tmp <- extract_results(list(fit), CI = FALSE, tot_n = 100)
+    tmp <- extract_results(list(fit), CI = FALSE, df_bw = 8, tot_n = 100)
 
     x <- tmp[[1]]$RE
     expect_equal(x$vcov, c(2.330233, 0.032569, 0.008725, 2.070966, -0.193),
@@ -79,7 +79,7 @@ test_that("extract results satterthwaite", {
     d <- simulate_data(p)
     fit <- lmerTest::lmer(y ~ treatment * time + (1 + time | subject) +
                               (0 + time | cluster), data = d)
-    tmp <- extract_results(list(fit), CI = FALSE, tot_n = 100)
+    tmp <- extract_results(list(fit), CI = FALSE, df_bw = 8, tot_n = 100)
 
     x <- tmp[[1]]$RE
     expect_equal(x$vcov, c(2.330233, 0.032569, 0.008725, 2.070966, -0.193),
@@ -137,6 +137,9 @@ test_that("simulation summary", {
     expect_equal(tmp$summary$correct$RE[3, "prop_zero"], mean(abs(est - 0) < 0.00001),
                  tolerance = 0.001)
 
+    # df_bw
+    df <- res$res$correct$FE$df_bw
+    expect_equal(df[!is.na(df)], c(8,8,8))
 })
 
 test_that("simulation summary alpha", {
@@ -172,6 +175,10 @@ test_that("simulation partially nested", {
                     progress = FALSE, cores = 1, save = FALSE)
     expect_error(summary(res), NA)
 
+    # df_bw
+    df <- res$res$correct$FE$df_bw
+    expect_equal(df[!is.na(df)], c(3,3,3))
+
     ##
     formula <- "y ~ treatment * time + (1 + time | subject) + (1 + treatment:time | cluster)"
 
@@ -191,6 +198,57 @@ test_that("simulation partially nested", {
 
     res <- simulate(p, nsim = 3, formula = formula, satterthwaite = FALSE,
                     progress = FALSE, cores = 1, save = FALSE)
+    expect_error(summary(res), NA)
+
+})
+
+test_that("simulation random n2", {
+
+    set.seed(5447)
+    p <- study_parameters(n1 = 11,
+                          n2 = unequal_clusters(func = rnorm(5, 0, 10)),
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          cor_subject = -0.5,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          partially_nested = TRUE,
+                          cohend = -0.5)
+    res <- simulate(p, nsim = 3, satterthwaite = FALSE,
+                    progress = FALSE)
+    tmp <- res$res$correct$tot_n[,1]
+    expect_gt(length(unique(tmp)), 1)
+
+    # df_bw
+    df <- res$res$correct$FE$df_bw
+    expect_equal(df[!is.na(df)], c(4,4,4))
+    expect_error(summary(res), NA)
+
+})
+
+
+test_that("simulation random n2 some zero", {
+
+    set.seed(5446)
+    p <- study_parameters(n1 = 11,
+                          n2 = unequal_clusters(func = rnorm(10, 0, 10), replace = 0),
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          cor_subject = -0.5,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          partially_nested = TRUE,
+                          cohend = -0.5)
+    res <- simulate(p, nsim = 3, satterthwaite = FALSE,
+                    progress = FALSE)
+    tmp <- res$res$correct$tot_n[,1]
+    expect_length(unique(tmp), 3)
+
+    # df_bw
+    df <- res$res$correct$FE$df_bw
+    expect_gt(length(unique(df[!is.na(df)])), 1)
     expect_error(summary(res), NA)
 
 })

@@ -343,12 +343,15 @@ simulate.plcp_list <-
              satterthwaite = FALSE,
              CI = FALSE,
              cores = 1,
+             progress = TRUE,
              save = FALSE,
              save_folder = NULL,
              save_folder_create = NULL,
+             cl = NULL,
              ...) {
         ptm <- proc.time()
         is_windows <- .Platform$OS.type == "windows"
+
         if (progress & !is_windows) {
             check_installed("pbmcapply")
             res <-
@@ -364,7 +367,7 @@ simulate.plcp_list <-
                 )
         } else if (cores > 1) {
             if(.Platform$OS.type == "unix" && !interactive()) {
-                res <- mclapply(X = 1:nsim,
+                res <- parallel::mclapply(X = 1:nsim,
                                  FUN = simulate_,
                                  paras = object,
                                  formula = formula,
@@ -373,8 +376,10 @@ simulate.plcp_list <-
                                  mc.cores = cores,
                                  ...)
             } else {
-                cl <- parallel::makeCluster(min(cores, nsim))
-                on.exit(parallel::stopCluster(cl))
+                if(is.null(cl)) {
+                    cl <- parallel::makeCluster(min(cores, nsim))
+                    on.exit(parallel::stopCluster(cl))
+                }
                 parallel::clusterEvalQ(cl, expr =
                                            suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
                 res <- parLapply(cl,
@@ -383,8 +388,7 @@ simulate.plcp_list <-
                                  paras = object,
                                  formula = formula,
                                  satterthwaite = satterthwaite,
-                                 CI = CI,
-                                 ...)
+                                 CI = CI)
             }
         } else {
             res <- lapply(1:nsim,
@@ -454,7 +458,10 @@ simulate.plcp_data_frame <-
                     rep(" ", options()$width - 13))
                 cat("\n")
             }
-
+            if(cores > 1 && interactive()) {
+                cl <- parallel::makeCluster(cores)
+                on.exit(parallel::stopCluster(cl))
+            } else cl <- NULL
             x <- simulate.plcp_list(
                 as.plcp(object[i,]),
                 nsim = nsim,
@@ -462,7 +469,8 @@ simulate.plcp_data_frame <-
                 satterthwaite = satterthwaite,
                 CI = CI,
                 cores = cores,
-                progress = progress
+                progress = progress,
+                cl = cl
             )
 
             if (save) {
@@ -481,7 +489,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     d <- simulate_data(prepped)
     tot_n <- length(unique(d[d$time == 0,]$subject))
     fit <- analyze_data(formula, d)
-    res <- extract_results(fit, CI, satterthwaite = satterthwaite, tot_n = tot_n)
+    res <- extract_results(fit, CI, satterthwaite = satterthwaite, df_bw = get_balanced_df(prepped), tot_n = tot_n)
     res
 }
 
@@ -560,10 +568,11 @@ analyze_data <- function(formula, d) {
     fit
 }
 
-extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, tot_n) {
+extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n) {
     lapply(fit, extract_results_,
            CI = CI,
            satterthwaite = satterthwaite,
+           df_bw = df_bw,
            tot_n = tot_n)
 }
 extract_random_effects <- function(fit) {
@@ -584,7 +593,7 @@ extract_random_effects <- function(fit) {
 
     rbind(vcovs, correlations)
 }
-add_p_value <- function(fit, satterthwaite, tot_n = NULL) {
+add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
     tmp <- tryCatch(summary(fit))
     tmp <- tmp$coefficients
 
@@ -608,9 +617,8 @@ add_p_value <- function(fit, satterthwaite, tot_n = NULL) {
             p[ind] <- satt$pvalue
         }
         if(is.na(p[ind])) {
-            #saveRDS(list(fit = fit, tmp = tmp, satt=satt, df = df, ind = ind, p = p, tot_n = tot_n), "sim_debug_satterth.rds")
             tval <- tmp[ind, "t value"]
-            p[ind] <- 2*(1 - pt(abs(tval), df = tot_n - 2))
+            p[ind] <- 2*(1 - pt(abs(tval), df = df_bw))
         }
 
         res <- list("df" = df,
@@ -634,11 +642,11 @@ fix_sath_NA_pval <- function(x, df) {
 
     x
 }
-extract_results_ <- function(fit, CI, satterthwaite, tot_n) {
+extract_results_ <- function(fit, CI, satterthwaite, df_bw, tot_n) {
     se <- sqrt(diag(vcov(fit)))
     tmp_p <- add_p_value(fit = fit,
                          satterthwaite = satterthwaite,
-                         tot_n = tot_n)
+                         df_bw = df_bw)
     FE <- data.frame(
         "estimate" = lme4::fixef(fit),
         "se" = se,
@@ -654,7 +662,7 @@ extract_results_ <- function(fit, CI, satterthwaite, tot_n) {
     FE <- cbind(data.frame(parameter = rnames), FE)
 
     # Fix DF when clusters are random
-    FE[FE$parameter == "time:treatment", "df_bw"] <- tot_n - 2
+    FE[FE$parameter == "time:treatment", "df_bw"] <- df_bw
 
     if (CI) {
         CI <- tryCatch(stats::confint(fit, parm = CI_parm),
@@ -821,16 +829,22 @@ print.plcp_sim_summary <- function(x, ...) {
     } else n2 <- deparse_n2(n2$treatment)
 
 
+    if(is.unequal_clusters(res$paras$n2)) {
+        n2_lab <- "\nSubjects per cluster: "
+        n2 <- print_per_treatment(prepare_print_n2(res$paras), hanging = 23, n2 = TRUE)
+    } else {
+        n2_lab <- "\nSubjects per cluster (n2 x n3): "
+        n2 <- print_per_treatment(prepare_print_n2(res$paras), hanging = 33, n2 = TRUE)
+    }
     lapply(seq_along(x), print_model, x)
     cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
     cat("\nTime points (n1): ", res$paras$n1)
-    cat(" | Subjects per cluster (n2): ", unlist(n2))
-    cat(" | Clusters per treatment (n3): ",
-        unlist(n3[c("treatment", "control")]))
+    cat(n2_lab, n2)
     cat("\nTotal number of subjects: ", tot_n)
     convergence <- lapply(x, function(d)
         d$convergence)
     convergence <- unlist(convergence)
+    convergence <- round(convergence, 4)
     cat("\nConvergence: ",
         paste(convergence * 100, "%", collapse = ", "))
 }

@@ -450,3 +450,75 @@ test_that("multi_para #1", {
 
 
 })
+
+test_that("proportion of dropout, per_treatment", {
+
+    p <- study_parameters(n1 = 10,
+                          n2 = unequal_clusters(func = rpois(5, lambda = 5)),
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          partially_nested = TRUE,
+                          cohend = 0.5)
+
+    # partially nested
+    set.seed(3)
+    d <- simulate_data(p)
+    n <- d %>%
+        group_by(treatment) %>%
+        summarise(n = length(unique(slope_cluster))) %>%
+        .$n
+
+    expect_equal(n, c(1,5))
+
+    n2 <- d %>%
+        group_by(treatment, cluster) %>%
+        filter(time == 0) %>%
+        summarise(n = length(cluster)) %>%
+        .$n
+
+    expect_true(length(unique(n2)) > 1)
+
+    # not partially_nested
+    p <- update(p, partially_nested = FALSE)
+
+    d <- simulate_data(p)
+    n <- d %>%
+        group_by(treatment) %>%
+        summarise(n = length(unique(slope_cluster))) %>%
+        .$n
+    expect_equal(n, c(5,5))
+
+    n2 <- d %>%
+        group_by(treatment, cluster) %>%
+        filter(time == 0) %>%
+        summarise(n = length(cluster)) %>%
+        .$n
+
+    expect_true(length(unique(n2)) > 1)
+
+
+    # test prepped
+    prepped <- prepare_paras(p)
+
+    d <- simulate_data(prepped)
+    n <- d %>%
+        group_by(treatment) %>%
+        summarise(n = length(unique(slope_cluster))) %>%
+        .$n
+    expect_equal(n, c(5,5))
+
+    n2 <- d %>%
+        group_by(treatment, cluster) %>%
+        filter(time == 0) %>%
+        summarise(n = length(cluster)) %>%
+        .$n
+    expect_true(length(unique(n2)) > 1)
+    n2_2 <- as.integer(get_n2(prepped$control)$treatment)
+    expect_identical(rep(n2_2, 2), n2)
+
+
+})
+

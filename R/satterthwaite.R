@@ -170,18 +170,16 @@ get_balanced_df <- function(object) {
         pp <- prepare_paras(object)
     } else pp <- object
 
-    tot_n2 <- get_tot_n(object)
-    n2_cc <- tot_n2$control
-    n2_tx <- tot_n2$treatment
+    n2_cc <- get_tot_n(pp$control)$control
+    n2_tx <- get_tot_n(pp$treatment)$treatment
 
-    n3 <- get_n3(object)
-    n3_cc <- n3$control
-    n3_tx <- n3$treatment
+    n3_cc <- pp$control$n3
+    n3_tx <- pp$treatment$n3
 
 
-    if(object$sigma_cluster_slope == 0) {
+    if(pp$treatment$sigma_cluster_slope == 0) {
         df <-  (n2_tx + n2_cc) - 2
-    } else if(object$partially_nested) {
+    } else if(pp$treatment$partially_nested) {
         df <- n3_tx - 1
     } else {
         df <- (n3_cc + n3_tx) - 2

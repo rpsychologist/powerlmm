@@ -504,11 +504,12 @@ sim_parameters <- function(...) {
 }
 
 
-print_per_treatment <- function(n, width = 0, n2 = FALSE) {
+print_per_treatment <- function(n, width = 0, n2 = FALSE, hanging = 19) {
     x <- lapply(seq_along(n), print_per_treatment_, x = n, n2 = n2)
     x <- format(x, width = width)
     x <- paste(x, " (", names(n), ")", sep ="")
-    x <- paste(unlist(x), collapse = "\n                   ")
+    collapse <- paste0("\n", paste(rep(" ", hanging), collapse = ""))
+    x <- paste(unlist(x), collapse = collapse)
     x
 }
 print_per_treatment_ <- function(i, x, n2 = FALSE) {
@@ -527,11 +528,16 @@ deparse_n2 <- function(n2) {
     }
     n2
 }
-prepare_print_plcp <- function(x, two_level = FALSE) {
-    n1 <- x$n1
+prepare_print_n2 <- function(x) {
     n2 <- get_n2(x)
     n2$treatment <- deparse_n2(n2$treatment)
     n2$control <- deparse_n2(n2$control)
+
+    n2
+}
+prepare_print_plcp <- function(x, two_level = FALSE) {
+    n1 <- x$n1
+    n2 <- prepare_print_n2(x)
     n3 <- get_n3(x)
     tot_n <- get_tot_n(x)
     width <- max(nchar(print_per_treatment_(1, n2, n2 = TRUE)),

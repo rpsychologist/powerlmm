@@ -33,6 +33,10 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    # expect print withour error
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 # combine scalar and per_treatment
@@ -73,6 +77,10 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
+
 })
 # test df when n3 per_treatment
 test_that("power", {
@@ -114,6 +122,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 
@@ -151,6 +162,9 @@ test_that("power", {
     # compare se with matrix se
     tmp2 <- get_se_3lvl_matrix(as.plcp(paras[1,]))
     expect_equal(tmp$se[[1]], tmp2$se)
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 # combine scalar and per_treatment
@@ -190,6 +204,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 
 })
 # test df when n3 per_treatment
@@ -235,6 +252,9 @@ test_that("power", {
     # compare se with matrix se
     tmp2 <- get_se_3lvl_matrix(as.plcp(paras[1,]))
     expect_equal(tmp$se[[1]], tmp2$se)
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 
@@ -278,6 +298,9 @@ test_that("power", {
     # compare se with matrix se
     tmp2 <- get_se_3lvl_matrix(as.plcp(paras[1,]))
     expect_equal(tmp$se[[1]], tmp2$se)
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 # combine scalar and per_treatment
@@ -318,6 +341,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 # test df when n3 per_treatment
 test_that("power", {
@@ -358,6 +384,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 
@@ -391,6 +420,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 # combine scalar and per_treatment
@@ -430,6 +462,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 # test df when n3 per_treatment
 test_that("power", {
@@ -469,6 +504,9 @@ test_that("power", {
     # set 2 should have more power
     expect_gt(unlist(tmp$power[2]),
               unlist(tmp$power[1]))
+
+    expect_error(tmp, NA)
+    expect_output(str(print(tmp)), "n1.*: num  3 3")
 })
 
 
@@ -492,6 +530,8 @@ test_that("power partially nested", {
     # compare class se and matrix se
     expect_equal(as.numeric(x$se), x_m$se)
 
+    expect_error(x, NA)
+    expect_output(print(x), "n1 = 11")
 
     # Test df when per_treatment
     paras <- study_parameters(n1 = 11,
@@ -503,9 +543,14 @@ test_that("power partially nested", {
                               var_ratio = 0.03,
                               icc_slope = 0.1,
                               dropout = dropout_weibull(0.3, 2),
+                              partially_nested = TRUE,
                               cohend = -0.8)
     x <- get_power(paras)
-    expect_equal(as.numeric(x$df), 15-2)
+    expect_equal(as.numeric(x$df), 10-1)
+
+    expect_error(x, NA)
+    expect_output(print(x), "n1 = 11")
+
 
 })
 
@@ -597,9 +642,98 @@ test_that("varb", {
                           icc_slope = 0,
                           cohend = 0.8)
     test_varb(p)
-
-
 })
 
 
+
+# Random n2 ---------------------------------------------------------------
+test_that("power random n2", {
+
+    # three-level
+    p <- study_parameters(n1 = 11,
+                          n2 = unequal_clusters(func = rpois(6,6)),
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          icc_pre_cluster = 0,
+                          var_ratio = 0.03,
+                          icc_slope = 0.1,
+                          dropout = 0,
+                          cohend = 0.8)
+
+    x <- get_power(p, R = 2, progress = FALSE)
+    expect_length(x$power, 1)
+    expect_length(x$power_list, 2)
+    expect_equal(x$power, mean(x$power_list))
+
+    expect_error(p, NA)
+    expect_output(str(print(p)),  "n1.*: num 11")
+
+    # two-level
+    p <- study_parameters(n1 = 11,
+                          n2 = unequal_clusters(func = rpois(6,6)),
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          icc_pre_cluster = 0,
+                          var_ratio = 0.03,
+                          icc_slope = 0,
+                          dropout = 0,
+                          cohend = 0.8)
+
+    x <- get_power(p, R = 2, progress = FALSE)
+    expect_length(x$power, 1)
+    expect_length(x$power_list, 2)
+    expect_equal(x$power, mean(x$power_list))
+
+    expect_error(p, NA)
+    expect_output(str(print(p)),  "n1.*: num 11")
+
+})
+
+# random multiple designs
+test_that("power random n2 multi", {
+
+    # three-level
+    p <- study_parameters(n1 = 11,
+                          n2 = c(unequal_clusters(func = rpois(4,4)),
+                                 unequal_clusters(func = rpois(6,6))),
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          icc_pre_cluster = 0,
+                          var_ratio = 0.03,
+                          icc_slope = 0.1,
+                          dropout = 0,
+                          cohend = 0.8)
+
+    x <- get_power(p, R = 3, progress = FALSE)
+    expect_length(x$power, 2)
+    expect_length(x$power_list, 2)
+    expect_length(x$power_list[[1]], 3)
+    expect_equal(x$power[1], mean(x$power_list[[1]]))
+    expect_equal(x$power[2], mean(x$power_list[[2]]))
+    expect_error(p, NA)
+    expect_output(str(print(p)),  "n1.*: num 11")
+
+    # two-level
+    p <- study_parameters(n1 = 11,
+                          n2 = c(unequal_clusters(func = rpois(4,4)),
+                                 unequal_clusters(func = rpois(6,6))),
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          icc_pre_cluster = 0,
+                          var_ratio = 0.03,
+                          icc_slope = 0,
+                          dropout = 0,
+                          cohend = 0.8)
+
+    x <- get_power(p, R = 3, progress = FALSE)
+    expect_length(x$power, 2)
+    expect_length(x$power_list, 2)
+    expect_length(x$power_list[[1]], 3)
+    expect_equal(x$power[1], mean(x$power_list[[1]]))
+    expect_equal(x$power[2], mean(x$power_list[[2]]))
+
+    expect_error(p, NA)
+    expect_output(str(print(p)),  "n1.*: num 11")
+
+})
 

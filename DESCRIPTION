@@ -24,6 +24,7 @@ RoxygenNote: 6.0.1
 Depends: R (>= 3.2.0)
 Imports: stats, 
     methods,
+    parallel,
     lme4 (>= 1.1),
     Matrix,
     MASS,
