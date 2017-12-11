@@ -57,7 +57,6 @@ test_that("setup print", {
 
 
 # three-level -------------------------------------------------------------
-# two level ---------------------------------------------------------------
 test_that("setup print", {
 
     p <- study_parameters(n1 = 10,
@@ -112,3 +111,22 @@ test_that("setup print", {
     expect_output(str(print(p)), " 0,  0,  2,  4,  7, 10, 15, 19, 25, 30 \\(%, control\\)")
 })
 
+# Random n2
+test_that("setup print", {
+
+    #  partially nesting, total_n should not chabnge
+    p <- study_parameters(n1 = 10,
+                          n2 = unequal_clusters(func = rpois(6, 5)),
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          partially_nested = TRUE,
+                          cohend = 0.5)
+
+    expect_output(str(print(p)), "Study setup \\(three-level, partially nested\\)")
+    expect_output(str(print(p)), "n1 = 10")
+    expect_output(str(print(p)), "n2 = rpois\\(6, 5\\)")
+    expect_output(str(print(p)), "n3 = 6")
+})
