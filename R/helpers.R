@@ -241,6 +241,13 @@ print.elapsed_time <- function(x, ...) {
      cat("# nsim: ", attr(x, "nsim"))
 }
 
+
+# check if approx equal --------------------------------------------------------------------
+is_approx <- function(x, y) {
+    abs(x - y) < .Machine$double.eps^0.5
+}
+
+
 # save multi-simulations --------------------------------------------------------
 save_res <- function(res, i) {
      output_dir <- format(Sys.time(), "%Y%m%d_%H%M")
