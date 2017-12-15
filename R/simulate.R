@@ -31,7 +31,18 @@ simulate_data <- function(paras, n = 1) {
     UseMethod("simulate_data")
 }
 
+create_dropout_indicator <- function(paras) {
+    ind <- dropout_process(unlist(paras$dropout), paras)
+    ind <- ind$missing
 
+    ind
+}
+add_NA_values_from_indicator <- function(d, missing) {
+    d$miss <- missing
+    d$y <- ifelse(d$miss == 1, NA, d$y)
+
+    d
+}
 #' @rdname simulate_data
 #' @export
 simulate_data.plcp <- function(paras, n = NULL) {
@@ -60,21 +71,15 @@ simulate_data.plcp <- function(paras, n = NULL) {
 
     # drop outs
     if (is.list(paras$dropout) |
-        is.function(paras$dropout) | length(paras$dropout) > 1) {
-        miss_tx <- dropout_process(unlist(paras_tx$dropout), paras_tx)
-        miss_tx <- miss_tx$missing
+        is.function(paras$dropout) |
+        length(paras$dropout) > 1) {
 
-        miss_c <- dropout_process(unlist(paras$dropout), paras)
-        miss_c <- miss_c$missing
+        miss_tx <- create_dropout_indicator(paras_tx)
+        miss_c <- create_dropout_indicator(paras)
 
-        d_tx$miss <- miss_tx
-        d_tx$y <- ifelse(d_tx$miss == 1, NA, d_tx$y)
-
-        d_c$miss <- miss_c
-        d_c$y <- ifelse(d_c$miss == 1, NA, d_c$y)
+        d_tx <- add_NA_values_from_indicator(d_tx, miss_tx)
+        d_c <- add_NA_values_from_indicator(d_c, miss_c)
     }
-
-
 
     # combine
     d_tx$treatment <- 1
@@ -382,13 +387,19 @@ simulate.plcp_list <-
                 }
                 parallel::clusterEvalQ(cl, expr =
                                            suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+                clust_call <- (function(object, satterthwaite, formula, CI) {
+                    function(i) {
+                        simulate_(i, paras = object,
+                                  satterthwaite = satterthwaite,
+                                  formula = formula,
+                                  CI = CI)
+                    }
+                })(object, satterthwaite, formula, CI)
+
                 res <- parLapply(cl,
                                  X = 1:nsim,
-                                 fun = simulate_,
-                                 paras = object,
-                                 formula = formula,
-                                 satterthwaite = satterthwaite,
-                                 CI = CI)
+                                 clust_call
+                                )
             }
         } else {
             res <- lapply(1:nsim,
@@ -411,7 +422,6 @@ simulate.plcp_list <-
                 time = time["elapsed"],
                 formula = formula
             )
-        #saveRDS(out, "sim_debug.rds")
         out <- munge_results(out)
         class(out) <- append(class(out), "plcp_sim")
 
@@ -486,10 +496,16 @@ simulate.plcp_data_frame <-
     }
 simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     prepped <- prepare_paras(paras)
+
     d <- simulate_data(prepped)
     tot_n <- length(unique(d[d$time == 0,]$subject))
     fit <- analyze_data(formula, d)
-    res <- extract_results(fit, CI, satterthwaite = satterthwaite, df_bw = get_balanced_df(prepped), tot_n = tot_n)
+    res <- extract_results(fit = fit,
+                           CI = CI,
+                           satterthwaite = satterthwaite,
+                           df_bw = get_balanced_df(prepped),
+                           tot_n = tot_n)
+
     res
 }
 
@@ -557,7 +573,6 @@ check_formula_terms <- function(f) {
 # analyze -----------------------------------------------------------------
 
 analyze_data <- function(formula, d) {
-
     fit <-
         lapply(formula, function(f)
             tryCatch(
@@ -577,7 +592,6 @@ extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n
 }
 extract_random_effects <- function(fit) {
     x <- as.data.frame(lme4::VarCorr(fit))
-
     vcovs <- x[is.na(x$var2),]
     vcovs$parameter <- paste(vcovs$grp, vcovs$var1, sep = "_")
     vcovs$sdcor <- NULL
@@ -659,9 +673,10 @@ extract_results_ <- function(fit, CI, satterthwaite, df_bw, tot_n) {
     CI_parm <- c("time:treatment", "treatment:time")[parm_id]
     rnames <- gsub("treatment:time", "time:treatment", rnames)
     rownames(FE) <- NULL
-    FE <- cbind(data.frame(parameter = rnames), FE)
+    FE <- cbind(data.frame(parameter = rnames,
+                           stringsAsFactors = FALSE),
+                FE)
 
-    # Fix DF when clusters are random
     FE[FE$parameter == "time:treatment", "df_bw"] <- df_bw
 
     if (CI) {
@@ -686,13 +701,13 @@ extract_results_ <- function(fit, CI, satterthwaite, df_bw, tot_n) {
          "conv" = conv)
 }
 
-.rename_rr <- function(.x, match, new) {
+rename_rr_ <- function(.x, match, new) {
     .x[.x$parameter %in% match, "parameter"] <- new
 
     .x
 }
 rename_random_effects <- function(.x) {
-    .x <- .rename_rr(
+    .x <- rename_rr_(
         .x,
         match = c(
             "cluster_time",
@@ -704,29 +719,29 @@ rename_random_effects <- function(.x) {
         new = "cluster_slope"
     )
 
-    .x <- .rename_rr(.x,
+    .x <- rename_rr_(.x,
                      match = "Residual_NA",
                      new = "error")
 
-    .x <- .rename_rr(.x,
+    .x <- rename_rr_(.x,
                      match = c("subject_(Intercept)"),
                      new = "subject_intercept")
 
-    .x <- .rename_rr(.x,
+    .x <- rename_rr_(.x,
                      match = c("cluster_(Intercept)",
                                "cluster_treatment"),
                      new = "cluster_intercept")
 
-    .x <- .rename_rr(.x,
+    .x <- rename_rr_(.x,
                      match = c("subject.1_time", "subject_time"),
                      new = "subject_slope")
 
 
-    .x <- .rename_rr(.x,
+    .x <- rename_rr_(.x,
                      match = "subject_(Intercept)_time",
                      new = "cor_subject")
 
-    .x <- .rename_rr(.x,
+    .x <- rename_rr_(.x,
                      match = c("cluster_(Intercept)_time",
                                "cluster_(Intercept)_treatment:time",
                                "cluster_(Intercept)_time:treatment",
@@ -734,29 +749,34 @@ rename_random_effects <- function(.x) {
                      new = "cor_cluster")
 
 }
-
-munge_results <- function(res) {
-    x <- res$res
-
-    models <- names(x[[1]])
-    RE <- lapply(models, munge_results_, x, "RE")
-    FE <- lapply(models, munge_results_, x, "FE")
-
-    convergence <- lapply(models, munge_results_, x, "conv")
-    tot_n <- lapply(models, munge_results_, x, "tot_n")
-
-    RE <- lapply(RE, rename_random_effects)
-
+order_model_lists <- function(models, RE, FE, tot_n, convergence) {
     x <- list()
-
     for (i in seq_along(models)) {
         x[[i]] <- list("RE" = RE[[i]],
                        "FE" = FE[[i]],
                        "tot_n" = tot_n[[i]],
                        "convergence" = convergence[[i]])
     }
-
     names(x) <- models
+
+    x
+}
+munge_results <- function(res) {
+    x <- res$res
+
+    models <- names(x[[1]])
+    RE <- lapply(models, munge_results_, x, "RE")
+    FE <- lapply(models, munge_results_, x, "FE")
+    convergence <- lapply(models, munge_results_, x, "conv")
+    tot_n <- lapply(models, munge_results_, x, "tot_n")
+    RE <- lapply(RE, rename_random_effects)
+
+    x <- order_model_lists(models,
+                           RE = RE,
+                           FE = FE,
+                           tot_n = tot_n,
+                           convergence = convergence)
+
     res$res <- x
 
     res
@@ -792,7 +812,7 @@ print_model <- function(i, x) {
 #' @importFrom stats median
 tot_n_ <- function(x) {
 
-     x <- as.numeric(x)
+    x <- as.numeric(x)
     if(length(unique(x)) > 1) {
         x_mean <- mean(x)
         x_median <- median(x)
@@ -808,6 +828,25 @@ tot_n_ <- function(x) {
 
     x
 }
+
+print_test_NA <- function(i, x) {
+    mod_name <- names(x[i])
+    Satt_NA <- x[[i]]$Satt_NA
+    CI_NA <- x[[i]]$CI_NA
+    non_convergence <- 1 - x[[i]]$convergence
+
+    mess <- NULL
+    if(Satt_NA > 0) {
+        message("[Model: ", mod_name, "] ", round(Satt_NA, 4) * 100, "% of the Satterthwaite calculations failed")
+    }
+    if(CI_NA > 0) {
+        message("[Model: ", mod_name, "] ", round(CI_NA, 4) * 100, "% of the profile likelihood CIs failed")
+    }
+    if(non_convergence > 0) {
+        message("[Model: ", mod_name, "] ", round(non_convergence, 4) * 100, "% of the models threw convergence warnings")
+    }
+}
+
 #' Print method for \code{summary.plcp_sim}-objects
 #' @param x An object of class \code{plcp_sim_summary}
 #' @param ... Optional arguments.
@@ -831,22 +870,21 @@ print.plcp_sim_summary <- function(x, ...) {
 
     if(is.unequal_clusters(res$paras$n2)) {
         n2_lab <- "\nSubjects per cluster: "
-        n2 <- print_per_treatment(prepare_print_n2(res$paras), hanging = 23, n2 = TRUE)
+        n2 <- print_per_treatment(prepare_print_n2(res$paras),
+                                  hanging = 23,
+                                  n2 = TRUE)
     } else {
         n2_lab <- "\nSubjects per cluster (n2 x n3): "
-        n2 <- print_per_treatment(prepare_print_n2(res$paras), hanging = 33, n2 = TRUE)
+        n2 <- print_per_treatment(prepare_print_n2(res$paras),
+                                  hanging = 33,
+                                  n2 = TRUE)
     }
     lapply(seq_along(x), print_model, x)
     cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
     cat("\nTime points (n1): ", res$paras$n1)
     cat(n2_lab, n2)
-    cat("\nTotal number of subjects: ", tot_n)
-    convergence <- lapply(x, function(d)
-        d$convergence)
-    convergence <- unlist(convergence)
-    convergence <- round(convergence, 4)
-    cat("\nConvergence: ",
-        paste(convergence * 100, "%", collapse = ", "))
+    cat("\nTotal number of subjects: ", tot_n, "\n")
+    lapply(seq_along(x), print_test_NA, x = x)
 }
 
 #' Print method for \code{simulate.plcp_multi}-objects
@@ -926,7 +964,9 @@ print.plcp_sim <- function(x, ...) {
 #' @export
 summary.plcp_sim <- function(object, alpha = 0.05, ...) {
     res <- object
-    x <- lapply(res$res, summary_.plcp_sim, paras = res$paras, alpha = alpha)
+    x <- lapply(res$res, summary_.plcp_sim,
+                paras = res$paras,
+                alpha = alpha)
     x <- list(summary = x,
               nsim = res$nsim,
               paras = res$paras,
@@ -934,6 +974,94 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
               alpha = alpha)
     class(x) <- append("plcp_sim_summary", class(x))
     x
+}
+summarize_RE <- function(res, theta) {
+    d <- res$RE
+    parms <- unique(d$parameter)
+    tmp <- vector("list", length(parms))
+    for(i in seq_along(parms)) {
+        para <- parms[[i]]
+        vcov <- d[d$parameter == para, "vcov"]
+        theta_i <- theta[theta$parameter == para, "theta"]
+        res <- data.frame(
+            parameter = para,
+            M_est = mean(vcov),
+            theta = theta_i,
+            prop_zero = mean(is_approx(vcov, 0))
+        )
+        if (para %in% c("cor_subject", "cor_cluster")) {
+            res$prop_zero <- mean(is_approx(vcov, 1))
+        }
+        tmp[[i]] <- res
+    }
+    RE <- do.call(rbind, tmp)
+
+    RE
+}
+summarize_FE <- function(res, theta, alpha) {
+    d <- res$FE
+    parms <- unique(d$parameter)
+    tmp <- vector("list", length(parms))
+    for(i in seq_along(parms)) {
+        para <- parms[[i]]
+        ind <- d$parameter == para
+        se <- d[ind, "se"]
+        estimate <- d[ind, "estimate"]
+        pval <- d[ind, "pval"]
+        df <- d[ind, "df"]
+        df_bw <- d[ind, "df_bw"]
+
+        if(any(!is.na(pval))) {
+            Satt_NA <- mean(is.na(df))
+        } else Satt_NA <- NA
+
+       # para <- i
+        #theta_i <- theta[[i]]
+        pvals_bw <- get_p_val_df(t = estimate/se,
+                                 df = df_bw,
+                                 parameter = para)
+        theta_i <- theta[[i]]
+        tmp[[i]] <- data.frame(
+                    parameter = para,
+                    M_est = mean(estimate),
+                    theta = theta_i,
+                    M_se = mean(se),
+                    SD_est = sd(estimate),
+                    Power = mean(get_cover(estimate, se, alpha = alpha)),
+                    Power_bw = mean(pvals_bw < alpha),
+                    Power_satt = mean(pval < alpha, na.rm = TRUE),
+                    Satt_NA = Satt_NA
+                )
+
+
+    }
+    FE <- do.call(rbind, tmp)
+
+    FE
+}
+summarize_CI <- function(res, theta) {
+    d <- res$FE
+    parms <- unique(res$FE$parameter)
+    tmp <- vector("list", length(parms))
+    for(i in seq_along(parms)) {
+        para <- parms[[i]]
+        ind <- d$parameter == para
+        CI_lwr <- d[ind, "CI_lwr"]
+        CI_upr <- d[ind, "CI_upr"]
+        CI_wald_lwr <- d[ind, "CI_wald_lwr"]
+        CI_wald_upr <- d[ind, "CI_wald_upr"]
+
+        tmp[[i]] <- data.frame(
+                    parameter = para,
+                    CI_cover = mean(CI_lwr < theta &
+                                         CI_upr > theta, na.rm=TRUE),
+                    CI_Wald_cover = mean(CI_wald_lwr < theta &
+                                             CI_wald_upr > theta, na.rm=TRUE),
+                    CI_NA = mean(is.na(CI_lwr)))
+    }
+    CI_cov <- do.call(rbind, tmp)
+
+    CI_cov
 }
 summary_.plcp_sim  <- function(res, paras, alpha) {
     RE_params <-
@@ -958,36 +1086,12 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
             )
         )
 
+    RE <- summarize_RE(res, theta = RE_params)
 
-    RE <- lapply(unique(res$RE$parameter), function(i, .d, theta) {
-        vcov <-  .d[.d$parameter == i, "vcov"]
-
-        para <- i
-        theta <- theta[theta$parameter == i, "theta"]
-        res <- data.frame(
-            parameter = para,
-            M_est = mean(vcov),
-            theta = theta,
-            prop_zero = mean(abs(vcov - 0) < .Machine$double.eps ^
-                                 0.5)
-        )
-        if (para %in% c("cor_subject", "cor_cluster")) {
-            res$prop_zero <- mean(abs(abs(vcov) - 1) < .Machine$double.eps ^ 0.5)
-        }
-        res
-
-    }, .d = res$RE, theta = RE_params)
-
-    RE <- do.call(rbind, RE)
-
-    # df
+    # falseconv
     false_conv <-
         res$RE[res$RE$parameter == "cluster_slope", "vcov"]
-    false_conv <-
-        mean(abs(false_conv - 0 < .Machine$double.eps ^ 0.5))
-
-
-    #df <- ifelse(false_conv, get_tot_n(paras) - 2, get_n3(paras) - 2)
+    false_conv <- mean(is_approx(false_conv, 0))
 
 
     theta = list(
@@ -996,62 +1100,26 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
         "time" = paras$fixed_slope,
         "time:treatment" = get_slope_diff(paras) / paras$T_end
     )
-    FE <- lapply(unique(res$FE$parameter), function(i, .d, theta, paras, alpha) {
-        se <- .d[.d$parameter == i, "se"]
-        estimate <- .d[.d$parameter == i, "estimate"]
-        pval <- .d[.d$parameter == i, "pval"]
-        df <- .d[.d$parameter == i, "df"]
-        df_bw <- .d[.d$parameter == i, "df_bw"]
+    FE <- summarize_FE(res = res,
+                       theta = theta,
+                       alpha = alpha)
 
-        if(any(!is.na(pval))) {
-               Satt_NA <- mean(is.na(df))
-               # x <- .d[.d$parameter == i, ]
-               # x <- fix_sath_NA_pval(x, paras)
-               # pval <- x$pval
-        } else Satt_NA <- NA
-
-        para <- i
-        theta <- theta[[i]]
-        data.frame(
-            parameter = i,
-            M_est = mean(estimate),
-            M_se = mean(se),
-            SD_est = sd(estimate),
-            Power = mean(get_cover(estimate, se, alpha = alpha)),
-            Power_bw = mean(get_p_val_df(t = estimate/se, df = df_bw, parameter = i) < alpha),
-            Power_satt = mean(pval < alpha, na.rm = TRUE),
-            Satt_NA = Satt_NA
-        )
-    }, .d = res$FE, theta = theta, paras = paras, alpha = alpha)
-
-    FE <- do.call(rbind, FE)
-
-    if ("CI_lwr" %in% colnames(res$FE)) {
-        diff <- get_slope_diff(paras) / paras$T_end
-
-        CI_cov <- lapply(unique(res$FE$parameter), function(i, .d, diff) {
-            CI_lwr <- .d[.d$parameter == i, "CI_lwr"]
-            CI_upr <- .d[.d$parameter == i, "CI_upr"]
-            CI_wald_lwr <- .d[.d$parameter == i, "CI_wald_lwr"]
-            CI_wald_upr <- .d[.d$parameter == i, "CI_wald_upr"]
-
-            para <- i
-            data.frame(
-                parameter = i,
-                CI_cover =  mean(CI_lwr < diff &
-                                     CI_upr > diff, na.rm=TRUE),
-                CI_Wald_cover = mean(CI_wald_lwr < diff &
-                                         CI_wald_upr > diff, na.rm=TRUE))
-
-        }, .d = res$FE, diff = diff)
-
-        CI_cov <- do.call(rbind, CI_cov)
-
-        FE$CI_Cover <- CI_cov$CI_cover
-        FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
+    if(all(is.na(res$FE$pval))) {
+        Satt_NA <- 0
+    } else {
+        Satt_NA <- FE[FE$parameter == "time:treatment", "Satt_NA"]
     }
 
+    FE <- subset(FE, select = -Satt_NA)
 
+
+    CI_NA <- 0
+    if ("CI_lwr" %in% colnames(res$FE)) {
+        CI_cov <- summarize_CI(res, theta[["time:treatment"]])
+        FE$CI_Cover <- CI_cov$CI_cover
+        CI_NA <- CI_cov[CI_cov$parameter == "time:treatment", "CI_NA"]
+        FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
+    }
     FE_eff <- c("(Intercept)",
                 "treatment",
                 "time",
@@ -1067,7 +1135,9 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     list("RE" = RE,
          "FE" = FE,
          "tot_n" = res$tot_n,
-         "convergence" = convergence)
+         "convergence" = convergence,
+         "Satt_NA" = Satt_NA,
+         "CI_NA" = CI_NA)
 }
 
 
@@ -1246,10 +1316,8 @@ summary_random.plcp_multi_sim <- function(res, para, model) {
         M_est = est,
         theta = theta ^ 2,
         est_rel_bias = (est - theta ^ 2) / theta ^ 2,
-        prop_zero = mean(abs(out$vcov - 0 < .Machine$double.eps ^
-                                 0.5))
+        prop_zero = mean(is_approx(out$vcov, 0))
     )
-
 
     #out <- cbind(get_rel_bias(res$para), out)
     #out <- dplyr::select(out, -approx_rel_bias)
