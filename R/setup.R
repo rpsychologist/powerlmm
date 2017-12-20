@@ -516,7 +516,11 @@ print_per_treatment_ <- function(i, x, n2 = FALSE) {
     name <- names(x)[i]
     x <- x[[i]]
     if(n2 & length(unique(x)) == 1) {
-        x <- paste(unique(x),"x", length(x))
+        if(attr(x, "func")) {
+            x <- paste(unique(x))
+        } else {
+            x <- paste(unique(x),"x", length(x))
+        }
     }
     paste(paste(unlist(x), collapse = ", "), sep ="")
 }
@@ -525,8 +529,11 @@ deparse_n2 <- function(n2) {
     n2_attr <- attr(n2, "func")
     if(!is.null(n2_attr) && (n2_attr != "manual")) {
         n2 <- deparse(n2_attr)
-    }
+        attr(n2, "func") <- TRUE
+    } else attr(n2, "func") <- FALSE
+
     n2
+
 }
 prepare_print_n2 <- function(x) {
     n2 <- get_n2(x)
