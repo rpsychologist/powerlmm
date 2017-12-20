@@ -316,6 +316,25 @@ test_that("Simulation runs, unequal_clusters", {
                     progress = FALSE)
 
     expect_is(res$res$correct$FE[1,2], "numeric")
+})
+
+# Test simulations run without error with CI
+test_that("Simulation runs, unequal_clusters", {
+    p <- study_parameters(n1 = 3,
+                          n2 = 10,
+                          n3 = 2,
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          cohend = 0.5)
+    f <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+    res <- simulate(p, nsim = 2, formula = f, satterthwaite = FALSE, CI = TRUE,
+                    progress = FALSE)
+
+    expect_is(res$res$correct$FE[4, "CI_lwr"], "numeric")
+    expect_error(summary(res), NA)
 
 })
 test_that("Simulation runs, dropout", {
