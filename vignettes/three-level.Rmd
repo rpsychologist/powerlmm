@@ -354,11 +354,11 @@ p2 <- study_parameters(n1 = 11,
 plot(p2, type = "dropout")
 ```
 
-# The design effect and type I error rates if clustering is ignored
+# The design effect and Type I errors if clustering is ignored
 You might be interested in calculation the *design effect*. The `get_DEFT`-function will 
 calculate the design effect for the standard error of the `time:treatment`-interaction. DEFT tells you
 how many times larger the standard errors from the misspecified model should be. It will
-also report the approximate type I error if the random slope at the third level is omitted. Here's an example 
+also report the approximate Type I error if the random slope at the third level is omitted. Here's an example 
 that investigates the impact of increasing cluster sizes on the DEFT.
 ```{r, message = FALSE}
 p2 <- study_parameters(n1 = 11,
@@ -375,4 +375,4 @@ p2 <- study_parameters(n1 = 11,
 get_DEFT(p2)
 ```
 
-We can see that the design effect increases with more subjects per cluster. Even when only 5 % of the slope variance is at the cluster level, type I errors can be considerably inflated if the random slope at the third-level is ignored. 
+We can see that the design effect increases with more subjects per cluster. Even when only 5 % of the slope variance is at the cluster level, Type I errors can be considerably inflated if the random slope at the third-level is ignored. 

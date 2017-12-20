@@ -17,7 +17,7 @@ library(powerlmm)
 # Introduction
 This vignette shows how to use the *powerlmm*-package to design a two-level longitudinal study. The package does not only contain tools to calculate power for these models, but also tools to help you understand 
 the implications of the model's parameters. The real world performance of the study design can also be evaluated using Monte Carlo simulations (see the simulation vignette). The package also includes functions to help you understand the consequences of
-ignoring clustering effects at the third level (see the three-level vignette). The design effect can be calculated, as well as the inflation of type 1 errors when a random slope at the third level is ignored.
+ignoring clustering effects at the third level (see the three-level vignette). The design effect can be calculated, as well as the inflation of Type I errors when a random slope at the third level is ignored.
 
 # Supported models
 Currently power can be calculated for the following designs
