@@ -285,6 +285,7 @@ simulate.plcp <- function(object,
 
     if(is.null(formula)) formula <- create_lmer_formula(object)
     formula <- check_formula(formula)
+    if(satterthwaite) check_installed("lmerTest")
 
     if (is.null(nrow(object))) {
         simulate.plcp_list(
@@ -613,7 +614,6 @@ add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
 
     ## satterthwaite
     if(satterthwaite) {
-        check_installed("lmerTest")
         ff <- rownames(tmp)
         ind <- which(ff %in%  c("treatment:time", "time:treatment"))
 
