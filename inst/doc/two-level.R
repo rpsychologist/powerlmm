@@ -48,7 +48,7 @@ p2 <- study_parameters(n1 = 11,
                       dropout = d,
                       cohend = -0.5)
 
-plot(p2, plot = 2)
+plot(p2, type = "dropout")
 
 ## ------------------------------------------------------------------------
 p1 <- study_parameters(n1 = 11,

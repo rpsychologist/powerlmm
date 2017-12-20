@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2017-11-01" />
+<meta name="date" content="2017-12-20" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2017-11-01</em></h4>
+<h4 class="date"><em>2017-12-20</em></h4>
 
 
 
@@ -109,12 +109,13 @@ p</code></pre></div>
 <p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. However, parallelization relies on <code>parallel::mclapply</code> which does not support Windows. If you’re using Windows use <code>cores = 1</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
 
+cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="co"># use all cores</span>
+
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
                 <span class="dt">nsim =</span> <span class="dv">5000</span>,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
-                <span class="dt">progress =</span> <span class="ot">TRUE</span>,
-                <span class="dt">cores =</span> <span class="dv">1</span>,
+                <span class="dt">cores =</span> cores,
                 <span class="dt">save =</span> <span class="ot">FALSE</span>)
 
 <span class="kw">summary</span>(res)</code></pre></div>
@@ -135,8 +136,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
                 <span class="dt">nsim =</span> <span class="dv">5000</span>,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
-                <span class="dt">progress =</span> <span class="ot">TRUE</span>,
-                <span class="dt">cores =</span> <span class="dv">1</span>,
+                <span class="dt">cores =</span> cores,
                 <span class="dt">save =</span> <span class="ot">FALSE</span>)
 
 <span class="kw">summary</span>(res)</code></pre></div>
@@ -168,8 +168,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
                 <span class="dt">nsim =</span> <span class="dv">5000</span>,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
-                <span class="dt">progress =</span> <span class="ot">TRUE</span>,
-                <span class="dt">cores =</span> <span class="dv">1</span>,
+                <span class="dt">cores =</span> cores,
                 <span class="dt">save =</span> <span class="ot">FALSE</span>)</code></pre></div>
 <p>The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups <code>nsim</code> number of simulations will be performed. With multiple designs <code>summary</code> works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Summarize 'time:treatment' results </span>

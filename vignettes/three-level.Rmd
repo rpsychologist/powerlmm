@@ -321,7 +321,7 @@ p <- study_parameters(n1 = 11,
 p
 ```
 
-Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and the missing data pattern using the t`plot`-method.
+Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and the missing data pattern using the `plot`-method.
 
 ```{r, fig.width=8}
 plot(p)
@@ -351,7 +351,7 @@ p2 <- study_parameters(n1 = 11,
                       fixed_slope = -0.5/10,
                       cohend = -0.5)
 
-plot(p2, plot = 2)
+plot(p2, type = "dropout")
 ```
 
 # The design effect and type I error rates if clustering is ignored
