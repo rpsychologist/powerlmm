@@ -341,23 +341,25 @@ get_correlation_matrix.plcp <- function(object) {
 
 plot.plcp_ICC2 <- function(x, ...) {
     check_installed("ggplot2")
-    res <- get_correlation_matrix(p)
-    res <- as.data.frame(res)
+    res <- as.data.frame(x)
 
-    res <- reshape(res, varying = 1:ncol(res),
+    breaks <- 1:ncol(res)
+    res <- reshape(res, varying = breaks,
                    v.names = "cor",
                    idvar = "time1",
                    timevar = "time2",
                    direction = "long")
-    res$time1 <- res$time1 - 1
-    res$time2 <- res$time2 - 1
+    res$time1 <- res$time1
+    res$time2 <- res$time2
     res$cor2 <- round(res$cor, 2)
+
+    break_labs <- as.numeric(dimnames(x)[[1]])
 
     p <- ggplot2::ggplot(res, ggplot2::aes_string("time1", "time2", color = "cor", fill = "cor")) +
         ggplot2::geom_tile() +
         ggplot2::geom_text(ggplot2::aes_string(label = "cor2"), hjust = "center", color = "black") +
-        ggplot2::scale_x_continuous(breaks = get_time_vector(p)) +
-        ggplot2::scale_y_continuous(breaks = get_time_vector(p)) +
+        ggplot2::scale_x_continuous(breaks = breaks, labels = break_labs) +
+        ggplot2::scale_y_continuous(breaks = breaks, labels = break_labs) +
         ggplot2::labs(color = "Correlation", fill = "Correlation",
              x = "Time", y = "Time",
              title = "Subject-level correlation matrix") +
