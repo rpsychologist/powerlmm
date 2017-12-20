@@ -35,19 +35,18 @@ groups, or physician), and missing data. The main features of the package are:
 * Explore bias, Type 1 errors and model misspecification using convenient simulation methods.
 
 ## Installation
-`powerlmm` can be installed from CRAN and GitHub.
+`powerlmm` can be installed from CRAN and GitHub. Currently, the GitHub version is the beta of version 0.2.0.
 ```{r, eval = FALSE}
-# CRAN
+# CRAN, version 0.1.0
 install.packages("powerlmm")
 
-# GitHub
+# GitHub, version 0.2.0 beta
 devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
 ```
 
-
 ## Example usage
 This is an example of setting up a three-level longitudinal model with random slopes at both the subject- 
-and cluster-level, with different missing data pattern per treatment arm. Here relative standardized inputs are used,
+and cluster-level, with different missing data patterns per treatment arm. Relative standardized inputs are used,
 but unstandardized raw parameters values can also be used. 
 
 ```{r three-level-setup, fig.width=9}
@@ -79,7 +78,10 @@ get_power(p, df = "satterthwaite")
 Several convenience functions are also included, e.g. for creating power curves.
 
 ```{r three-level-power-curve, eval = FALSE}
-x <- get_power_table(p, n2 = 5:10, n3 = c(4, 8, 12), cohend = c(0.5, 0.8))
+x <- get_power_table(p, 
+                     n2 = 5:10, 
+                     n3 = c(4, 8, 12), 
+                     cohend = c(0.5, 0.8))
 ```
 
 ```{r, eval = FALSE}

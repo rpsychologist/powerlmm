@@ -23,20 +23,20 @@ The purpose of `powerlmm` is to help design longitudinal treatment studies, with
 Installation
 ------------
 
-`powerlmm` can be installed from CRAN and GitHub.
+`powerlmm` can be installed from CRAN and GitHub. Currently, the GitHub version is the beta of version 0.2.0.
 
 ``` r
-# CRAN
+# CRAN, version 0.1.0
 install.packages("powerlmm")
 
-# GitHub
+# GitHub, version 0.2.0 beta
 devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
 ```
 
 Example usage
 -------------
 
-This is an example of setting up a three-level longitudinal model with random slopes at both the subject- and cluster-level, with different missing data pattern per treatment arm. Here relative standardized inputs are used, but unstandardized raw parameters values can also be used.
+This is an example of setting up a three-level longitudinal model with random slopes at both the subject- and cluster-level, with different missing data patterns per treatment arm. Relative standardized inputs are used, but unstandardized raw parameters values can also be used.
 
 ``` r
 library(powerlmm)
@@ -57,14 +57,14 @@ p
 #>      Study setup (three-level) 
 #> 
 #>               n1 = 11
-#>               n2 = 10  (treatment)
-#>                    10  (control)
-#>               n3 = 5   (treatment)
-#>                    5   (control)
-#>                    10  (total)
-#>          total_n = 50  (treatment)
-#>                    50  (control)
-#>                    100 (total)
+#>               n2 = 10 x 5 (treatment)
+#>                    10 x 5 (control)
+#>               n3 = 5      (treatment)
+#>                    5      (control)
+#>                    10     (total)
+#>          total_n = 50     (treatment)
+#>                    50     (control)
+#>                    100    (total)
 #>          dropout =  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10 (time)
 #>                     0,  0,  1,  3,  6,  9, 12, 16, 20, 25, 30 (%, control)
 #>                     0,  0,  1,  2,  4,  5,  8, 10, 13, 17, 20 (%, treatment)
@@ -88,14 +88,14 @@ get_power(p, df = "satterthwaite")
 #>                   with missing data and unbalanced designs 
 #> 
 #>               n1 = 11
-#>               n2 = 10  (treatment)
-#>                    10  (control)
-#>               n3 = 5   (treatment)
-#>                    5   (control)
-#>                    10  (total)
-#>          total_n = 50  (treatment)
-#>                    50  (control)
-#>                    100 (total)
+#>               n2 = 10 x 5 (treatment)
+#>                    10 x 5 (control)
+#>               n3 = 5      (treatment)
+#>                    5      (control)
+#>                    10     (total)
+#>          total_n = 50     (control)
+#>                    50     (treatment)
+#>                    100    (total)
 #>          dropout =  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10 (time)
 #>                     0,  0,  1,  3,  6,  9, 12, 16, 20, 25, 30 (%, control)
 #>                     0,  0,  1,  2,  4,  5,  8, 10, 13, 17, 20 (%, treatment)
@@ -104,7 +104,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>           cohend = -0.8
-#>               df = 8.803349
+#>               df = 8.81873
 #>            alpha = 0.05
 #>            power = 69 %
 ```
@@ -112,7 +112,10 @@ get_power(p, df = "satterthwaite")
 Several convenience functions are also included, e.g. for creating power curves.
 
 ``` r
-x <- get_power_table(p, n2 = 5:10, n3 = c(4, 8, 12), cohend = c(0.5, 0.8))
+x <- get_power_table(p, 
+                     n2 = 5:10, 
+                     n3 = c(4, 8, 12), 
+                     cohend = c(0.5, 0.8))
 ```
 
 ``` r
