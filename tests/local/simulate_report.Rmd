@@ -1,0 +1,86 @@
+---
+title: "Results from simulations"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(purrr)
+compare_power <- function(x, title, R = 1, cores = 1) {
+    p <- x$p
+    pow <- get_power(p, df = "satterth", R = cores, cores = cores)
+    
+    res <- summary(x)
+    
+    res <- res$summary$correct$FE[4, c("Power", "Power_bw", "Power_satt")]
+    
+    df <- data.frame("title" = title,
+                     "get_power_Satt" = pow$power,
+                       "sim_Satt"= res$Power_satt,
+                       "diff %" = (pow$power - res$Power_satt)*100,
+                       "sim_Wald" = res$Power,
+                       "sim_BW" = res$Power_bw, 
+                       check.names = FALSE,
+                     stringsAsFactors = FALSE)
+    
+    df
+
+}
+```
+
+
+```{r}
+library(powerlmm)
+res <- readRDS("simres.rds")
+```
+
+
+# Power results
+```{r}
+
+
+cmp <- pmap_dfr(list(x = res, 
+              title = c("1. 4 clusters",
+                        "2. 4 clusters, PN",
+                        "3. 12 clusters",
+                        "4. 12 unequal clusters",
+                        "5. Random clusters"),
+              R = c(1, 1, 1, 50, 100), 
+              cores = c(1, 1, 1, 30, 30)),
+            compare_power)
+kable(cmp, digits = 3)
+```
+
+
+
+## 1. 4 clusters
+```{r}
+res[[1]]$p
+summary(res[[1]])
+```
+
+## 2. 4 clusters, partially nested
+```{r}
+res[[2]]$p
+summary(res[[2]])
+```
+
+## 3. 12 clusters
+```{r}
+res[[3]]$p
+summary(res[[3]])
+```
+
+## 4. Unequal clusters
+```{r}
+res[[4]]$p
+summary(res[[4]])
+```
+
+## 5. Random clusters
+```{r}
+res[[5]]$p
+summary(res[[5]])
+```

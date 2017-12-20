@@ -1,12 +1,15 @@
 library(dplyr)
-message("Running simulations...")
-source("run_simulations.R")
+message("Redo simulations?")
+if(menu(c("Yes", "No")) == 1) {
+    message("Running simulations...")
+    source("run_simulations.R")
+}
 res <- readRDS("simres.rds")
 message("Running tests...")
 test_local_sim <- function(res, R = 1, cores = 1) {
     x <- summary(res)
     p <- res$p
-    pow <- get_power(p, df = "satterth", R = cores, cores = cores)
+    pow <- get_power(p, df = "satterth", R = R, cores = cores)
 
     RB_RE <- x$summary$correct$RE %>%
         mutate(RB = (M_est - theta)/theta) %>%
@@ -50,3 +53,6 @@ test_that("res4 unequal_clusters", {
 test_that("res5 random_clusters", {
     test_local_sim(res[[5]], R = 100, cores = 30)
 })
+
+message("Generating simulation report...")
+rmarkdown::render("simulate_report.Rmd")

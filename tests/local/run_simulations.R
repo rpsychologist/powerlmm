@@ -89,4 +89,3 @@ cat("Sim 5\n")
 res5 <- simulate(p, nsim = nsim, satterthwaite = TRUE, cores = cores, cl = cl)
 parallel::stopCluster(cl)
 saveRDS(list(res1, res2, res3, res4, res5), file = "simres.rds")
-
