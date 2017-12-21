@@ -14,43 +14,38 @@ test_that("ignore n3", {
 })
 
 ## Test errors
-# ICC_pre errors
-test_that("ICC pre total sum", {
-    msg <- "'icc_pre_subject' and 'icc_pre_cluster' shouldn't sum to >= 1"
-    expect_error(study_parameters(n1 = 10,
-                          n2 = 10,
-                          n3 = 5,
-                          icc_pre_subject = 0.5,
-                          icc_pre_cluster = 0.5,
-                          icc_slope = 0.05,
-                          var_ratio = 0.03,
-                          cohend = 0.5), msg)
 
-    expect_error(study_parameters(n1 = 10,
-                                  n2 = 10,
-                                  n3 = 5,
-                                  icc_pre_subject = 0.6,
-                                  icc_pre_cluster = 0.4,
-                                  icc_slope = 0.05,
-                                  var_ratio = 0.03,
-                                  cohend = 0.5), msg)
 
-    expect_error(study_parameters(n1 = 10,
-                                  n2 = 10,
-                                  n3 = 5,
-                                  icc_pre_subject = 0.7,
-                                  icc_pre_cluster = 0.5,
-                                  icc_slope = 0.05,
-                                  var_ratio = 0.03,
-                                  cohend = 0.5), msg)
-    expect_error(study_parameters(n1 = 10,
-                                  n2 = 10,
-                                  n3 = 5,
+test_that("combine icc_pre_subject and sigma_cluster_intercept", {
+    expect_error(study_parameters(n1 = 4,
+                     n2 = 3,
+                     n3 = 4,
+                     sigma_cluster_intercept = 0.5,
+                     icc_pre_subject = 0.5,
+                     var_ratio = 0.05,
+                     icc_slope = 0.1,
+                     sigma_error = 0.5), "'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined")
+
+    expect_error(study_parameters(n1 = 4,
+                                  n2 = 3,
+                                  n3 = 4,
+                                  sigma_cluster_intercept = 0.6,
                                   icc_pre_subject = 0.5,
-                                  icc_pre_cluster = c(0.3, 0.5),
-                                  icc_slope = 0.05,
-                                  var_ratio = 0.03,
-                                  cohend = 0.5), msg)
+                                  var_ratio = 0.05,
+                                  icc_slope = 0.1,
+                                  sigma_error = 0.5), "'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined")
+
+
+    expect_error(study_parameters(n1 = 4,
+                                  n2 = 3,
+                                  n3 = 4,
+                                  sigma_cluster_intercept = c(0.4, 0.5),
+                                  icc_pre_subject = c(0.5),
+                                  var_ratio = 0.05,
+                                  icc_slope = 0.1,
+                                  sigma_error = 0.5), "'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined")
+
+
 })
 
 # duplicate intercepts
@@ -82,18 +77,7 @@ test_that("subject intercept duplicate", {
                                   cohend = 0.5), msg)
 
 })
-test_that("not enough information", {
-    msg <- "Either 'sigma_error', 'sigma_subject_slope', or 'sigma_cluster_slope' need to be specified"
-    expect_error(study_parameters(n1 = 10,
-                                  n2 = 10,
-                                  n3 = 5,
-                                  icc_pre_subject = 0.5,
-                                  sigma_cluster_intercept = 1.44,
-                                  icc_slope = 0.05,
-                                  var_ratio = 0.03,
-                                  cohend = 0.5), msg)
 
-})
 test_that("not enough information", {
     msg <- "'sigma_error' or 'var_ratio' should be specified and > 0"
     expect_error(study_parameters(n1 = 10,
@@ -166,39 +150,39 @@ test_that("setup 3 lvl", {
     # icc_slope NULL
     p <- study_parameters(n1 = 10,
                           n2 = 10,
-                          icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_subject = 0.122,
+                          icc_pre_cluster = 0.1,
                           var_ratio =0.05)
 
     expect_equal(get_var_ratio(p), 0.05)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(get_ICC_slope(p), 0)
 
     # same but icc_slope = 0
     p <- study_parameters(n1 = 10,
                         n2 = 10,
                         icc_pre_subject  = 0.122,
-                        icc_pre_cluster = 0.2,
+                        icc_pre_cluster = 0.1,
                         icc_slope = 0,
                         var_ratio =0.05)
 
     expect_equal(get_var_ratio(p), 0.05)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(get_ICC_slope(p), 0)
 
     # Same but with sigma_error & ICC_slope NULL
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_cluster = 0.1,
                           var_ratio =0.05,
                           sigma_error = 1.33)
 
     expect_equal(get_var_ratio(p), 0.05)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(get_ICC_slope(p), 0)
     expect_equal(p$sigma_error, 1.33)
 
@@ -206,14 +190,14 @@ test_that("setup 3 lvl", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_cluster = 0.1,
                           icc_slope = 0,
                           var_ratio =0.05,
                           sigma_error = 1.33)
 
     expect_equal(get_var_ratio(p), 0.05)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(get_ICC_slope(p), 0)
     expect_equal(p$sigma_error, 1.33)
 })
@@ -225,11 +209,11 @@ test_that("setup 3 lvl", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject = 0.122,
-                          icc_pre_cluster = 0.2)
+                          icc_pre_cluster = 0.1)
 
     expect_equal(get_var_ratio(p), 0)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(p$sigma_cluster_slope, 0)
     expect_equal(p$sigma_subject_slope, 0)
 
@@ -238,12 +222,12 @@ test_that("setup 3 lvl", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_cluster = 0.1,
                           var_ratio = 0)
 
     expect_equal(get_var_ratio(p), 0)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(p$sigma_cluster_slope, 0)
     expect_equal(p$sigma_subject_slope, 0)
 
@@ -251,13 +235,13 @@ test_that("setup 3 lvl", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_cluster = 0.1,
                           icc_slope = 0,
                           var_ratio =0)
 
     expect_equal(get_var_ratio(p), 0)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(p$sigma_cluster_slope, 0)
     expect_equal(p$sigma_subject_slope, 0)
 
@@ -265,13 +249,13 @@ test_that("setup 3 lvl", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_cluster = 0.1,
                           var_ratio =0.05,
                           sigma_error = 1.33)
 
     expect_equal(get_var_ratio(p), 0.05)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(get_ICC_slope(p), 0)
     expect_equal(p$sigma_error, 1.33)
 
@@ -279,14 +263,14 @@ test_that("setup 3 lvl", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           icc_pre_subject  = 0.122,
-                          icc_pre_cluster = 0.2,
+                          icc_pre_cluster = 0.1,
                           icc_slope = 0,
                           var_ratio =0.05,
                           sigma_error = 1.33)
 
     expect_equal(get_var_ratio(p), 0.05)
     expect_equal(get_ICC_pre_subjects(p), 0.122)
-    expect_equal(get_ICC_pre_clusters(p), 0.2)
+    expect_equal(get_ICC_pre_clusters(p), 0.1)
     expect_equal(get_ICC_slope(p), 0)
     expect_equal(p$sigma_error, 1.33)
 

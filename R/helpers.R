@@ -119,7 +119,7 @@ get_ICC_pre_subjects <- function(object, ...) {
 }
 #' @export
 get_ICC_pre_subjects.default <- function(object = NULL, u0, v0, error, ...) {
-    u0^2/(u0^2 + v0^2 + error^2)
+    (u0^2 + v0^2)/(u0^2 + v0^2 + error^2)
 }
 #' @export
 get_ICC_pre_subjects.plcp <- function(object, ...) {

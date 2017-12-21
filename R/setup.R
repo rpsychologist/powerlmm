@@ -168,7 +168,10 @@
 #'
 #' get_power(p)
 #' @export
-study_parameters <- function(n1, n2, n3=1, T_end=NULL,
+study_parameters <- function(n1,
+                             n2,
+                             n3 = 1,
+                             T_end = NULL,
                              fixed_intercept = 0L,
                              fixed_slope = 0L,
                              sigma_subject_intercept = NULL,
@@ -191,15 +194,15 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
 
     # drop out checks
-    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'")
+    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
     if(is.per_treatment(dropout)) {
         tx <- dropout[[1]]$treatment
         cc <- dropout[[1]]$control
-        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'")
-        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'")
+        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
     }
 
-    # warn n3 is ignores
+    # warn n3 is ignored
     if(is.unequal_clusters(n2) & !is.per_treatment(n2) & is.per_treatment(n3)) {
         message("'n3' per_treatment argument is ignored. 'n3' is automatically based on length of unequal_clusters")
     }
@@ -207,43 +210,48 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
     # Check if enough parameters are provided
     if(!is.null(icc_slope) & (!is.null(sigma_subject_slope) &
                               !is.null(sigma_cluster_slope))) {
-        stop("Can't use 'icc_slope' with both 'sigma_subject_slope' and 'sigma_cluster_slope'")
+        stop("Can't use 'icc_slope' with both 'sigma_subject_slope' and 'sigma_cluster_slope'", call. = FALSE)
 
     }
     if(!is.null(sigma_subject_slope) & !is.null(icc_pre_subject) & !is.null(var_ratio)) {
-        if(any(var_ratio == 0)) stop("'var_ratio' can't be zero")
+        if(any(var_ratio == 0)) stop("'var_ratio' can't be zero", call. = FALSE)
     }
     if(!is.null(sigma_subject_slope) &
        !is.null(var_ratio) &
        !is.null(sigma_error)) {
-        stop("'sigma_subject_slope' or 'var_ratio' or 'sigma_error' should be NULL")
+        stop("'sigma_subject_slope' or 'var_ratio' or 'sigma_error' should be NULL", call. = FALSE)
 
     }
 
     if(!is.null(sigma_subject_intercept) & !is.null(icc_pre_subject)) {
-        stop("Can't use both 'icc_pre_subject' and 'sigma_subject_intercept'")
+        stop("Can't use both 'icc_pre_subject' and 'sigma_subject_intercept'", call. = FALSE)
     }
 
     if(!is.null(sigma_cluster_intercept) & !is.null(icc_pre_cluster)) {
-        stop("Can't use both 'icc_pre_cluster' and 'sigma_cluster_intercept'")
+        stop("Can't use both 'icc_pre_cluster' and 'sigma_cluster_intercept'", call. = FALSE)
     }
 
     if(is.null(sigma_subject_intercept) & is.null(icc_pre_subject)) {
-         stop("Both 'sigma_subject_intercept' and 'icc_pre_subject' can't be NULL")
+         stop("Both 'sigma_subject_intercept' and 'icc_pre_subject' can't be NULL", call. = FALSE)
     }
     if(is.null(sigma_subject_slope) & (is.null(var_ratio) || var_ratio == 0) &
        is.null(sigma_cluster_slope) & is.null(icc_slope) &
        is.null(icc_pre_subject) & is.null(icc_pre_cluster)) {
-        stop("Both 'sigma_subject_slope' and 'var_ratio' can't be NULL")
+        stop("Both 'sigma_subject_slope' and 'var_ratio' can't be NULL", call. = FALSE)
     }
     if(!(is.null(icc_slope) || icc_slope == 0) & (is.null(var_ratio) || var_ratio == 0) &
        (is.null(sigma_cluster_slope) & is.null(sigma_subject_slope))) {
-        stop("Argument 'icc_slope' requires that 'var_ratio' is specified and > 0.")
+        stop("Argument 'icc_slope' requires that 'var_ratio' is specified and > 0.", call. = FALSE)
     }
     if(!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
-        if(any((icc_pre_subject + icc_pre_cluster) >= 1)) {
-            stop("'icc_pre_subject' and 'icc_pre_cluster' shouldn't sum to >= 1")
+        if(any((icc_pre_cluster > icc_pre_subject))) {
+            stop("'icc_pre_cluster' can't be larger than 'icc_pre_subject'", call. = FALSE)
         }
+    }
+    if(is.null(icc_pre_cluster) &
+       !is.null(sigma_cluster_intercept) &
+       !is.null(icc_pre_subject)) {
+        stop("'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined, use 'icc_pre_cluster'", call. = FALSE)
     }
     # if(!is.null(icc_pre_subject) & !is.null(icc_pre_cluster) & !is.null(var_ratio) &
     #    is.null(icc_slope) & is.null(sigma_subject_slope) & is.null(sigma_cluster_slope) &
@@ -264,11 +272,11 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
        is.null(sigma_error) &
        is.null(sigma_subject_slope) &
        is.null(sigma_cluster_slope)) {
-        stop("Either 'sigma_error', 'sigma_subject_slope', or 'sigma_cluster_slope' need to be specified")
+        stop("Either 'sigma_error', 'sigma_subject_slope', or 'sigma_cluster_slope' need to be specified", call. = FALSE)
     }
     if(!is.null(icc_slope) & (!is.null(sigma_subject_slope) | !is.null(sigma_cluster_slope)) &
        (is.null(sigma_error) || sigma_error == 0) & (is.null(var_ratio) || var_ratio == 0)) {
-        stop("'sigma_error' or 'var_ratio' should be specified and > 0")
+        stop("'sigma_error' or 'var_ratio' should be specified and > 0", call. = FALSE)
     }
 
 
@@ -337,7 +345,6 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
 
 
     # two level
-
     if(is.null(sigma_cluster_intercept) & (is.null(icc_pre_cluster) || icc_pre_cluster == 0)) {
         tmp$sigma_cluster_intercept <- 0L
     }
@@ -380,12 +387,10 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
 
 
     # three level
-
     if(!is.null(icc_pre_subject) &
        !is.null(icc_pre_cluster) &
        is.null(sigma_error)) {
-        tmp$sigma_error <- sqrt(1-(tmp$icc_pre_subject +
-                                       tmp$icc_pre_cluster))
+        tmp$sigma_error <- sqrt(1-(tmp$icc_pre_subject))
         tmp$sigma_subject_intercept <- sqrt(tmp$icc_pre_subject)
         tmp$sigma_cluster_intercept <- sqrt(tmp$icc_pre_cluster)
 
@@ -432,8 +437,6 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
        is.null(sigma_cluster_slope) & is.null(sigma_subject_slope)) {
         tmp$sigma_subject_slope <- sqrt(with(tmp, var_ratio *
                                                  sigma_error^2))
-
-
     }
     # var ratio also null
     if((all(is.null(var_ratio)) || all(var_ratio == 0)) &
@@ -442,18 +445,17 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
         tmp$sigma_subject_slope <- 0L
     }
 
-
     if(!is.null(icc_pre_subject) & !is.null(icc_pre_cluster)) {
         tmp$sigma_subject_intercept <-
             sqrt(
                 tmp$sigma_error^2 /
-                    (1-(tmp$icc_pre_subject + tmp$icc_pre_cluster)) *
-                    tmp$icc_pre_subject
+                    (1-(tmp$icc_pre_subject)) *
+                    (tmp$icc_pre_subject - tmp$icc_pre_cluster)
             )
         tmp$sigma_cluster_intercept <-
             sqrt(
                 tmp$sigma_error^2 /
-                    (1-(tmp$icc_pre_subject + tmp$icc_pre_cluster)) *
+                    (1-(tmp$icc_pre_subject)) *
                     tmp$icc_pre_cluster
             )
     }
@@ -463,12 +465,12 @@ study_parameters <- function(n1, n2, n3=1, T_end=NULL,
                  /(1-icc_pre_cluster))
            tmp$sigma_cluster_intercept <- sqrt(v0)
     }
-    if(is.null(icc_pre_cluster) & !is.null(icc_pre_subject) &
-       !is.null(sigma_cluster_intercept)) {
-        u0 <- with(tmp, (icc_pre_subject*(sigma_error^2 + sigma_cluster_intercept^2))
-                   /(1-icc_pre_subject))
-        tmp$sigma_subject_intercept <- sqrt(u0)
-    }
+    # if(is.null(icc_pre_cluster) & !is.null(icc_pre_subject) &
+    #    !is.null(sigma_cluster_intercept)) {
+    #     u0 <- with(tmp, (icc_pre_subject * (sigma_error^2 + sigma_cluster_intercept^2))
+    #                /(1-icc_pre_subject))
+    #     tmp$sigma_subject_intercept <- sqrt(u0)
+    # }
 
     cols <- which(colnames(tmp) %in% c("icc_slope",
                                        "var_ratio",
