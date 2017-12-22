@@ -78,10 +78,10 @@ test_that("ICC_pre_subjects", {
                               cohend = -0.8)
 
     x <- get_ICC_pre_subjects(paras)
-    expect_equal(x, 1.2^2/(1.2^2 + 0.5^2 + 1.25^2))
+    expect_equal(x, (1.2^2 + 0.5^2)/(1.2^2 + 0.5^2 + 1.25^2))
 
     x <- get_ICC_pre_subjects(u0 = 1.33, v0 = 0.5, error = 1.55)
-    expect_equal(x, 1.33^2/(1.33^2 + 0.5^2 + 1.55^2))
+    expect_equal(x, (1.33^2+ 0.5^2)/(1.33^2 + 0.5^2 + 1.55^2))
 
 
     # Multi
@@ -98,7 +98,7 @@ test_that("ICC_pre_subjects", {
 
     expect_equal(nrow(paras), 3*2*2)
     x1 <- get_ICC_pre_subjects(paras)
-    x2 <- with(paras, sigma_subject_intercept^2/(sigma_subject_intercept^2 +
+    x2 <- with(paras, (sigma_subject_intercept^2 + sigma_cluster_intercept^2)/(sigma_subject_intercept^2 +
                                                      sigma_cluster_intercept^2 +
                                                      sigma_error^2))
     expect_equal(x1, x2)

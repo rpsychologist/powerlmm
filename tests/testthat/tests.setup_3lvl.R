@@ -323,14 +323,15 @@ test_that("study setup lvl 3 minimal #3", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           n3 = 5,
-                          icc_pre_subject = 0,
+                          icc_pre_subject = 0.2,
                           icc_pre_cluster = 0.2,
                           icc_slope = 0.05,
                           var_ratio = 0.03,
                           cohend = 0.5)
     expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
     expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    expect_equal(get_ICC_pre_subjects(p), 0, tolerance = 0.001)
+    expect_equal(get_ICC_pre_subjects(p), 0.2, tolerance = 0.001)
+    expect_equal(p$sigma_subject_intercept, 0)
     expect_equal(get_ICC_pre_clusters(p), 0.2, tolerance = 0.001)
     expect_equal(p$sigma_subject_intercept^2 +
                      p$sigma_cluster_intercept^2 +
@@ -343,16 +344,16 @@ test_that("study setup lvl 3 minimal raw", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
                           n3 = 5,
-                          sigma_subject_intercept = 0.7071068,
+                          sigma_subject_intercept = sqrt(0.7071068^2/2),
                           sigma_subject_slope = 0.09246621,
-                          sigma_cluster_intercept = 0.4472136,
+                          sigma_cluster_intercept = sqrt(0.7071068^2/2),
                           sigma_cluster_slope = 0.0212132,
-                          sigma_error = 0.5477226,
+                          sigma_error = 0.7071068,
                           cohend = 0.5)
-    expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
+    expect_equal(get_var_ratio(p), 0.018, tolerance = 0.001)
     expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
     expect_equal(get_ICC_pre_subjects(p), 0.5, tolerance = 0.001)
-    expect_equal(get_ICC_pre_clusters(p), 0.2, tolerance = 0.001)
+    expect_equal(get_ICC_pre_clusters(p), 0.25, tolerance = 0.001)
     expect_equal(p$sigma_subject_intercept^2 +
                      p$sigma_cluster_intercept^2 +
                      p$sigma_error^2, 1,
@@ -380,74 +381,29 @@ test_that("study setup lvl 3 icc + sigma_error", {
     expect_is(p, "plcp_3lvl")
 })
 test_that("solve subject_intercept", {
-    p <- study_parameters(n1 = 10,
-                          n2 = 10,
-                          n3 = 5,
-                          icc_pre_subject = 0.5,
-                          sigma_cluster_intercept = 1.44,
-                          sigma_subject_slope = 1.66,
-                          icc_slope = 0.05,
-                          var_ratio = 0.03,
-                          cohend = 0.5)
-    expect_equal(p$sigma_subject_slope, 1.66, tolerance = 0.001)
-    expect_equal(p$sigma_cluster_intercept, 1.44, tolerance = 0.001)
-    x <- sqrt((0.5 * (1.44^2 + (1.66^2/0.95) / 0.03))/(1 - 0.5))
-    expect_equal(p$sigma_subject_intercept, x, tolerance = 0.001)
-    expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
-    expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    expect_equal(get_ICC_pre_subjects(p), 0.5, tolerance = 0.001)
-    icc <- 1.44^2/((1.44^2 +(1.66^2/0.95) / 0.03) * 1/0.5)
-    expect_equal(get_ICC_pre_clusters(p), icc, tolerance = 0.001)
-    expect_is(p, "plcp")
-    expect_is(p, "plcp_3lvl")
+    expect_error(study_parameters(n1 = 10,
+                                  n2 = 10,
+                                  n3 = 5,
+                                  icc_pre_subject = 0.5,
+                                  sigma_cluster_intercept = 1.44,
+                                  sigma_subject_slope = 1.66,
+                                  icc_slope = 0.05,
+                                  var_ratio = 0.03,
+                                  cohend = 0.5),
+                 msg = "'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined")
+    # expect_equal(p$sigma_subject_slope, 1.66, tolerance = 0.001)
+    # expect_equal(p$sigma_cluster_intercept, 1.44, tolerance = 0.001)
+    # x <- sqrt((0.5 * (1.44^2 + (1.66^2/0.95) / 0.03))/(1 - 0.5))
+    # expect_equal(p$sigma_subject_intercept, x, tolerance = 0.001)
+    # expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
+    # expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
+    # expect_equal(get_ICC_pre_subjects(p), 0.5, tolerance = 0.001)
+    # icc <- 1.44^2/((1.44^2 +(1.66^2/0.95) / 0.03) * 1/0.5)
+    # expect_equal(get_ICC_pre_clusters(p), icc, tolerance = 0.001)
+    # expect_is(p, "plcp")
+    # expect_is(p, "plcp_3lvl")
 })
 
-# use cluster_sloper instead
-test_that("solve subject_intercept ", {
-    p <- study_parameters(n1 = 10,
-                          n2 = 10,
-                          n3 = 5,
-                          icc_pre_subject = 0.5,
-                          sigma_cluster_intercept = 1.44,
-                          sigma_cluster_slope = 1.66,
-                          icc_slope = 0.05,
-                          var_ratio = 0.03,
-                          cohend = 0.5)
-    expect_equal(p$sigma_cluster_slope, 1.66, tolerance = 0.001)
-    expect_equal(p$sigma_cluster_intercept, 1.44, tolerance = 0.001)
-    x <- sqrt((0.5 * (1.44^2 + (1.66^2/0.05) / 0.03))/(1 - 0.5))
-    expect_equal(p$sigma_subject_intercept, x, tolerance = 0.001)
-    expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
-    expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    expect_equal(get_ICC_pre_subjects(p), 0.5, tolerance = 0.001)
-    icc <- 1.44^2/((1.44^2 +(1.66^2/0.05) / 0.03) * 1/0.5)
-    expect_equal(get_ICC_pre_clusters(p), icc, tolerance = 0.001)
-    expect_is(p, "plcp")
-    expect_is(p, "plcp_3lvl")
-})
-test_that("solve subject_intercept with sigma_error", {
-
-    p <- study_parameters(n1 = 10,
-                          n2 = 10,
-                          n3 = 5,
-                          icc_pre_subject = 0.5,
-                          sigma_cluster_intercept = 1.44,
-                          icc_slope = 0.05,
-                          var_ratio = 0.03,
-                          sigma_error = 1.33,
-                          cohend = 0.5)
-    expect_equal(p$sigma_error, 1.33, tolerance = 0.001)
-    expect_equal(p$sigma_cluster_intercept, 1.44, tolerance = 0.001)
-    x <- sqrt((0.5 * (1.33^2 + 1.44^2))/(1 - 0.5))
-    expect_equal(p$sigma_subject_intercept, x, tolerance = 0.001)
-    expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
-    expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    expect_equal(get_ICC_pre_subjects(p), 0.5, tolerance = 0.001)
-    icc <- 1.44^2/((1.44^2 + 1.33^2) * 1/0.5)
-    expect_equal(get_ICC_pre_clusters(p), icc, tolerance = 0.001)
-    expect_is(p, "plcp")
-    expect_is(p, "plcp_3lvl")
-})
 test_that("solve cluster_intercept", {
 
     p <- study_parameters(n1 = 10,
@@ -465,7 +421,7 @@ test_that("solve cluster_intercept", {
     expect_equal(p$sigma_cluster_intercept, x, tolerance = 0.001)
     expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
     expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    icc <- 0.66^2/((0.66^2 + 1.33^2) * 1/0.75)
+    icc <- (0.66^2 + 0.8572242^2)/((0.66^2 + 1.33^2) * 1/0.75)
     expect_equal(get_ICC_pre_subjects(p), icc, tolerance = 0.001)
     expect_equal(get_ICC_pre_clusters(p), 0.25, tolerance = 0.001)
     expect_is(p, "plcp")
@@ -491,7 +447,7 @@ test_that("solve cluster_intercept + slope", {
     x <- 1.2^2/(1-0.05) / 1.2^2
     expect_equal(get_var_ratio(p), x, tolerance = 0.001)
     expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    icc <- 1.2^2/((1.2^2 + 1.2^2) * 1/0.95)
+    icc <- (1.2^2+0.3893314^2)/((1.2^2 + 1.2^2) * 1/0.95)
     expect_equal(get_ICC_pre_subjects(p), icc, tolerance = 0.001)
     expect_equal(get_ICC_pre_clusters(p), 0.05, tolerance = 0.001)
     expect_is(p, "plcp")
@@ -517,7 +473,7 @@ test_that("solve cluster_intercept + slope with var_ratio", {
     expect_equal(p$sigma_cluster_intercept, x, tolerance = 0.001)
     expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
     expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    icc <- 1.2^2/((1.2^2 + (1.2^2/0.95) / 0.03) * 1/0.95)
+    icc <- (1.2^2 + 1.653804^2)/((1.2^2 + (1.2^2/0.95) / 0.03) * 1/0.95)
     expect_equal(get_ICC_pre_subjects(p), icc, tolerance = 0.001)
     expect_equal(get_ICC_pre_clusters(p), 0.05, tolerance = 0.001)
     expect_is(p, "plcp")
@@ -544,7 +500,7 @@ test_that("solve cluster_intercept + slope with var_ratio", {
     expect_equal(p$sigma_cluster_intercept, x, tolerance = 0.001)
     expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
     expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
-    icc <- 1.2^2/((1.2^2 + (1.2^2/0.05) / 0.03) * 1/0.95)
+    icc <- (1.2^2 + 7.113516^2)/((1.2^2 + (1.2^2/0.05) / 0.03) * 1/0.95)
     expect_equal(get_ICC_pre_subjects(p), icc, tolerance = 0.001)
     expect_equal(get_ICC_pre_clusters(p), 0.05, tolerance = 0.001)
     expect_is(p, "plcp")
