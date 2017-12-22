@@ -184,12 +184,11 @@ with,
 
 $$ \text{V(\textbf{t})} = \Sigma_{i=1}^{n_1}(t_i - \bar{t})^2.$$
 
-By defining the amount of slope variance at the cluster-level as $\rho_s = \sigma_{v_1}^2 / (\sigma_{v_1}^2 + \sigma_{u_1}^2)$
-and the variance ratio as $r_{\tau} = ({\sigma_{v_1}^2 + \sigma_{u_1}^2}) / \sigma_{e}^2$ we can then rewrite the formula using the relative parameters $\rho_s$ and $r_{\tau}$, 
+By defining the amount of slope variance at the cluster-level as $\rho_s = \sigma_{v_1}^2 / (\sigma_{v_1}^2 + \sigma_{u_1}^2)$, and `ICC_pre_subjects` = $\rho_1 = (\sigma_{u_0}^2 + \sigma_{v_0}^2) / (\sigma_{v_0}^2 + \sigma_{u_0}^2 + \sigma_{e}^2)$, and the variance ratio as $r_{\tau} = ({\sigma_{v_1}^2 + \sigma_{u_1}^2}) / \sigma_{e}^2$ we can then rewrite the formula using the relative parameters $\rho_1$, $\rho_s$ and $r_{\tau}$, 
 
 $$
- \text{V}(\delta_1^*) = \frac{1+n_1  \text{V}(\textbf{t}) (n_2 \rho_s r_{\tau} + (1-\rho_1)r_{\tau})}{n_1 n_2 n_3  \text{V}(\textbf{t}) },
+ \text{V}(\delta_1^*) = \frac{(1-\rho_1)+n_1  \text{Var}(\textbf{t})(1-\rho_1) [n_2 \rho_s r + (1-\rho_s)r]}{n_1 n_2 n_3  \text{Var}(\textbf{t}) },
 $$
-which will yield the same non-centrality parameters as long as the interaction-coefficient corresponds to the same standardized value, e.g. Cohen's d. Thus, we see that power depends on $n1$, $n2$, $n3$, the duration of the study, the amount of slope variance at the third level and the variance ratio. 
+which will yield the same non-centrality parameters as long as the interaction-coefficient corresponds to the same standardized value, e.g. Cohen's d. Thus, we see that power depends on $n1$, $n2$, $n3$, the duration of the study, the proportion of intercept variance at baseline, the amount of slope variance at the third level, and the variance ratio. 
 
 # References
