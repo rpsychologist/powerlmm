@@ -573,7 +573,7 @@ multi_power_worker <- function(object, df, alpha, R, ...) {
                 n2_list = out$n2)
 }
 loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, R, ...) {
-    if(progress) pb <- txtProgressBar(style = 3, min = 1, max = nr)
+    if(progress) pb <- txtProgressBar(style = 3, min = 0, max = nr)
     x <- vector(mode = "list", length = nr)
     for(i in 1:nrow(object)) {
         p <- as.plcp(object[i,])
@@ -594,7 +594,7 @@ loop_power <- function(object, df, alpha, nr, progress, progress_inner = FALSE, 
 #' @export
 #' @importFrom utils txtProgressBar setTxtProgressBar
 
-get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, R = 1, cores = 1,...) {
+get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress = TRUE, R = 1, cores = 1, ...) {
     dots <- list(...)
     if (is.function(dots$updateProgress)) {
         dots$updateProgress()
@@ -612,8 +612,10 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
                         R = R)
 
     } else {
-        cl <- parallel::makeCluster(min(cores, max(nr, R)))
-        on.exit(parallel::stopCluster(cl))
+        if(is.null(dots$cl)) {
+            cl <- parallel::makeCluster(min(cores, max(nr, R)))
+            on.exit(parallel::stopCluster(cl))
+        } else cl <- dots$cl
         parallel::clusterEvalQ(cl, expr =
                                    suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
         parallel::clusterExport(cl, "multi_power_worker", envir = parent.env(environment()))
