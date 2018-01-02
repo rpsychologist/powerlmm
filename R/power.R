@@ -612,7 +612,7 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
                         R = R)
 
     } else {
-        cl <- parallel::makeCluster(min(cores, nr))
+        cl <- parallel::makeCluster(min(cores, max(nr, R)))
         on.exit(parallel::stopCluster(cl))
         parallel::clusterEvalQ(cl, expr =
                                    suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
