@@ -54,7 +54,9 @@ slope variance to the within-subject variance.}
 at the cluster level.}
 
 \item{icc_pre_subject}{Amount of baseline
-variance at the subject level. N.B. this is not really an ICC.}
+variance at the subject level. N.B. the variance at the subject-level also
+included the cluster-level variance. If there's no random slopes, this would
+be the subject-level ICC, i.e. correlation between time points.}
 
 \item{icc_pre_cluster}{Amount of baseline
 variance at the cluster level.}
