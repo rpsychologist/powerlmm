@@ -349,6 +349,8 @@ study_parameters <- function(n1,
     # two level
     if(is.null(sigma_cluster_intercept) & (is.null(icc_pre_cluster) || icc_pre_cluster == 0)) {
         tmp$sigma_cluster_intercept <- 0L
+        icc_pre_cluster <- 0L
+        tmp$icc_pre_cluster <- 0L
     }
     if(is.null(sigma_cluster_slope) & (is.null(icc_slope) || icc_slope == 0)) {
         tmp$sigma_cluster_slope <- 0L

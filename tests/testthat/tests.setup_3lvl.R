@@ -319,6 +319,28 @@ test_that("study setup lvl 3 minimal #2", {
     expect_is(p, "plcp")
     expect_is(p, "plcp_3lvl")
 })
+# icc_pre_cluster = NULL
+test_that("study setup lvl 3 minimal icc NULL #2", {
+    p <- study_parameters(n1 = 10,
+                          n2 = 10,
+                          n3 = 5,
+                          icc_pre_subject = 0.5,
+                          icc_slope = 0.05,
+                          var_ratio = 0.03,
+                          cohend = 0.5)
+    expect_equal(get_var_ratio(p), 0.03, tolerance = 0.001)
+    expect_equal(get_ICC_slope(p), 0.05, tolerance = 0.001)
+    expect_equal(get_ICC_pre_subjects(p), 0.5, tolerance = 0.001)
+    expect_equal(get_ICC_pre_clusters(p), 0, tolerance = 0.001)
+    expect_equal(p$sigma_subject_intercept^2 +
+                     p$sigma_cluster_intercept^2 +
+                     p$sigma_error^2, 1,
+                 tolerance = 0.001)
+    expect_is(p, "plcp")
+    expect_is(p, "plcp_3lvl")
+})
+
+
 test_that("study setup lvl 3 minimal #3", {
     p <- study_parameters(n1 = 10,
                           n2 = 10,
