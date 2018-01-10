@@ -245,11 +245,7 @@ study_parameters <- function(n1,
        (is.null(sigma_cluster_slope) & is.null(sigma_subject_slope))) {
         stop("Argument 'icc_slope' requires that 'var_ratio' is specified and > 0.", call. = FALSE)
     }
-    if(!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
-        if(any((icc_pre_cluster > icc_pre_subject))) {
-            stop("'icc_pre_cluster' can't be larger than 'icc_pre_subject'", call. = FALSE)
-        }
-    }
+
     if(is.null(icc_pre_cluster) &
        !is.null(sigma_cluster_intercept) &
        !is.null(icc_pre_subject)) {
@@ -323,7 +319,18 @@ study_parameters <- function(n1,
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
     tmp <- expand.grid(tmp_args)
+
+
+    if(!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
+        if(any((tmp$icc_pre_cluster > tmp$icc_pre_subject))) {
+            stop("'icc_pre_cluster' can't be larger than 'icc_pre_subject'", call. = FALSE)
+        }
+    }
+
     if(is.null(args$T_end)) tmp$T_end <- tmp$n1 - 1
+
+
+
 
     # two level
     if(!is.null(sigma_subject_slope) &
@@ -347,11 +354,16 @@ study_parameters <- function(n1,
 
 
     # two level
-    if(is.null(sigma_cluster_intercept) & (is.null(icc_pre_cluster) || icc_pre_cluster == 0)) {
-        tmp$sigma_cluster_intercept <- 0L
-        icc_pre_cluster <- 0L
-        tmp$icc_pre_cluster <- 0L
+    if(is.null(sigma_cluster_intercept) & (any(is.null(icc_pre_cluster)) | any(icc_pre_cluster == 0))) {
+        # set ICC_pre_cluster NULL to 0
+        icc_pre_cluster[is.null(icc_pre_cluster)] <- 0L
+        tmp$icc_pre_cluster <- icc_pre_cluster
+        tmp$sigma_cluster_intercept[icc_pre_cluster == 0L] <- 0L
+
     }
+
+
+
     if(is.null(sigma_cluster_slope) & (is.null(icc_slope) || icc_slope == 0)) {
         tmp$sigma_cluster_slope <- 0L
     }
