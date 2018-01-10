@@ -48,6 +48,44 @@ test_that("combine icc_pre_subject and sigma_cluster_intercept", {
 
 })
 
+# icc_pre_cluster > icc_pre_subjects
+test_that("icc_pre_cluster > icc_pre_subjects", {
+
+    msg <- "'icc_pre_cluster' can't be larger than 'icc_pre_subject'"
+
+    # single
+    expect_error(study_parameters(n1 = 3,
+                                  n2 = 30,
+                                  n3 = 2,
+                                  T_end = 10,
+                                  icc_pre_subject = c(0.1),
+                                  cor_subject = -0.7,
+                                  icc_pre_cluster = c(0.2),
+                                  cor_cluster = 0.7,
+                                  icc_slope = 0.1,
+                                  var_ratio = 0.02,
+                                  dropout = 0,
+                                  cohend = 2
+    ), msg)
+
+
+    # multi
+    expect_error(study_parameters(n1 = 3,
+                                   n2 = 30,
+                                   n3 = 2,
+                                   T_end = 10,
+                                   icc_pre_subject = c(0.09, 0.6),
+                                   cor_subject = -0.7,
+                                   icc_pre_cluster = c(0, 0.05, 0.1),
+                                   cor_cluster = 0.7,
+                                   icc_slope = 0.1,
+                                   var_ratio = 0.02,
+                                   dropout = 0,
+                                   cohend = 2
+    ), msg)
+
+})
+
 # duplicate intercepts
 test_that("cluster intercept duplicate", {
     msg <- "Can't use both 'icc_pre_cluster' and 'sigma_cluster_intercept'"
@@ -589,6 +627,88 @@ test_that("multi 3lvl icc_slope + var_ratio 0", {
 
 
 
+test_that("multi 3lvl ICC_cluster include 0", {
+    p <- study_parameters(n1 = 3,
+                           n2 = 30,
+                           n3 = 2,
+                           T_end = 10,
+                           icc_pre_subject = 0.5,
+                           cor_subject = -0.7,
+                           icc_pre_cluster = c(0, 0.05, 0.1),
+                           cor_cluster = 0.7,
+                           icc_slope = c(0, 0.1),
+                           var_ratio = 0.02,
+                           sigma_error = 5.5,
+                           dropout = 0
+    )
+    expect_equal(get_ICC_slope(p), c(0,0,0, 0.1,0.1,0.1))
+    expect_equal(get_var_ratio(p), rep(0.02, 6))
+    expect_equal(get_ICC_pre_subjects(p), rep(0.5, 6))
+    expect_equal(get_ICC_pre_clusters(p),  c(0, 0.05, 0.1, 0, 0.05, 0.1))
+    expect_equal(p$sigma_error,  rep(5.5, 6))
+})
 
+test_that("multi 3lvl ICC_cluster include 0", {
+    p <- study_parameters(n1 = 3,
+                          n2 = 30,
+                          n3 = 2,
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          cor_subject = -0.7,
+                          icc_pre_cluster = c(0, 0.05, 0.1),
+                          cor_cluster = 0.7,
+                          icc_slope = c(0, 0.1),
+                          var_ratio = 0.02,
+                          sigma_error = 5.5,
+                          dropout = 0
+    )
+    expect_equal(get_ICC_slope(p), c(0,0,0, 0.1,0.1,0.1))
+    expect_equal(get_var_ratio(p), rep(0.02, 6))
+    expect_equal(get_ICC_pre_subjects(p), rep(0.5, 6))
+    expect_equal(get_ICC_pre_clusters(p),  c(0, 0.05, 0.1, 0, 0.05, 0.1))
+    expect_equal(p$sigma_error,  rep(5.5, 6))
+})
 
+test_that("multi 3lvl ICC_cluster include 0, sigma_error NULL", {
+    p <- study_parameters(n1 = 3,
+                          n2 = 30,
+                          n3 = 2,
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          cor_subject = -0.7,
+                          icc_pre_cluster = c(0, 0.05, 0.1),
+                          cor_cluster = 0.7,
+                          icc_slope = c(0, 0.1),
+                          var_ratio = 0.02,
+                          dropout = 0
+    )
+    expect_equal(get_ICC_slope(p), c(0,0,0, 0.1,0.1,0.1))
+    expect_equal(get_var_ratio(p), rep(0.02, 6))
+    expect_equal(get_ICC_pre_subjects(p), rep(0.5, 6))
+    expect_equal(get_ICC_pre_clusters(p),  c(0, 0.05, 0.1, 0, 0.05, 0.1))
+    expect_equal(p$sigma_error^2,  rep(0.5, 6))
+})
+
+# detect bug that permutations to be wrong when icc_pre_cluster included 0
+test_that("multi 3lvl ICC_cluster include 0, correct grid", {
+    p <- study_parameters(n1 = 3,
+                          n2 = 30,
+                          n3 = 2,
+                          T_end = 10,
+                          icc_pre_subject = 0.5,
+                          cor_subject = c(0, -0.7),
+                          icc_pre_cluster = c(0, 0.05),
+                          cor_cluster = c(0, 0.7),
+                          icc_slope = c(0.1),
+                          var_ratio = 0.02,
+                          dropout = 0
+    )
+    expect_equal(get_ICC_slope(p), rep(0.1, 8))
+    expect_equal(get_var_ratio(p), rep(0.02, 8))
+    expect_equal(get_ICC_pre_subjects(p), rep(0.5, 8))
+    expect_equal(get_ICC_pre_clusters(p),  c(rep(0, 4), rep(0.05, 4)))
+    expect_equal(p$cor_cluster, c(0, 0, 0.7, 0.7, 0, 0, 0.7, 0.7))
+    expect_equal(p$cor_subject, c(0, -0.7, 0, -0.7, 0, -0.7, 0, -0.7))
+
+})
 
