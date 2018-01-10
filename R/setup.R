@@ -354,11 +354,13 @@ study_parameters <- function(n1,
 
 
     # two level
+
     if(is.null(sigma_cluster_intercept) & (all(is.null(icc_pre_cluster)))) {
         # set ICC_pre_cluster NULL to 0
         icc_pre_cluster[is.null(icc_pre_cluster)] <- 0L
         tmp$icc_pre_cluster <- 0L
         tmp$sigma_cluster_intercept <- 0L
+
 
     }
 
