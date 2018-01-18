@@ -24,6 +24,12 @@
   argument `cores`.
 * `simulate.plcp_multi` now have more options for saving intermediate results.
 
+## Breaking changes
+* `icc_pre_subject` is now defined as `(u_0^2 + v_0^2) / (u_0^2 + v_0^2 + error^2)`,
+instead of `(u_0^2) / (u_0^2 + v_0^2 + error^2)`. This would be the subject-level ICC, 
+if there's no random slopes, i.e. correlation between time points for the same subject.
+
+
 ## Bug fixes and minor changes
 * `simulate()` new argument `batch_progress` enables showing progress when doing
   multiple simulations.
