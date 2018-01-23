@@ -23,6 +23,8 @@
 * Multiple power calculations can no be performed in parallel, via the
   argument `cores`.
 * `simulate.plcp_multi` now have more options for saving intermediate results.
+* `print.plcp_multi_power` now has better support for subsetting via either [], 
+head(), or subset().
 
 ## Breaking changes
 * `icc_pre_subject` is now defined as `(u_0^2 + v_0^2) / (u_0^2 + v_0^2 + error^2)`,

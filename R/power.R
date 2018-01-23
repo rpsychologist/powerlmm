@@ -652,8 +652,19 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
                "df",
                "se",
                "n2_list")]
-    x <- cbind(object, x)
 
+    out_dense <- prepare_multi_power_out(object,
+                                         x = x,
+                                         R = R,
+                                         alpha = alpha,
+                                         df = df)
+
+    out_dense
+}
+
+prepare_multi_power_out <- function(object, x, R, alpha, df) {
+    .x <- x
+    x <- cbind(object, x)
     prep <- prepare_multi_setup(object)
     out <- prep$out
     out_dense <- prep$out_dense
@@ -671,6 +682,8 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
 
     class(out_dense) <- append("plcp_multi_power", class(out_dense))
     attr(out_dense, "out") <- out
+    attr(out_dense, "x") <- .x
+    attr(out_dense, "object") <- object
     attr(out_dense, "R") <- R
     attr(out_dense, "alpha") <- alpha
     attr(out_dense, "df") <- df
@@ -685,7 +698,8 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
 #' @method print plcp_multi_power
 #' @export
 print.plcp_multi_power <- function(x, ...) {
-    out <- attr(x, "out")
+
+     out <- attr(x, "out")
     alpha <- attr(x, "alpha")
     df <- attr(x, "df")
     R <- attr(x, "R")
@@ -694,11 +708,25 @@ print.plcp_multi_power <- function(x, ...) {
 
     cat("# Power Analysis for Longitudinal Linear Mixed-Effect Models\n\n")
     print(out)
-    cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df, "; R = ", R))
+    cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df, "; R = ", R), "\n")
     invisible(x)
 }
+#' plcp_multi_power needs it own subset method to make subsetting compatible
+#' with print.plcp_multi_power
+`[.plcp_multi_power` <- function(x, i, j = NULL, drop = FALSE) {
+    if(!is.null(j) && j != TRUE) warning("Column index is ignored, only subsetting by rows is supported.", call. = FALSE)
+    if(length(i) == 1 && i > nrow(x)) stop("Row number does not exist.", call. = FALSE)
+    if(all(!i)) stop("Nothing to print, subset empty.", call. = FALSE)
+    x_new <- attr(x, "x")[i, ]
+    object <- attr(x, "object")[i, ]
 
-
+    out_dense <- prepare_multi_power_out(object,
+                                         x = x_new,
+                                         R = attr(x, "R"),
+                                         alpha = attr(x, "alpha"),
+                                         df = attr(x, "df"))
+    out_dense
+}
 
 
 

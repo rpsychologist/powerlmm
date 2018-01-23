@@ -903,7 +903,6 @@ print.plcp_multi_sim <- function(x, ...) {
     cat("# Object size:", format(object.size(x), units = "auto"))
 }
 
-
 cat_formulas <- function(f) {
     nams <- names(f)
     names
