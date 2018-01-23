@@ -16,10 +16,16 @@ simulate_data(paras, n = 1)
 is a \code{data.frame} containing multiple setups.}
 }
 \value{
-A \code{data.frame} with the simulated data in long form. Column
-\code{y} is the outcome, \code{time} the time variable, \code{subject} is
-the subject-level id variable, from 1, ..., the total number of subjects. \code{cluster} is
-the cluster-level id variable, from 1, ..., to the total number of clusters.
+A \code{data.frame} with the simulated data in long form. With the following columns:
+\itemize{
+ \item \code{y} the outcome vector, with missing values as NA
+ \item \code{y_c} the outcome vector, without missing values removed.
+ \item \code{time} the time vector
+ \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment")
+ \item \code{subject} subject-level id variable, from 1 to total number of subjects.
+ \item \code{cluster} for three-level models; the cluster-level id variable,
+ from 1 to the total number of clusters.
+}
 }
 \description{
 Generate a data set using a \code{study_parameters}-object

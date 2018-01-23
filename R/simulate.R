@@ -4,10 +4,16 @@
 #' @param n Optional; specifies which row \code{n} should be used if \code{object}
 #'  is a \code{data.frame} containing multiple setups.
 #'
-#' @return A \code{data.frame} with the simulated data in long form. Column
-#' \code{y} is the outcome, \code{time} the time variable, \code{subject} is
-#' the subject-level id variable, from 1, ..., the total number of subjects. \code{cluster} is
-#' the cluster-level id variable, from 1, ..., to the total number of clusters.
+#' @return A \code{data.frame} with the simulated data in long form. With the following columns:
+#' \itemize{
+#'  \item \code{y} the outcome vector, with missing values as NA
+#'  \item \code{y_c} the outcome vector, without missing values removed.
+#'  \item \code{time} the time vector
+#'  \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment")
+#'  \item \code{subject} subject-level id variable, from 1 to total number of subjects.
+#'  \item \code{cluster} for three-level models; the cluster-level id variable,
+#'  from 1 to the total number of clusters.
+#' }
 #' @export
 #'
 #' @examples
@@ -39,8 +45,11 @@ create_dropout_indicator <- function(paras) {
 }
 add_NA_values_from_indicator <- function(d, missing) {
     d$miss <- missing
+    d$y_c <- d$y
     d$y <- ifelse(d$miss == 1, NA, d$y)
-
+    d <- d[, c("y",
+               "y_c",
+                grep("^y$|^y_c$", colnames(d), value = TRUE, invert = TRUE))]
     d
 }
 #' @rdname simulate_data

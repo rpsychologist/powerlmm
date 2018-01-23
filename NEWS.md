@@ -33,6 +33,9 @@ if there's no random slopes, i.e. correlation between time points for the same s
 
 
 ## Bug fixes and minor changes
+* Output from `simulate_data()` now includes a column `y_c` that contains the full outcome vector,
+without missing values added. This makes it easy to compare the complete and incomplete
+data set, e.g. via `simulate()`.
 * `simulate()` new argument `batch_progress` enables showing progress when doing
   multiple simulations.
 * Fix bug in `summary.plcp_sim` where the wrong % convergence was calculated.
