@@ -711,10 +711,17 @@ print.plcp_multi_power <- function(x, ...) {
     cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df, "; R = ", R), "\n")
     invisible(x)
 }
-#' plcp_multi_power needs it own subset method to make subsetting compatible
-#' with print.plcp_multi_power
-`[.plcp_multi_power` <- function(x, i, j = NULL, drop = FALSE) {
-    if(!is.null(j) && j != TRUE) warning("Column index is ignored, only subsetting by rows is supported.", call. = FALSE)
+
+#' Subset function for \code{plcp_multi_power}-objects
+#'
+#' Custom subset function for \code{plcp_multi_power}-object to make it compatible
+#' with its print method.
+#' @param x A \code{plcp_multi_power}-object.
+#' @param i Indicates which rows to subset.
+#' @param ... Ignored.
+#' @method [ plcp_multi_power
+#' @export
+`[.plcp_multi_power` <- function(x, i, ...) {
     if(length(i) == 1 && i > nrow(x)) stop("Row number does not exist.", call. = FALSE)
     if(all(!i)) stop("Nothing to print, subset empty.", call. = FALSE)
     x_new <- attr(x, "x")[i, ]
