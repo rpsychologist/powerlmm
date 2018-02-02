@@ -114,12 +114,14 @@ simulate_3lvl_data_ <- function (n1,
 
      df <-
           data.frame (y,
+                      y_c = y,
                       time,
                       subject,
                       cluster = rep(cluster, each = n1),
                       intercept_subject = b0[subject],
                       slope_subject = b1[subject],
-                      slope_cluster = cluster_b1[subject])
+                      slope_cluster = cluster_b1[subject],
+                      miss = 0)
 
      df
 }

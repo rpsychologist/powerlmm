@@ -58,6 +58,8 @@ data set, e.g. via `simulate()`.
   are used to calculate *p*-values.
 * `Power.plcp_multi` is now exported.
 * `get_power.plcp_multi` now shows a progress bar.
+* Fix a bug that caused dropout to be wrong when one condition had 0 dropout, and
+`deterministic_dropout = FALSE`.
 
 # Changes in version 0.1.0
 First release.

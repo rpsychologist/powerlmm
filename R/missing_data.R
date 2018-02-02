@@ -67,6 +67,7 @@ dropout_process <- function(dropout, paras) {
     }
 
     if(is.list(retention)) {
+
         d_a <- make_dropout_indicator(time, retention[[1]], tot_n)
         d_a$treatment <- "A"
 

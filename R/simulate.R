@@ -45,7 +45,6 @@ create_dropout_indicator <- function(paras) {
 }
 add_NA_values_from_indicator <- function(d, missing) {
     d$miss <- missing
-    d$y_c <- d$y
     d$y <- ifelse(d$miss == 1, NA, d$y)
     d <- d[, c("y",
                "y_c",
@@ -83,11 +82,14 @@ simulate_data.plcp <- function(paras, n = NULL) {
         is.function(paras$dropout) |
         length(paras$dropout) > 1) {
 
-        miss_tx <- create_dropout_indicator(paras_tx)
         miss_c <- create_dropout_indicator(paras)
-
-        d_tx <- add_NA_values_from_indicator(d_tx, miss_tx)
         d_c <- add_NA_values_from_indicator(d_c, miss_c)
+    }
+    if (is.list(paras_tx$dropout) |
+        is.function(paras_tx$dropout) |
+        length(paras_tx$dropout) > 1) {
+        miss_tx <- create_dropout_indicator(paras_tx)
+        d_tx <- add_NA_values_from_indicator(d_tx, miss_tx)
     }
 
     # combine
