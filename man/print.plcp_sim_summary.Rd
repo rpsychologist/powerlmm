@@ -4,10 +4,12 @@
 \alias{print.plcp_sim_summary}
 \title{Print method for \code{summary.plcp_sim}-objects}
 \usage{
-\method{print}{plcp_sim_summary}(x, ...)
+\method{print}{plcp_sim_summary}(x, digits = 2, ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_sim_summary}}
+
+\item{digits}{number of significant digits.}
 
 \item{...}{Optional arguments.}
 }
