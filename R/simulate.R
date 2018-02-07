@@ -806,16 +806,16 @@ munge_results_ <- function(model, res, effect) {
 
 
 # Print -------------------------------------------------------------------
-print_model <- function(i, x) {
+print_model <- function(i, x, digits) {
     models <- names(x)
     cat("Model: ", models[i], "\n")
     cat("  Random effects\n\n")
     print.data.frame(x[[i]]$RE,
                      row.names = FALSE,
-                     digits = 3,
+                     digits = digits,
                      quote = FALSE)
     cat("\n  Fixed effects\n\n")
-    print.data.frame(x[[i]]$FE, row.names = FALSE, digits = 3)
+    print.data.frame(x[[i]]$FE, row.names = FALSE, digits = digits)
     cat("---\n")
 
 }
@@ -860,10 +860,11 @@ print_test_NA <- function(i, x) {
 
 #' Print method for \code{summary.plcp_sim}-objects
 #' @param x An object of class \code{plcp_sim_summary}
+#' @param digits number of significant digits.
 #' @param ... Optional arguments.
 #' @method print plcp_sim_summary
 #' @export
-print.plcp_sim_summary <- function(x, ...) {
+print.plcp_sim_summary <- function(x, digits = 2, ...) {
     res <- x
     #print
     x <- res$summary
@@ -890,12 +891,13 @@ print.plcp_sim_summary <- function(x, ...) {
                                   hanging = 33,
                                   n2 = TRUE)
     }
-    lapply(seq_along(x), print_model, x)
+    lapply(seq_along(x), print_model, x, digits = digits)
     cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
     cat("\nTime points (n1): ", res$paras$n1)
     cat(n2_lab, n2)
     cat("\nTotal number of subjects: ", tot_n, "\n")
     lapply(seq_along(x), print_test_NA, x = x)
+    if(any(x$correct$RE$is_NA > 0)) warning("Some estimated random effects were removed due to being NA.", call. = FALSE)
 }
 
 #' Print method for \code{simulate.plcp_multi}-objects
@@ -912,6 +914,7 @@ print.plcp_multi_sim <- function(x, ...) {
     cat("# lmer formula(s) used: \n")
     cat_formulas(x[[1]]$formula)
     cat("# Object size:", format(object.size(x), units = "auto"))
+    cat("\n")
 }
 
 cat_formulas <- function(f) {
@@ -935,6 +938,7 @@ print.plcp_sim <- function(x, ...) {
     cat("# lmer formula(s) used: \n")
     cat_formulas(x$formula)
     cat("# Object size:", format(object.size(x), units = "auto"))
+    cat("\n")
     invisible(x)
 }
 
@@ -993,14 +997,17 @@ summarize_RE <- function(res, theta) {
         para <- parms[[i]]
         vcov <- d[d$parameter == para, "vcov"]
         theta_i <- theta[theta$parameter == para, "theta"]
+        est <- mean(vcov, na.rm=TRUE)
         res <- data.frame(
             parameter = para,
-            M_est = mean(vcov),
+            M_est = est,
             theta = theta_i,
-            prop_zero = mean(is_approx(vcov, 0))
+            est_rel_bias = get_RB(est, theta_i),
+            prop_zero = mean(is_approx(vcov, 0), na.rm=TRUE),
+            is_NA = mean(is.na(vcov))
         )
         if (para %in% c("cor_subject", "cor_cluster")) {
-            res$prop_zero <- mean(is_approx(vcov, 1))
+            res$prop_zero <- mean(is_approx(abs(vcov), 1), na.rm=TRUE)
         }
         tmp[[i]] <- res
     }
@@ -1234,18 +1241,24 @@ summary.plcp_multi_sim <- function(object,
     out
 }
 
+
+#' Print method for \code{summary.plcp_multi_sim}-objects
+#' @param x An object of class \code{plcp_multi_sim_summary}
+#' @param digits number of significant digits.
+#' @param ... Optional arguments.
 #' @method print plcp_multi_sim_summary
 #' @export
-print.plcp_multi_sim_summary <- function(x, ...) {
+print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
     model <- attr(x, "model")
     type <- attr(x, "type")
     nsim <- attr(x, "nsim")
     x <- as.data.frame(x)
     cat("Model: ", model, "| Type:", type, "\n")
     cat("---\n")
-    print(x, digits = 3)
+    print(x, digits = digits)
     cat("---\n")
-    cat("nsim: ", nsim)
+    cat("nsim: ", nsim, "\n")
+    if(any(x$is_NA > 0)) warning("Some simulations had NA estimates that was removed.", call. = FALSE)
     invisible(x)
 }
 
@@ -1268,8 +1281,12 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
     se_est <- mean(out$se)
     se_hat <- sd(out$estimate)
 
-    power <- mean(get_cover(out$estimate, out$se, alpha = alpha))
-    power_bw <- get_p_val_df(t = out$estimate/out$se, df = out$df_bw, parameter = para)
+    power <- mean(get_cover(out$estimate,
+                            out$se,
+                            alpha = alpha))
+    power_bw <- get_p_val_df(t = out$estimate/out$se,
+                             df = out$df_bw,
+                             parameter = para)
     Satt_NA <-  mean(is.na(out$df))
 
     out <- with(
@@ -1307,33 +1324,45 @@ summary_random.plcp_multi_sim <- function(res, para, model) {
 
     theta <- switch(
         para,
-        "subject_intercept" = res$paras$sigma_subject_intercept,
-        "subject_slope" = res$paras$sigma_subject_slope,
-        "subject_intercept" = res$paras$sigma_subject_intercept,
+        "subject_intercept" = res$paras$sigma_subject_intercept^2,
+        "subject_slope" = res$paras$sigma_subject_slope^2,
+        "subject_intercept" = res$paras$sigma_subject_intercept^2,
         "cor_subject" = res$paras$cor_subject,
-        "cluster_intercept" = res$paras$sigma_cluster_intercept,
-        "cluster_slope" = res$paras$sigma_cluster_slope,
+        "cluster_intercept" = res$paras$sigma_cluster_intercept^2,
+        "cluster_slope" = res$paras$sigma_cluster_slope^2,
         "cor_cluster" = res$paras$cor_cluster,
-        "error" = res$paras$sigma_error
+        "error" = res$paras$sigma_error^2
     )
 
     out <- res$res[[model]]$RE
     out <- out[out$parameter == para,]
 
-    est <- mean(out$vcov)
+    vcov <- out$vcov
+    est <- mean(vcov, na.rm = TRUE)
     out <- data.frame(
         parameter = para,
         M_est = est,
-        theta = theta ^ 2,
-        est_rel_bias = (est - theta ^ 2) / theta ^ 2,
-        prop_zero = mean(is_approx(out$vcov, 0))
+        theta = theta,
+        est_rel_bias = get_RB(est, theta),
+        prop_zero = mean(is_approx(vcov, 0), na.rm=TRUE),
+        is_NA = mean(is.na(vcov))
     )
-
-    #out <- cbind(get_rel_bias(res$para), out)
-    #out <- dplyr::select(out, -approx_rel_bias)
+    if (para %in% c("cor_subject", "cor_cluster")) {
+        out$prop_zero <- mean(is_approx(abs(vcov), 1))
+    }
 
     out
 
+}
+
+
+get_RB <- function(est, theta) {
+    if(theta == 0) {
+        RB <- (est - theta)
+    } else {
+        RB <- (est - theta) / theta
+    }
+    RB
 }
 
 # power -------------------------------------------------------------------
