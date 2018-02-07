@@ -667,6 +667,22 @@ prepare_multi_power_out <- function(object, x, R, alpha, df) {
     x <- cbind(object, x)
     prep <- prepare_multi_setup(object)
     out <- prep$out
+    per_treatment <- all(colnames(out) != "n2")
+    if(per_treatment) {
+        out$n2_tx <- truncate_n2(out$n2_tx)
+        out$n2_cc <- truncate_n2(out$n2_cc)
+    } else {
+        out$n2 <- truncate_n2(out$n2)
+    }
+    per_treatment_n3 <- all(colnames(out) != "n3")
+    if(per_treatment_n3) {
+        out$n3_tx <- out$n3_tx
+        out$n3_cc <- out$n3_cc
+    } else {
+        out$n3 <- out$n3
+    }
+
+
     out_dense <- prep$out_dense
     out <- out[, select_setup_cols(out)]
     out$df <- round(unlist(x$df), 2)
@@ -678,6 +694,7 @@ prepare_multi_power_out <- function(object, x, R, alpha, df) {
     out_dense$power_list <- x$power_list
     out_dense$tot_n <- x$tot_n
     out_dense$se <- unlist(x$se)
+
     out_dense$n2_list <- x$n2_list
 
     class(out_dense) <- append("plcp_multi_power", class(out_dense))
@@ -705,9 +722,9 @@ print.plcp_multi_power <- function(x, ...) {
     R <- attr(x, "R")
     out <- as.data.frame(out)
     #cat(get_multi_title(x$object), "\n")
-
+    colnames(out) <- gsub("_lab", "", colnames(out))
     cat("# Power Analysis for Longitudinal Linear Mixed-Effect Models\n\n")
-    print(out)
+    print(out, digits = 2)
     cat(paste0("---\n# alpha = ", alpha, "; DFs = ", df, "; R = ", R), "\n")
     invisible(x)
 }

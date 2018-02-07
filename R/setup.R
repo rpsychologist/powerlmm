@@ -525,7 +525,9 @@ sim_parameters <- function(...) {
 
 
 print_per_treatment <- function(n, width = 0, n2 = FALSE, hanging = 19) {
-    x <- lapply(seq_along(n), print_per_treatment_, x = n, n2 = n2)
+    x <- lapply(seq_along(n), function(i) {
+        print_per_treatment_(i, x = n, n2 = n2)$lab
+    })
     x <- format(x, width = width)
     x <- paste(x, " (", names(n), ")", sep ="")
     collapse <- paste0("\n", paste(rep(" ", hanging), collapse = ""))
@@ -537,12 +539,26 @@ print_per_treatment_ <- function(i, x, n2 = FALSE) {
     x <- x[[i]]
     if(n2 & length(unique(x)) == 1) {
         if(attr(x, "func")) {
-            x <- paste(unique(x))
+            x_num <- NA
+            x_lab <- paste(unique(x))
         } else {
-            x <- paste(unique(x),"x", length(x))
+            x_num <- unique(x)
+            if(length(x) > 1) {
+                x_lab <- paste(unique(x),"x", length(x))
+            } else {
+                x_lab <- paste(unique(x))
+            }
+
         }
+    } else if(length(unique(x)) == 1) {
+        x_lab <- x
+        x_num <- x
+    } else {
+        x_lab <- x
+        x_num <- NA
     }
-    paste(paste(unlist(x), collapse = ", "), sep ="")
+    list("lab" = paste(paste(unlist(x_lab), collapse = ", "), sep =""),
+         "num" = x_num)
 }
 
 deparse_n2 <- function(n2) {
@@ -553,6 +569,11 @@ deparse_n2 <- function(n2) {
     } else attr(n2, "func") <- FALSE
 
     n2
+
+}
+truncate_n2 <- function(n2) {
+    n2 <- gsub("^.*::", "", n2)
+    n2 <- strtrim(n2, 20)
 
 }
 prepare_print_n2 <- function(x) {
@@ -567,9 +588,9 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     n2 <- prepare_print_n2(x)
     n3 <- get_n3(x)
     tot_n <- get_tot_n(x)
-    width <- max(nchar(print_per_treatment_(1, n2, n2 = TRUE)),
-                 nchar(print_per_treatment_(2, n2, n2 = TRUE)),
-                 nchar(print_per_treatment_(3, tot_n)))
+    width <- max(nchar(print_per_treatment_(1, n2, n2 = TRUE)$lab),
+                 nchar(print_per_treatment_(2, n2, n2 = TRUE)$lab),
+                 nchar(print_per_treatment_(3, tot_n)$lab))
     if(two_level) width <- max(vapply(tot_n, nchar, numeric(1)))
     n2 <- print_per_treatment(n2, width = width, n2 = TRUE)
     n3 <- print_per_treatment(n3, width = width)
@@ -599,7 +620,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                           icc_pre_clusters = icc_pre_clusters,
                           icc_slope = icc_slope,
                           var_ratio = var_ratio,
-                          cohend = cohend,
+                          `Cohen's d` = cohend,
                           method = "Study setup (three-level)"),
                      class = "power.htest")
     attr(res, "width") <- width
@@ -691,9 +712,17 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
 
     n2 <- lapply(1:nrow(paras), function(i) {
         x <- get_n2(as.plcp(paras[i,]))
+
+
         x$control <- deparse_n2(x$control)
         x$treatment <- deparse_n2(x$treatment)
-        data.frame(treatment = print_per_treatment_(1, x, n2 = TRUE), control = print_per_treatment_(2, x, n2 = TRUE), stringsAsFactors = FALSE)
+        tx <- print_per_treatment_(1, x, n2 = TRUE)
+        cc <- print_per_treatment_(2, x, n2 = TRUE)
+        data.frame(treatment_lab = tx$lab,
+                   treatment = tx$num,
+                   control_lab = cc$lab,
+                   control = cc$num,
+                   stringsAsFactors = FALSE)
     })
     n2 <- do.call(rbind, n2)
 
@@ -710,10 +739,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     object$var_ratio <- get_var_ratio(object)
 
     out <- object
-    out$icc_pre_cluster <- round(object$icc_pre_cluster, digits)
-    out$icc_pre_subject <- round(object$icc_pre_subject, digits)
-    out$icc_slope <- round(object$icc_slope, digits)
-    out$var_ratio <- round(object$var_ratio, digits)
+
 
     dropout <- lapply(1:nrow(object), function(i) get_dropout_post(object[i, ]))
     dropout <- do.call(rbind, dropout)
@@ -724,11 +750,16 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         out$dropout_cc <- dropout$control
         out <- subset(out, select = -dropout)
     }
-    if(all(n2$treatment == n2$control)) {
+    if(all(n2$treatment_lab == n2$control_lab)) {
+        out$n2_lab <- n2$treatment_lab
         out$n2 <- n2$treatment
     } else {
+        out$n2_tx_lab <- n2$treatment_lab
         out$n2_tx <- n2$treatment
+        out$n2_cc_lab <- n2$control_lab
         out$n2_cc <- n2$control
+        #out$n2_tx_lab <- n2$treatment_lab
+        #out$n2_cc_lab <- n2$control_lab
         out <- subset(out, select = -n2)
     }
 
@@ -748,6 +779,10 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     }
 
     out_dense <- out
+    out$icc_pre_cluster <- round(object$icc_pre_cluster, digits)
+    out$icc_pre_subject <- round(object$icc_pre_subject, digits)
+    out$icc_slope <- round(object$icc_slope, digits)
+    out$var_ratio <- round(object$var_ratio, digits)
     for(i in 1:ncol(out)) {
         out[,i] <- replace_repeating(out[,i], empty = empty)
     }
@@ -770,8 +805,8 @@ get_multi_title.plcp_3lvl <- function(object) {
 
 select_setup_cols <- function(x) {
     cols <- c("n1",
-              "n2", "n2_tx", "n2_cc",
-              "n3", "n3_tx", "n3_cc",
+              "n2_lab", "n2_tx_lab", "n2_cc_lab",
+
               "dropout", "dropout_tx", "dropout_cc",
               "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "cohend")
     cols[cols %in% colnames(x)]
@@ -795,7 +830,9 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
     out <- as.data.frame(out)
     cat(get_multi_title(pp$object), "\n")
 
-    print(out[, select_setup_cols(out)])
+    out <- out[, select_setup_cols(out)]
+    colnames(out) <- gsub("_lab", "", colnames(out))
+    print(out)
     if(hidden_row > 0) {
         cat("# ...", hidden_row, "setups not shown.")
     }
