@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{A \code{plcp_multi_power}-object.}
 
-\item{i}{Indicates which rows subset.}
+\item{i}{Indicates which rows to subset.}
 
 \item{...}{Ignored.}
 }
