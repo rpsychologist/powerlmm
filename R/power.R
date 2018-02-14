@@ -268,26 +268,26 @@ create_lmer_formula.plcp <- function(object, n = NULL, ...) {
     f
 }
 make_random_formula <- function(x0, x01, x1, term) {
-    if(x0 != 0 & x1 == 0) {
+    if(!is.na(x0) & is.na(x1)) {
         f <- "(1 | g)"
-    } else if(x0 == 0 & x1 != 0) {
+    } else if(is.na(x0) & !is.na(x1)) {
         f <- "(0 + time | g)"
-    } else if(x0 != 0 & x1 != 0 & x01 != 0) {
+    } else if(!is.na(x0)  & !is.na(x1) & !is.na(x01)) {
         f <- "(1 + time | g)"
-    } else if(x0 != 0 & x1 != 0 & x01 == 0) {
+    } else if(!is.na(x0) & !is.na(x1) & is.na(x01)) {
         f <- "(1 + time || g)"
     }
     f <- gsub("g", term, f)
     f
 }
 make_random_formula_pn <- function(x0, x01, x1) {
-    if(x0 != 0 & x1 == 0) {
+    if(!is.na(x0) & is.na(x1)) {
         f <- "(0 + treatment | cluster)"
-    } else if(x0 == 0 & x1 != 0) {
+    } else if(is.na(x0) & !is.na(x1)) {
         f <- "(0 + treatment:time | cluster)"
-    } else if(x0 != 0 & x1 != 0 & x01 != 0) {
+    } else if(!is.na(x0) & !is.na(x1) & !is.na(x01)) {
         f <- "(0 + treatment + treatment:time | cluster)"
-    } else if(x0 != 0 & x1 != 0 & x01 == 0) {
+    } else if(!is.na(x0) & !is.na(x1) & !is.na(x01)) {
         f <- "(0 + treatment + treatment:time || cluster)"
     }
     f
@@ -297,9 +297,10 @@ make_random_formula_pn <- function(x0, x01, x1) {
 
 
 # new power func ---------------------------------------------------------------
-## lme4:::grad.ctr3
+
 gradient <- function (fun, x, delta = 1e-04, ...)
 {
+    ## lme4:::grad.ctr3
     nx <- length(x)
     Xadd <- matrix(rep(x, nx), nrow = nx, byrow = TRUE) + diag(delta,
                                                                nx)
@@ -310,19 +311,33 @@ gradient <- function (fun, x, delta = 1e-04, ...)
     (fadd - fsub)/(2 * delta)
 }
 make_theta_vec <- function(x0sq, x01, x1sq) {
-    if(x0sq == 0 | x1sq == 0) {
-        x <- c(x0sq, x1sq)
-        x <- x[x > 0]
+
+    # deal with negative paras in numeric derivative
+    x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
+    #x01 <- ifelse(x01 < 0, abs(x01), x01)
+    x1sq <- ifelse(x1sq < 0, abs(x1sq), x1sq)
+
+
+
+    if((NA_or_zero(x0sq) | NA_or_zero(x1sq)) & is.na(x01)) {
+        x <- c(x0sq, x01, x1sq)
+        x <- x[!is.na(x)]
         x <- sqrt(x)
     } else  {
         x <- matrix(c(x0sq, x01, x01, x1sq), ncol = 2)
-        if(x01 == 0) {
-            x <- sqrt(x)
-            x <- x[c(1,4)]
+        if(is.na(x01)) {
+           x <- sqrt(x)
+           x <- x[c(1,4)]
+        # } else {
+        #     x <- chol(x)
+        #     x <- x[c(1,3,4)]
         } else {
-            x <- chol(x)
-            x <- x[c(1,3,4)]
+            L <- suppressWarnings(chol(x, pivot = TRUE))
+            L <- L[, order(attr(L, "pivot"))]
+            x <- L[c(1,3,4)]
         }
+
+
     }
     x
 }
@@ -335,7 +350,8 @@ make_theta <- function(pars) {
     c(lvl2, lvl3)
 }
 varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
-    ind <- which(para != 0)
+    ## adapted from lme4PureR
+    ind <- which(!is.na(para))
     pars <- as.list(para)
     function(x = NULL, Lc) {
         if(!is.null(x)) pars[ind] <- x
@@ -1003,7 +1019,9 @@ get_se_classic <- function(object) {
 
     error <- object$sigma_error
     u1 <- object$sigma_subject_slope
+    u1[is.na(u1)] <- 0
     v1 <- object$sigma_cluster_slope
+    v1[is.na(v1)] <- 0
 
     if(object$partially_nested) {
         se <- sqrt( (error^2 + n1*u1^2*sx)/(n1*n2_cc*n3_cc*sx) + (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx) )
