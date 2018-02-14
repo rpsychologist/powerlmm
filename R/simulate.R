@@ -1348,7 +1348,7 @@ summary_random.plcp_multi_sim <- function(res, para, model) {
         is_NA = mean(is.na(vcov))
     )
     if (para %in% c("cor_subject", "cor_cluster")) {
-        out$prop_zero <- mean(is_approx(abs(vcov), 1))
+        out$prop_zero <- mean(is_approx(abs(vcov), 1), na.rm=TRUE)
     }
 
     out
