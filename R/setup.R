@@ -359,7 +359,7 @@ study_parameters <- function(n1,
     # solve subject_slope
     if(is.null(sigma_subject_slope)) {
 
-        icc <- icc_slope
+        icc <- tmp$icc_slope
         icc[is.na(icc)] <- 0
         tmp$sigma_subject_slope <- sqrt(tmp$var_ratio *
                                                  tmp$sigma_error^2 * (1-icc))
@@ -384,17 +384,14 @@ study_parameters <- function(n1,
 
     }
 
-    }
 
-    # Solve cluster_slope
-    if(is.null(sigma_cluster_slope)) {
 
 
     # Solve cluster_slope
     if(is.null(sigma_cluster_slope)) {
 
         # check if NA
-        if(is.na(icc_slope) | is.null(icc_slope)) {
+        if(is.null(icc_slope) || all(is.na(icc_slope)) ) {
 
             tmp$sigma_cluster_slope <- NA
         } else {
