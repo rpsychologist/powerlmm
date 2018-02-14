@@ -288,6 +288,7 @@ make_random_formula_pn <- function(x0, x01, x1) {
     } else if(!is.na(x0) & !is.na(x1) & !is.na(x01)) {
         f <- "(0 + treatment + treatment:time | cluster)"
     } else if(!is.na(x0) & !is.na(x1) & is.na(x01)) {
+
         f <- "(0 + treatment + treatment:time || cluster)"
     }
     f

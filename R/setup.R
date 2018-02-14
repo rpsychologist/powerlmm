@@ -316,6 +316,7 @@ study_parameters <- function(n1,
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
 
+
     ## Default NA
     if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
         tmp_args$icc_pre_subject <- NA
@@ -358,7 +359,7 @@ study_parameters <- function(n1,
     # solve subject_slope
     if(is.null(sigma_subject_slope)) {
 
-        icc <- tmp$icc_slope
+        icc <- icc_slope
         icc[is.na(icc)] <- 0
         tmp$sigma_subject_slope <- sqrt(tmp$var_ratio *
                                                  tmp$sigma_error^2 * (1-icc))
@@ -383,12 +384,18 @@ study_parameters <- function(n1,
 
     }
 
+    }
+
+    # Solve cluster_slope
+    if(is.null(sigma_cluster_slope)) {
+
 
     # Solve cluster_slope
     if(is.null(sigma_cluster_slope)) {
 
         # check if NA
-        if(is.na(tmp$icc_slope) | is.null(tmp$icc_slope)) {
+        if(is.na(icc_slope) | is.null(icc_slope)) {
+
             tmp$sigma_cluster_slope <- NA
         } else {
             # solve from icc_slope and var_ratio
