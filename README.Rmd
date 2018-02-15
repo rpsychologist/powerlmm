@@ -52,7 +52,7 @@ but unstandardized raw parameters values can also be used.
 ```{r three-level-setup, fig.width=9}
 library(powerlmm)
 d <- per_treatment(control = dropout_weibull(0.3, 2),
-              treatment = dropout_weibull(0.2, 2))
+               treatment = dropout_weibull(0.2, 2))
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 5,
@@ -75,6 +75,35 @@ plot(p)
 get_power(p, df = "satterthwaite")
 ```
 
+### Unequal cluster sizes
+Unequal cluster sizes is also supported, the cluster sizes can either be random (sampled), or the marginal distribution can be specified. 
+
+```{r three-level-power-unequal, message= FALSE, warning=FALSE}
+p <- study_parameters(n1 = 11,
+                      n2 = unequal_clusters(2, 3, 5, 20),
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      cohend = -0.8)
+
+get_power(p)
+```
+
+Cluster sizes follow a Poisson distribution
+```{r three-level-power-unequal-random, message= FALSE, warning=FALSE}
+p <- study_parameters(n1 = 11,
+                      n2 = unequal_clusters(func = rpois(5, 5)), # sample from Poisson
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      cohend = -0.8)
+
+get_power(p, R = 100, progress = FALSE) # expected power by averaging over R realizations
+```
+
+### Convenience functions
 Several convenience functions are also included, e.g. for creating power curves.
 
 ```{r three-level-power-curve, eval = FALSE}

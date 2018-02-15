@@ -12,7 +12,7 @@
   can be calculated by averaging over multiple realizations, using the
   argument `R`.
 * Support for parallel computations on Microsoft Windows, and in GUIs/interactive
-  environments, using `parallel::makeCluster`. Forking is still used for
+  environments, using `parallel::makeCluster` (PSOCK). Forking is still used for
   non-interactive Unix environments.
   
 ## Improvements

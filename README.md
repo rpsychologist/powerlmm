@@ -41,7 +41,7 @@ This is an example of setting up a three-level longitudinal model with random sl
 ``` r
 library(powerlmm)
 d <- per_treatment(control = dropout_weibull(0.3, 2),
-              treatment = dropout_weibull(0.2, 2))
+               treatment = dropout_weibull(0.2, 2))
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 5,
@@ -72,7 +72,7 @@ p
 #> icc_pre_clusters = 0
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
-#>           cohend = -0.8
+#>        Cohen's d = -0.8
 ```
 
 ``` r
@@ -103,11 +103,89 @@ get_power(p, df = "satterthwaite")
 #> icc_pre_clusters = 0
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
-#>           cohend = -0.8
-#>               df = 8.81873
+#>        Cohen's d = -0.8
+#>               df = 7.911211
 #>            alpha = 0.05
-#>            power = 69 %
+#>            power = 68%
 ```
+
+### Unequal cluster sizes
+
+Unequal cluster sizes is also supported, the cluster sizes can either be random (sampled), or the marginal distribution can be specified.
+
+``` r
+p <- study_parameters(n1 = 11,
+                      n2 = unequal_clusters(2, 3, 5, 20),
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      cohend = -0.8)
+
+get_power(p)
+#> 
+#>      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
+#>                   with missing data and unbalanced designs 
+#> 
+#>               n1 = 11
+#>               n2 = 2, 3, 5, 20 (treatment)
+#>                    2, 3, 5, 20 (control)
+#>               n3 = 4           (treatment)
+#>                    4           (control)
+#>                    8           (total)
+#>          total_n = 30          (control)
+#>                    30          (treatment)
+#>                    60          (total)
+#>          dropout = No missing data
+#> icc_pre_subjects = 0.5
+#> icc_pre_clusters = 0
+#>        icc_slope = 0.05
+#>        var_ratio = 0.02
+#>        Cohen's d = -0.8
+#>               df = 6
+#>            alpha = 0.05
+#>            power = 44%
+```
+
+Cluster sizes follow a Poisson distribution
+
+``` r
+p <- study_parameters(n1 = 11,
+                      n2 = unequal_clusters(func = rpois(5, 5)), # sample from Poisson
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      cohend = -0.8)
+
+get_power(p, R = 100, progress = FALSE) # expected power by averaging over R realizations
+#> 
+#>      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
+#>                   with missing data and unbalanced designs 
+#> 
+#>               n1 = 11
+#>               n2 = rpois(5, 5) (treatment)
+#>                    rpois(5, 5) (control)
+#>               n3 = 5           (treatment)
+#>                    5           (control)
+#>                    10          (total)
+#>          total_n = 24.97       (control)
+#>                    24.97       (treatment)
+#>                    49.94       (total)
+#>          dropout = No missing data
+#> icc_pre_subjects = 0.5
+#> icc_pre_clusters = 0
+#>        icc_slope = 0.05
+#>        var_ratio = 0.02
+#>        Cohen's d = -0.8
+#>               df = 8
+#>            alpha = 0.05
+#>            power = 48% (MCSE: 1%)
+#> 
+#> NOTE: n2 is randomly sampled. Values are the mean from R = 100 realizations.
+```
+
+### Convenience functions
 
 Several convenience functions are also included, e.g. for creating power curves.
 
