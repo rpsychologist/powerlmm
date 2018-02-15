@@ -43,7 +43,7 @@ get_VPC <- function(object) {
 #' @rdname get_VPC
 #' @export
 get_VPC.plcp <- function(object) {
-    paras <- object
+    paras <- NA_to_zero(object)
      u0 <- paras$sigma_subject_intercept
      u1 <- paras$sigma_subject_slope
      v0 <- paras$sigma_cluster_intercept
@@ -167,7 +167,7 @@ get_sds <- function(object, n = 1) {
 
 #' @export
 get_sds.plcp <- function(object, n = NULL) {
-    .p <- object
+    .p <- NA_to_zero(object)
     .p$retention <- NULL
     .p$n2 <- NULL
     .p <- .p[c("sigma_subject_intercept",
@@ -297,7 +297,8 @@ get_correlation_matrix <- function(object) {
 
 #' @export
 get_correlation_matrix.plcp <- function(object) {
-    paras <- object
+    paras <- NA_to_zero(object)
+
 
     u0 <- paras$sigma_subject_intercept
     u1 <- paras$sigma_subject_slope
@@ -311,7 +312,6 @@ get_correlation_matrix.plcp <- function(object) {
     n1 <- paras$n1
     n2 <- paras$n2
     sx2 <- sum( (time - mean(time))^2)/n1
-
 
     X <- matrix(c(rep(1, n1), time), ncol = 2)
     Z <- X

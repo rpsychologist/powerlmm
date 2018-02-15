@@ -73,6 +73,9 @@ simulate_data.plcp <- function(paras, n = NULL) {
     paras$allocation_ratio <- NULL
     paras_tx$allocation_ratio <- NULL
 
+    # replace NA
+    paras[is.na(paras)] <- 0
+    paras_tx[is.na(paras_tx)] <- 0
 
     d_tx <- simulate_3lvl_data(paras_tx)
     d_c <- simulate_3lvl_data(paras)
@@ -510,6 +513,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     prepped <- prepare_paras(paras)
 
     d <- simulate_data(prepped)
+    #saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
     tot_n <- length(unique(d[d$time == 0,]$subject))
     fit <- analyze_data(formula, d)
     res <- extract_results(fit = fit,

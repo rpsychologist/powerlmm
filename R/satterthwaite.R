@@ -42,7 +42,7 @@ create_G <- function(p, d) {
 
     G <- list()
     ## G 1 intercept
-    if(p$sigma_subject_intercept != 0) {
+    if(!is.na(p$sigma_subject_intercept)) {
         X1 <- X[, c(1, 1 + (1:(tot_n-1)) * 2)]
         G1 <- tcrossprod(X1)
 
@@ -51,13 +51,13 @@ create_G <- function(p, d) {
 
     Z <- matrix(c(0,1,1,0), ncol = 2)
     ## G 2 cov
-    if(u01 != 0) {
+    if(!is.na(u01)) {
         G2 <- X %*% kronecker(Diagonal(tot_n), Z) %*% t(X)
         G <- c(G, G2)
     }
 
     ## G 3 slope
-    if(p$sigma_subject_slope != 0) {
+    if(!is.na(p$sigma_subject_slope)) {
         X2 <- X[, c((1:(tot_n))*2)]
         G3 <- tcrossprod(X2)
         G <- c(G, G3)
@@ -75,7 +75,7 @@ create_G <- function(p, d) {
     }
 
     ## G4 intercept cluster
-    if(p$sigma_cluster_intercept != 0) {
+    if(!is.na(p$sigma_cluster_intercept)) {
         X3 <- X %*% Z2
         X3i <- X3[, ind - 1]
         G4 <- tcrossprod(X3i)
@@ -85,13 +85,13 @@ create_G <- function(p, d) {
     X3 <- X %*% Z2
 
     ## G5 cov cluster
-    if(v01 != 0) {
+    if(!is.na(v01)) {
         G5 <- X3 %*% kronecker(Diagonal(n3_cc + n3_tx), Z) %*% t(X3)
         G <- c(G, G5)
     }
 
     ## G6 slope cluster
-    if(p$sigma_cluster_slope != 0) {
+    if(!is.na(p$sigma_cluster_slope)) {
         X32 <- X3[, ind]
         G6 <- tcrossprod(X32)
 
@@ -164,6 +164,7 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     }
 }
 
+
 get_balanced_df <- function(object) {
 
     if(is.null(object$prepared)) {
@@ -177,14 +178,19 @@ get_balanced_df <- function(object) {
     n3_tx <- pp$treatment$n3
 
 
-    if(pp$treatment$sigma_cluster_slope == 0) {
-        df <-  (n2_tx + n2_cc) - 2
-    } else if(pp$treatment$partially_nested) {
-        df <- n3_tx - 1
-    } else {
-        df <- (n3_cc + n3_tx) - 2
+    df <- ifelse(pp$treatment$sigma_cluster_slope == 0, (n3_cc + n3_tx) - 2, (n2_tx + n2_cc) - 2)
+    df <- ifelse(pp$treatment$sigma_cluster_slope > 0, (n3_cc + n3_tx) - 2, df)
+    df <- ifelse(is.na(pp$treatment$sigma_cluster_slope), (n2_tx + n2_cc) - 2, df)
+    df <- ifelse(pp$treatment$partially_nested, n3_tx - 1, df)
 
-    }
+    # if(pp$treatment$sigma_cluster_slope == 0) {
+    #     df <- (n2_tx + n2_cc) - 2
+    # } else if(pp$treatment$partially_nested) {
+    #     df <- n3_tx - 1
+    # } else {
+    #     df <- (n3_cc + n3_tx) - 2
+    #
+    # }
     df
 }
 
@@ -209,7 +215,7 @@ get_satterth_df <- function(object, d, pars, Lambdat, X, Zt, L0, Phi, varb) {
     ## delta method
     vv <- vcovAdj16_internal(Phi, SigmaG, X)
     Lc <- c(0,0,0,1)
-    g <- gradient(function(x)  as.numeric(varb(x = x, Lc)), x = pars[pars != 0], delta = 1e-4)
+    g <- gradient(function(x)  as.numeric(varb(x = x, Lc)), x = pars[!is.na(pars)], delta = 1e-4)
     df <- 2*(Phi[4,4])^2 / (t(g) %*% vv %*% g)
     df <- as.numeric(df)
 

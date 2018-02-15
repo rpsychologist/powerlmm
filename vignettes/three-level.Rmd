@@ -252,6 +252,24 @@ p <- study_parameters(n1 = 11,
 p
 ```
 
+## Random cluster sizes
+Instead of excactly specifing the numbers of subjects per cluster, we can treat is as a random variable and instead specify
+a probability distribution. This is probably preferable, unless it is exactly known how patients will be allocated. Since each power calcution will be based on a differet realization of cluster sizes, it is wise to repeatly calcaulte power for repeated realization from the distribution of cluster sizes. This is done automatically by adding the argument `R`, the output is then show the expected values by averaging over the realizations. Here's an example using the Poisson distribution.
+
+```{r}
+n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+
+p <- study_parameters(n1 = 3,
+                      n2 = n2,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      cohend = -0.8)
+get_power(p, R = 10, progress = FALSE)
+```
+
+
 # Partially nesting
 Partially nesting is common in e.g. clinical psychology studies, when a treatment is 
 compared to a wait-list control. The wait-list arm will only have two levels, but the

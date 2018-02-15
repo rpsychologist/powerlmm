@@ -14,6 +14,27 @@ test_that("icc_slope", {
     x <- get_ICC_slope(p)
     expect_equal(x, 0.5)
 
+    # NA
+    p <- study_parameters(n1 = 5,
+                          n2 = 5,
+                          n3 = 5,
+                          sigma_subject_intercept = 1.55,
+                          sigma_subject_slope = NA,
+                          sigma_cluster_intercept = 1.55,
+                          sigma_cluster_slope = 1)
+    x <- get_ICC_slope(p)
+    expect_equal(x, 1)
+
+    p <- study_parameters(n1 = 5,
+                          n2 = 5,
+                          n3 = 5,
+                          sigma_subject_intercept = 1.55,
+                          sigma_subject_slope = 1,
+                          sigma_cluster_intercept = 1.55,
+                          sigma_cluster_slope = NA)
+    x <- get_ICC_slope(p)
+    expect_equal(x, as.numeric(NA))
+
     # Multi
     p <- study_parameters(n1 = 5,
                           n2 = 5,
@@ -25,6 +46,8 @@ test_that("icc_slope", {
 
     x <- get_ICC_slope(p)
     expect_equal(x, c(0.5, 1/3, 2/3, 0.5))
+
+
     })
 
 # get_var_ratio
@@ -260,6 +283,24 @@ test_that("get_SDS", {
 
     expect_error(plot(x), NA)
 
+    # NA
+    p <- study_parameters(n1 = 11,
+                          n2 = 10,
+                          n3 = 3,
+                          T_end = 10,
+                          sigma_subject_intercept = 1L,
+                          icc_slope = 0,
+                          sigma_error = 1L,
+                          icc_pre_cluster = NA,
+                          var_ratio = 0L)
+
+    x <- get_sds(p)
+    expect_identical(nrow(x), 11L)
+    expect_equal(x$SD_with_random_slopes, rep(sqrt(1^2 + 1^2), 11))
+    expect_error(x, NA)
+
+
+
 })
 
 # get_correlation_matrix --------------------------------------------------
@@ -273,6 +314,24 @@ test_that("get_correlation_matrix", {
                           sigma_error = 1L,
                           icc_pre_cluster = 0L,
                           var_ratio = 0L)
+
+    x <- get_correlation_matrix(p1)
+    tmp <- dplyr::near(x[lower.tri(x)], 0.5)
+
+    expect_true(all(tmp))
+    expect_true(all(diag(x) == 1))
+    expect_error(plot(x), NA)
+
+    # NA
+    p1 <- study_parameters(n1 = 11,
+                           n2 = 10,
+                           n3 = 3,
+                           T_end = 10,
+                           sigma_subject_intercept = 1L,
+                           icc_slope = 0,
+                           sigma_error = 1L,
+                           icc_pre_cluster = NA,
+                           var_ratio = 0L)
 
     x <- get_correlation_matrix(p1)
     tmp <- dplyr::near(x[lower.tri(x)], 0.5)
@@ -299,6 +358,25 @@ test_that("get_VPC", {
                           icc_slope = 0,
                           sigma_error = 1L,
                           icc_pre_cluster = 0L,
+                          var_ratio = 0L)
+
+    x <- get_VPC(p)
+    expect_identical(nrow(x), 11L)
+    expect_equal(x$between_clusters, rep(0, 11))
+    expect_equal(x$between_subjects, rep(50, 11))
+    expect_equal(x$within_subjects, rep(50, 11))
+    expect_equal(x$tot_var, rep(0, 11))
+    expect_error(x, NA)
+
+    # NA
+    p <- study_parameters(n1 = 11,
+                          n2 = 10,
+                          n3 = 3,
+                          T_end = 10,
+                          sigma_subject_intercept = 1L,
+                          icc_slope = 0,
+                          sigma_error = 1L,
+                          icc_pre_cluster = NA,
                           var_ratio = 0L)
 
     x <- get_VPC(p)

@@ -31,8 +31,9 @@ get_ICC_slope <- function(object, ...) {
 #' @export
 #'
 get_ICC_slope.default <- function(object = NULL, u1, v1, ...) {
+    u1[is.na(u1)] <- 0
     x <- v1^2/(v1^2 + u1^2)
-    x[v1 == 0 & u1 == 0] <- NA
+    x[v1 == 0 & u1 == 0] <- 0
     x
 }
 
@@ -74,6 +75,11 @@ get_var_ratio <- function(object, ...) {
 }
 #' @export
 get_var_ratio.default <- function(object=NULL, v1, u1, error, ...) {
+     #if(!(is.na(v1) && is.na(u1))) {
+         v1[is.na(v1) & !is.na(u1)] <- 0
+         u1[is.na(u1) & !is.na(v1)] <- 0
+     #}
+
      (v1^2 + u1^2)/(error^2)
 }
 #' @export
@@ -119,6 +125,8 @@ get_ICC_pre_subjects <- function(object, ...) {
 }
 #' @export
 get_ICC_pre_subjects.default <- function(object = NULL, u0, v0, error, ...) {
+    v0 <- ifelse(is.na(v0), 0, v0)
+
     (u0^2 + v0^2)/(u0^2 + v0^2 + error^2)
 }
 #' @export
@@ -212,6 +220,28 @@ get_ICC_aov.list <- function(x) {
 
 get_time_vector <- function(paras) {
      seq(0, paras$T_end, length.out = paras$n1)
+}
+
+
+# logic -------------------------------------------------------------------
+
+NA_or_zero <- function(x) {
+    x == 0 | is.na(x)
+}
+
+# convert NA paras to 0
+# used e.g. in get_SDS()
+NA_to_zero <- function(object) {
+    ind <- c("sigma_subject_intercept", "sigma_subject_slope", "cor_subject",
+             "sigma_cluster_intercept", "sigma_cluster_slope", "cor_cluster",
+             "sigma_error")
+
+    for(i in ind) {
+        x <- object[[i]]
+        object[[i]][is.na(x)] <- 0
+    }
+
+    object
 }
 
 # elapsed time --------------------------------------------------------------------
@@ -535,7 +565,7 @@ make_list_weibull <- function(x) {
 #' Calculate the Monte Carlo standard error of the empirical power estimates
 #'
 #' Returns the expected simulation error for a study design. Indicates how many
-#' simulation that are needed for a desired precisions in the empirical power
+#' simulation that are needed for a desired precision in the empirical power
 #' estimates.
 #'
 #' @param object An object created by \code{\link{get_power}}
@@ -584,6 +614,11 @@ get_monte_carlo_se_ <- function(p, nsim) {
     class(res) <- append("plcp_mc_se", class(res))
 
     res
+}
+
+# report MCSE based on Gaussian approx
+get_monte_carlo_se_gaussian <- function(x) {
+    sd(x)/sqrt(length(x))
 }
 
 #' @rdname get_monte_carlo_se

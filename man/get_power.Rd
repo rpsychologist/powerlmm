@@ -65,6 +65,9 @@ using cluster sizes that are random, \code{unequal_clusters(func = ...)}, can le
 for a single realization of cluster sizes. In both scenarios the expected power can be calculated by repeatedly recalculating
 power for different new realizations of the random variables. This is done be using the argument \code{R} -- power, sample size, and DFs,
 is then reported by averaging over the \code{R} realizations.
+
+If power varies over the \code{R} realization then the Monte Carlo SE is also reported.
+The SE is based on the Gaussian approximation, i.e. sd(power_i)/sqrt(R).
 }
 \examples{
 # Two-level model

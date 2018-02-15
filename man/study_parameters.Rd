@@ -7,7 +7,7 @@
 study_parameters(n1, n2, n3 = 1, T_end = NULL, fixed_intercept = 0L,
   fixed_slope = 0L, sigma_subject_intercept = NULL,
   sigma_subject_slope = NULL, sigma_cluster_intercept = NULL,
-  sigma_cluster_slope = NULL, sigma_error = NULL, cor_subject = 0L,
+  sigma_cluster_slope = NULL, sigma_error = 10, cor_subject = 0L,
   cor_cluster = 0L, cor_within = 0L, var_ratio = NULL, icc_slope = NULL,
   icc_pre_subject = NULL, icc_pre_cluster = NULL, cohend = 0L,
   partially_nested = FALSE, dropout = 0L, deterministic_dropout = TRUE)
@@ -104,8 +104,20 @@ size of the parameters, therefore, it is possible to setup your calculations
 using only standardized inputs, or by a combination of raw inputs and
 standardized inputs. For instance, if \code{sigma_subject_slope} and
 \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
-solved for. More information regarding the standardized inputs are available in
-the two-level and three-level vignettes.
+solved for. Only the cluster-level parameters can be solved when standardized and
+raw values are mixed. \code{sigma_error} is 10 by default. More information regarding
+the standardized inputs are available in the two-level and three-level vignettes.
+
+\bold{Difference between 0 and NA}
+
+For the variance components \code{0} and \code{NA/NULL} have different meanings.
+A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
+a random intercept is estimated at the cluster level, but that the true value is 0.
+If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
+This choice will matter when simulation, or if Satterthwaite *dfs* are used.
+
+The default behavior if a parameters is not specified is that \code{cor_subject} and
+\code{cor_cluster} is 0, and the other variance components is \code{NULL}.
 
 \bold{Cohen's d calculation}
 
