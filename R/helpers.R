@@ -31,6 +31,7 @@ get_ICC_slope <- function(object, ...) {
 #' @export
 #'
 get_ICC_slope.default <- function(object = NULL, u1, v1, ...) {
+    u1[is.na(u1)] <- 0
     x <- v1^2/(v1^2 + u1^2)
     x[v1 == 0 & u1 == 0] <- 0
     x
@@ -74,7 +75,11 @@ get_var_ratio <- function(object, ...) {
 }
 #' @export
 get_var_ratio.default <- function(object=NULL, v1, u1, error, ...) {
-     v1[is.na(v1)] <- 0
+     #if(!(is.na(v1) && is.na(u1))) {
+         v1[is.na(v1) & !is.na(u1)] <- 0
+         u1[is.na(u1) & !is.na(v1)] <- 0
+     #}
+
      (v1^2 + u1^2)/(error^2)
 }
 #' @export

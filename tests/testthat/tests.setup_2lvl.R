@@ -32,7 +32,7 @@ test_that("study setup lvl 2 minimal #unstandardized", {
 
 # expect error
 test_that("study setup lvl 2 error multiple slope variance", {
-    msg <- "'sigma_subject_slope' or 'var_ratio' should be NULL"
+    msg <- "Can't use both 'sigma_subject_slope' and 'var_ratio'"
     expect_error(study_parameters(n1 = 10,
                                   n2 = 10,
                                   sigma_subject_slope = 1,
