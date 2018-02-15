@@ -79,20 +79,39 @@ test_that("G matrices", {
 
 })
 test_that("make theta", {
-    expect_length(make_theta_vec(1.2, 0, 0), 1)
-    expect_length(make_theta_vec(1.2, 0, 1.4), 2)
+    expect_length(make_theta_vec(1.2, 0, 0), 3)
+    expect_length(make_theta_vec(1.2, 0, 1.4), 3)
+    expect_length(make_theta_vec(1.2, 0.2, 1.4), 3)
+
+    expect_length(make_theta_vec(1.2, NA, NA), 1)
+    expect_length(make_theta_vec(NA, NA, NA), 0)
+    expect_length(make_theta_vec(NA, -0.5, NA), 3)
+    expect_length(make_theta_vec(1.2, NA, 1.4), 2)
     expect_length(make_theta_vec(1.2, 0.2, 1.4), 3)
 
 
+    # ZERO
     th <- make_theta(c("u0" = 1.2, "u01" = 0, "u1" = 0.5, "v0" = 0, "v01" = 0, "v1" = 0, "sigma" = 2.3))
-    expect_length(th, 2)
+    expect_length(th, 6)
 
     th <- make_theta(c("u0" = 1.2, "u01" = 0.5, "u1" = 0.5, "v0" = 1, "v01" = 0, "v1" = 0, "sigma" = 2.3))
-    expect_length(th, 4)
+    expect_length(th, 6)
 
     th <- make_theta(c("u0" = 1.2, "u01" = 0.5, "u1" = 0.5, "v0" = 1, "v01" = 0.3, "v1" = 0.3, "sigma" = 2.3))
     expect_length(th, 6)
+
+    # NA
+    th <- make_theta(c("u0" = 1.2, "u01" = NA, "u1" = 0.5, "v0" = NA, "v01" = NA, "v1" = NA, "sigma" = 2.3))
+    expect_length(th, 2)
+
+    th <- make_theta(c("u0" = 1.2, "u01" = 0.5, "u1" = 0.5, "v0" = 1, "v01" = NA, "v1" = NA, "sigma" = 2.3))
+    expect_length(th, 4)
+
+
+
 })
+
+
 
 # df
 test_that("satterth df 3lvl", {
@@ -128,9 +147,8 @@ test_that("satterth df 3lvl", {
     n3 <- get_n3(object)
 
     expect_equal(ddf, n3$total - 2)
-    })
-# df
-test_that("satterth df 2lvl", {
+})
+test_that("satterth df 3lvl ZERO", {
     object <- study_parameters(n1 = 4,
                                n2 = 5,
                                n3 = 4,
@@ -138,9 +156,80 @@ test_that("satterth df 2lvl", {
                                icc_pre_subject = 0.5,
                                icc_pre_cluster = 0,
                                cor_subject = -0.5,
-                               cor_cluster = 0,
+                               cor_cluster = -0.4,
                                var_ratio = 0.02,
-                               icc_slope = 0,
+                               icc_slope = 0.05,
+                               dropout = 0,
+                               partially_nested = FALSE,
+                               cohend = 0.8)
+
+
+    d <- simulate_data(object)
+    f <- lme4::lFormula(formula = create_lmer_formula(object),
+                        data = d)
+
+    pc <- setup_power_calc(d, f, object)
+    X <- pc$X
+    Zt <- pc$Zt
+    L0 <- pc$L0
+    Lambdat <- pc$Lambdat
+    Lind <- pc$Lind
+    varb <- varb_func(para = pc$pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
+    Phi <- varb(Lc = diag(4))
+    ddf <- get_satterth_df(object, d = d, pars = pc$pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
+
+    n3 <- get_n3(object)
+
+    expect_equal(ddf, n3$total - 2)
+})
+
+test_that("satterth df 3lvl", {
+    object <- study_parameters(n1 = 4,
+                               n2 = 5,
+                               n3 = 4,
+                               T_end = 10,
+                               icc_pre_subject = 0.5,
+                               icc_pre_cluster = 0.1,
+                               cor_subject = -0.5,
+                               cor_cluster = NA,
+                               var_ratio = 0.02,
+                               icc_slope = 0.05,
+                               dropout = 0,
+                               partially_nested = FALSE,
+                               cohend = 0.8)
+
+
+    d <- simulate_data(object)
+    f <- lme4::lFormula(formula = create_lmer_formula(object),
+                        data = d)
+
+    pc <- setup_power_calc(d, f, object)
+    X <- pc$X
+    Zt <- pc$Zt
+    L0 <- pc$L0
+    Lambdat <- pc$Lambdat
+    Lind <- pc$Lind
+    varb <- varb_func(para = pc$pars, X = X, Zt = Zt, L0 = L0, Lambdat = Lambdat, Lind = Lind)
+    Phi <- varb(Lc = diag(4))
+    ddf <- get_satterth_df(object, d = d, pars = pc$pars, Lambdat = Lambdat, X = X, Zt = Zt, L0 = L0, Phi = Phi, varb = varb)
+
+    n3 <- get_n3(object)
+
+    expect_gt(ddf, n3$total - 2)
+})
+
+# df
+test_that("satterth df 2lvl", {
+    object <- study_parameters(n1 = 4,
+                               n2 = 5,
+                               n3 = 4,
+                               T_end = 10,
+                               icc_pre_subject = 0.5,
+                               icc_pre_cluster = NA,
+                               cor_subject = -0.5,
+                               cor_cluster = NA,
+                               var_ratio = 0.02,
+                               icc_slope = NA,
                                dropout = 0,
                                partially_nested = FALSE,
                                cohend = 0.8)
