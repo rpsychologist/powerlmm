@@ -26,7 +26,7 @@ Helps specifying unequal cluster sizes with \code{\link{study_parameters}}
 \details{
 If \code{func} is used together with a function that generates random draws, e.g.
 \code{rnorm} or \code{rpois}, then cluster sizes  (and possible the number of clusters),
-will be threated as a random variable. This is mostly intended for simulations. However, if a
+will be treated as a random variable. This is mostly intended for simulations. However, if a
 random function is used with \code{get_power}, power will
 vary each time the function is called, and you would have to average over repeated calls
 to get the expected power. Functions that output decimal numbers will be rounded

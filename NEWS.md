@@ -5,13 +5,13 @@
 * `Simulate.plcp` will now automatically create lme4 formulas if none is
   supplied, see `?create_lmer_formula`.
 * You can now choose what alpha level to use.
-* Threat cluster sizes as a random variable, `uneqal_clusters` now accepts
+* Treat cluster sizes as a random variable, `uneqal_clusters` now accepts
   a function indicating the distribution of cluster sizes, via the new argument
   `func`, e.g. `rpois` or `rnorm` could be used to draw cluster sizes.
 * Expected power for designs with parameters that are random variables,
   can be calculated by averaging over multiple realizations, using the
   argument `R`.
-* Support for parallel computions on Microsoft Windows, and in GUIs/interactive
+* Support for parallel computations on Microsoft Windows, and in GUIs/interactive
   environments, using `parallel::makeCluster`. Forking is still used for
   non-interactive Unix environments.
   
@@ -30,7 +30,13 @@ head(), or subset().
 * `icc_pre_subject` is now defined as `(u_0^2 + v_0^2) / (u_0^2 + v_0^2 + error^2)`,
 instead of `(u_0^2) / (u_0^2 + v_0^2 + error^2)`. This would be the subject-level ICC, 
 if there's no random slopes, i.e. correlation between time points for the same subject.
-
+* `study_parameters()`: 0 and NA now means different things. If 0 is passed, the parameters
+is kept in the model, if you want to remove it specify it as NA instead.
+* `study_parameters()`: is now less flexible, but more robust. Previously a large
+combination if raw and relative parameters could be combined, and the individual 
+parameters was solved for. To make the function less bug prone and easier to maintain,
+it is now only possible to specify the cluster-level variance components as relative values,
+if the other parameters as passed as raw inputs. 
 
 ## Bug fixes and minor changes
 * Output from `simulate_data()` now includes a column `y_c` that contains the full outcome vector,

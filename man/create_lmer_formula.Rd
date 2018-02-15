@@ -18,9 +18,10 @@ A \code{character} vector with lmer formula syntax.
 Create an lmer formula based on a \code{\link{study_parameters}}-object
 }
 \details{
-The lmer formula will correspond to the model implied by the non-zero parameters in
-the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is 0 the
-corresponding term is removed from the lmer formula.
+The lme4 formula will correspond to the model implied by the specified parameters in
+the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is \code{NA} or \code{NULL} the
+corresponding term is removed from the lmer formula. Parameters that are 0 are retained.
+
 
 Currently only objects with one study design are supported, i.e. objects with class \code{plcp},
 and not \code{plcp_multi}; \code{data.frame} with multiple designs are currently not supported.

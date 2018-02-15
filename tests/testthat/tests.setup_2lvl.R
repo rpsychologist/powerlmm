@@ -377,7 +377,7 @@ test_that("multi with dropout #2", {
                           icc_pre_subject = c(0.1, 0.22),
                           var_ratio = c(0.01, 0.03),
                           dropout = dropout_weibull(0.1, 2))
-    expect_equal(sum(unlist(n2)), (4+10+25)*4)
+
     expect_equal(get_var_ratio(p), c(0.01, 0.03, 0.01, 0.03), tolerance = 0.001)
     expect_equal(get_ICC_slope(p), c(as.numeric(NA),as.numeric(NA), as.numeric(NA), as.numeric(NA)))
     expect_equal(get_ICC_pre_subjects(p), c(0.1, 0.1, 0.22, 0.22), tolerance = 0.001)

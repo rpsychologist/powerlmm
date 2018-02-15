@@ -229,6 +229,21 @@ NA_or_zero <- function(x) {
     x == 0 | is.na(x)
 }
 
+# convert NA paras to 0
+# used e.g. in get_SDS()
+NA_to_zero <- function(object) {
+    ind <- c("sigma_subject_intercept", "sigma_subject_slope", "cor_subject",
+             "sigma_cluster_intercept", "sigma_cluster_slope", "cor_cluster",
+             "sigma_error")
+
+    for(i in ind) {
+        x <- object[[i]]
+        object[[i]][is.na(x)] <- 0
+    }
+
+    object
+}
+
 # elapsed time --------------------------------------------------------------------
 elapsed_time <- function(object, ...) {
      UseMethod("elapsed_time")
@@ -550,7 +565,7 @@ make_list_weibull <- function(x) {
 #' Calculate the Monte Carlo standard error of the empirical power estimates
 #'
 #' Returns the expected simulation error for a study design. Indicates how many
-#' simulation that are needed for a desired precisions in the empirical power
+#' simulation that are needed for a desired precision in the empirical power
 #' estimates.
 #'
 #' @param object An object created by \code{\link{get_power}}
@@ -599,6 +614,11 @@ get_monte_carlo_se_ <- function(p, nsim) {
     class(res) <- append("plcp_mc_se", class(res))
 
     res
+}
+
+# report MCSE based on Gaussian approx
+get_monte_carlo_se_gaussian <- function(x) {
+    sd(x)/sqrt(length(x))
 }
 
 #' @rdname get_monte_carlo_se

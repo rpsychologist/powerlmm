@@ -79,6 +79,18 @@ p <- study_parameters(n1 = 11,
 p
 
 ## ------------------------------------------------------------------------
+n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+
+p <- study_parameters(n1 = 3,
+                      n2 = n2,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      icc_slope = 0.05,
+                      var_ratio = 0.02,
+                      cohend = -0.8)
+get_power(p, R = 10, progress = FALSE)
+
+## ------------------------------------------------------------------------
 p <- study_parameters(n1 = 11,
                       n2 = unequal_clusters(2, 5, 10, 30),
                       icc_pre_subject = 0.5,

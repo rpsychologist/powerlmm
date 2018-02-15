@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-02-07" />
+<meta name="date" content="2018-02-15" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-02-07</em></h4>
+<h4 class="date"><em>2018-02-15</em></h4>
 
 
 
@@ -121,7 +121,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 <span class="kw">summary</span>(res)</code></pre></div>
 <div id="automatic-formula-creation" class="section level3">
 <h3>Automatic formula creation</h3>
-<p>It is also possible to automatically create the <code>formula</code> by leaving it blank. Then the <code>lmer-formula</code> is created by including the non-zero parameters in the model, see <code>?create_lmer_formula</code></p>
+<p>It is also possible to automatically create the <code>formula</code> by leaving it blank. Then the <code>lmer-formula</code> is created by including parameters that are not specified as <code>NA</code> or <code>NULL</code> in the model, see <code>?create_lmer_formula</code></p>
 </div>
 </div>
 <div id="investigate-model-misspecification" class="section level2">

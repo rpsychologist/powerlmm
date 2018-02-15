@@ -68,8 +68,20 @@
 #' using only standardized inputs, or by a combination of raw inputs and
 #' standardized inputs. For instance, if \code{sigma_subject_slope} and
 #' \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
-#' solved for. More information regarding the standardized inputs are available in
-#' the two-level and three-level vignettes.
+#' solved for. Only the cluster-level parameters can be solved when standardized and
+#' raw values are mixed. \code{sigma_error} is 10 by default. More information regarding
+#' the standardized inputs are available in the two-level and three-level vignettes.
+#'
+#' \bold{Difference between 0 and NA}
+#'
+#' For the variance components \code{0} and \code{NA/NULL} have different meanings.
+#' A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
+#' a random intercept is estimated at the cluster level, but that the true value is 0.
+#' If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
+#' This choice will matter when simulation, or if Satterthwaite *dfs* are used.
+#'
+#' The default behavior if a parameters is not specified is that \code{cor_subject} and
+#' \code{cor_cluster} is 0, and the other variance components is \code{NULL}.
 #'
 #' \bold{Cohen's d calculation}
 #'
@@ -904,7 +916,7 @@ prepare_paras <- function(paras) {
 #' @details
 #' If \code{func} is used together with a function that generates random draws, e.g.
 #' \code{rnorm} or \code{rpois}, then cluster sizes  (and possible the number of clusters),
-#' will be threated as a random variable. This is mostly intended for simulations. However, if a
+#' will be treated as a random variable. This is mostly intended for simulations. However, if a
 #' random function is used with \code{get_power}, power will
 #' vary each time the function is called, and you would have to average over repeated calls
 #' to get the expected power. Functions that output decimal numbers will be rounded

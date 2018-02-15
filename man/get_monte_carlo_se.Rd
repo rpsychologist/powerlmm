@@ -28,7 +28,7 @@ A \code{data.frame} with the estimated power, expected standard error
 }
 \description{
 Returns the expected simulation error for a study design. Indicates how many
-simulation that are needed for a desired precisions in the empirical power
+simulation that are needed for a desired precision in the empirical power
 estimates.
 }
 \examples{

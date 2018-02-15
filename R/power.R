@@ -45,6 +45,9 @@
 #' power for different new realizations of the random variables. This is done be using the argument \code{R} -- power, sample size, and DFs,
 #' is then reported by averaging over the \code{R} realizations.
 #'
+#' If power varies over the \code{R} realization then the Monte Carlo SE is also reported.
+#' The SE is based on the Gaussian approximation, i.e. sd(power_i)/sqrt(R).
+#'
 #' @seealso \code{\link{study_parameters}}, \code{\link{simulate.plcp}}, \code{\link{get_power_table}}
 #'
 #' @export
@@ -125,6 +128,7 @@ print.plcp_power_3lvl <- function(x, ...) {
    .p <- x
 
    partially_nested <- .p$paras$partially_nested
+   MCSE <- 0
    if(.p$R > 0) {
        tot_n <- as.data.frame(.p$tot_n)
        tot_n <- data.frame(control = mean(unlist(tot_n$control)),
@@ -141,7 +145,9 @@ print.plcp_power_3lvl <- function(x, ...) {
       #                                mean(unlist(tot_n$treatment)))
 
        x$total_n <- print_per_treatment(tot_n, width = width)
-
+       if(.p$R > 1) {
+           MCSE <- get_monte_carlo_se_gaussian(unlist(.p$power_list))
+       }
        .p$power <- mean(unlist(.p$power))
        #x$tot_n <- mean(unlist(.p$tot_n))
        .p$df <- mean(unlist(.p$df))
@@ -152,7 +158,12 @@ print.plcp_power_3lvl <- function(x, ...) {
    x$method <- "Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)\n                  with missing data and unbalanced designs"
    x$df <- .p$df
    x$alpha <- .p$alpha
-   x$power <- paste(round(unlist(.p$power) * 100, 0), "%")
+   if(MCSE > 0) {
+       x$power <- paste0(round(unlist(.p$power) * 100, 0), "%", " (MCSE: ", round(MCSE*100), "%)")
+
+   } else {
+       x$power <- paste0(round(unlist(.p$power) * 100, 0), "%")
+   }
 
    if(!is.null(x$note) && x$note == "n2 is randomly sampled") {
        txt <- "n2 is randomly sampled"
@@ -223,9 +234,10 @@ print.plcp_power_2lvl <- function(x, ...) {
 #' @param ... Unused, optional arguments.
 #' @details
 #'
-#' The lmer formula will correspond to the model implied by the non-zero parameters in
-#' the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is 0 the
-#' corresponding term is removed from the lmer formula.
+#' The lme4 formula will correspond to the model implied by the specified parameters in
+#' the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is \code{NA} or \code{NULL} the
+#' corresponding term is removed from the lmer formula. Parameters that are 0 are retained.
+#'
 #'
 #' Currently only objects with one study design are supported, i.e. objects with class \code{plcp},
 #' and not \code{plcp_multi}; \code{data.frame} with multiple designs are currently not supported.

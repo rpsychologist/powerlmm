@@ -179,7 +179,7 @@ shinyServer(function(input, output, session) {
         if(p$run == FALSE) return()
           x <-  get_sds(p$paras)
 
-          x[,c("time","with_random_slopes")]
+          x[,c("time","SD_with_random_slopes")]
 
     })
 
