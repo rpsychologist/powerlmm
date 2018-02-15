@@ -715,8 +715,11 @@ prepare_multi_power_out <- function(object, x, R, alpha, df) {
     out_dense <- prep$out_dense
     out <- out[, select_setup_cols(out)]
     out$df <- round(unlist(x$df), 2)
-    out$power <- paste(round(unlist(x$power) * 100, 0), "%")
-    if(R > 1) out$power_SD <- paste(round(unlist(x$power_SD) * 100, 0), "%")
+    out$power <- paste(round(unlist(x$power) * 100, 1), "%")
+    if(R > 1) {
+        MCSE <- lapply(x$power_list, get_monte_carlo_se_gaussian)
+        out$power_MCSE <- paste(round(unlist(MCSE) * 100, 1), "%")
+    }
     out_dense$df <- unlist(x$df)
     out_dense$power <- unlist(x$power)
     out_dense$power_SD <- unlist(x$power_SD)
