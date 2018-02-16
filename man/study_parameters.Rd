@@ -71,9 +71,9 @@ arms or only in the treatment arm.}
 \code{\link{dropout_manual}}. Assumed to be 0 if \code{NULL}.}
 
 \item{deterministic_dropout}{\code{logical}; if \code{FALSE} the input to
-\code{dropout} will be treated as stochastic and dropout will sampled
+\code{dropout} will be treated as random and dropout will be sampled
 from a multinomial distribution. N.B.: the random dropout will be
-identical in both groups unless dropout is specified using \code{\link{per_treatment}}.}
+sampled independently in both treatment arms.}
 }
 \value{
 A \code{list} or \code{data.frame} of parameters values, either of
@@ -147,10 +147,20 @@ Accounting for missing data in the power calculations is possible. Currently,
 \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
 \code{\link{dropout_manual}}. It is possible to have different dropout
 patterns per treatment group using \code{\link{per_treatment}}. See their
-respective help pages for examples of their use. N.B.: the random dropout will be
-identical in both groups unless dropout is specified using \code{\link{per_treatment}}.
-If you want to sample both groups from independent multinomial distributions,
-use \code{\link{per_treatment}}, even if the parameters are the same.
+respective help pages for examples of their use.
+
+If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
+However, excactly which subjects dropout is randomy sampled within treatments. Thus,
+clusters can become slightly unbalanced, but generally power varies little over realizations.
+
+For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
+of dropout is converted to the probability of having excactly \emph{i} measurements,
+and the actual dropout is sampled from a multinomial distribution. In this case, the proportion of
+dropout varies over the realizations from the multinomial distribution, but will
+match the dropout proportions in expectation. The random dropout in
+each treatment group is sampled from independent multinomial distributions.
+
+Generally, power based on fixed dropout is a good approximation of random dropout.
 }
 \examples{
 # Three level model with both subject- and cluster-level random slope
