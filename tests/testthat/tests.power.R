@@ -647,7 +647,7 @@ test_that("power random n2", {
     expect_equal(x$power, mean(x$power_list))
 
     expect_error(p, NA)
-    expect_output(str(print(p)),  "n1.*: num 11")
+    expect_output(str(p),  "n1.*: num 11")
 
     # two-level
     p <- study_parameters(n1 = 11,
@@ -666,7 +666,7 @@ test_that("power random n2", {
     expect_equal(x$power, mean(x$power_list))
 
     expect_error(p, NA)
-    expect_output(str(print(p)),  "n1.*: num 11")
+    expect_output(str(p),  "n1.*: num 11")
 
 })
 

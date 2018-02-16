@@ -72,7 +72,8 @@ arms or only in the treatment arm.}
 
 \item{deterministic_dropout}{\code{logical}; if \code{FALSE} the input to
 \code{dropout} will be treated as stochastic and dropout will sampled
-from a multinomial distribution.}
+from a multinomial distribution. N.B.: the random dropout will be
+identical in both groups unless dropout is specified using \code{\link{per_treatment}}.}
 }
 \value{
 A \code{list} or \code{data.frame} of parameters values, either of
@@ -136,16 +137,20 @@ If either \code{sigma_cluster_slope} or \code{icc_slope} and
 It is possible to specify different cluster sizes using
 \code{\link{unequal_clusters}}. Cluster sizes can vary between treatment arms
 by also using \code{\link{per_treatment}}. The number of clusters per treatment can
-also be set by using \code{\link{per_treatment}}. See \code{\link{per_treatment}}
-and \code{\link{unequal_clusters}} examples of their use.
+also be set by using \code{\link{per_treatment}}. Moreover, cluster
+sizes can be sampled from a distribution, and treated as a random variable.
+See \code{\link{per_treatment}} and \code{\link{unequal_clusters}} for examples of their use.
 
 \bold{Missing data and dropout}
 
 Accounting for missing data in the power calculations is possible. Currently,
 \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
- \code{\link{dropout_manual}}. It is possible to have different dropout
- patterns per treatment group using \code{\link{per_treatment}}. See their
- respective help pages for examples of their use.
+\code{\link{dropout_manual}}. It is possible to have different dropout
+patterns per treatment group using \code{\link{per_treatment}}. See their
+respective help pages for examples of their use. N.B.: the random dropout will be
+identical in both groups unless dropout is specified using \code{\link{per_treatment}}.
+If you want to sample both groups from independent multinomial distributions,
+use \code{\link{per_treatment}}, even if the parameters are the same.
 }
 \examples{
 # Three level model with both subject- and cluster-level random slope

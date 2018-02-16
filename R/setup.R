@@ -46,7 +46,8 @@
 #' \code{\link{dropout_manual}}. Assumed to be 0 if \code{NULL}.
 #' @param deterministic_dropout \code{logical}; if \code{FALSE} the input to
 #' \code{dropout} will be treated as stochastic and dropout will sampled
-#' from a multinomial distribution.
+#' from a multinomial distribution. N.B.: the random dropout will be
+#' identical in both groups unless dropout is specified using \code{\link{per_treatment}}.
 #' @return A \code{list} or \code{data.frame} of parameters values, either of
 #' class \code{plcp} or \code{plcp_multi} if multiple parameters are compared.
 #'
@@ -100,16 +101,21 @@
 #' It is possible to specify different cluster sizes using
 #' \code{\link{unequal_clusters}}. Cluster sizes can vary between treatment arms
 #' by also using \code{\link{per_treatment}}. The number of clusters per treatment can
-#' also be set by using \code{\link{per_treatment}}. See \code{\link{per_treatment}}
-#' and \code{\link{unequal_clusters}} examples of their use.
+#' also be set by using \code{\link{per_treatment}}. Moreover, cluster
+#' sizes can be sampled from a distribution, and treated as a random variable.
+#' See \code{\link{per_treatment}} and \code{\link{unequal_clusters}} for examples of their use.
 #'
 #' \bold{Missing data and dropout}
 #'
 #' Accounting for missing data in the power calculations is possible. Currently,
 #' \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
-#'  \code{\link{dropout_manual}}. It is possible to have different dropout
-#'  patterns per treatment group using \code{\link{per_treatment}}. See their
-#'  respective help pages for examples of their use.
+#' \code{\link{dropout_manual}}. It is possible to have different dropout
+#' patterns per treatment group using \code{\link{per_treatment}}. See their
+#' respective help pages for examples of their use. N.B.: the random dropout will be
+#' identical in both groups unless dropout is specified using \code{\link{per_treatment}}.
+#' If you want to sample both groups from independent multinomial distributions,
+#' use \code{\link{per_treatment}}, even if the parameters are the same.
+#'
 #'
 #' @seealso \code{\link{get_power}}, \code{\link{simulate.plcp}}
 #'
@@ -441,6 +447,7 @@ sim_parameters <- function(...) {
 
 
 print_per_treatment <- function(n, width = 0, n2 = FALSE, hanging = 19) {
+
     x <- lapply(seq_along(n), function(i) {
         print_per_treatment_(i, x = n, n2 = n2)$lab
     })
@@ -495,7 +502,17 @@ truncate_n2 <- function(n2) {
 prepare_print_n2 <- function(x) {
     n2 <- get_n2(x)
     n2$treatment <- deparse_n2(n2$treatment)
-    n2$control <- deparse_n2(n2$control)
+    n2_attr <- attr(n2$control, "func")
+    if(attr(n2$control, "per_treatment")) {
+        n2$control <- deparse_n2(n2$control)
+
+    } else if(!is.null(n2_attr) && (n2_attr != "manual")) {
+        n2$control <- "-"
+        attr(n2$control, "func") <- FALSE
+    } else {
+        n2$control <- deparse_n2(n2$control)
+    }
+
 
     n2
 }
@@ -575,8 +592,11 @@ prepare_print_plcp_3lvl <- function(x) {
             n2_attr <- attr(n2, "func")
         }
 
-        if(!is.null(n2_attr) & n2_attr != "manual") res$note <- "n2 is randomly sampled"
-
+        if(!is.null(n2_attr) &
+           n2_attr != "manual") res$note <- "n2 is randomly sampled"
+        if(!is.null(n2_attr) &
+           n2_attr != "manual" &
+           !is.per_treatment(x$n2)) attr(res, "same_dist") <- TRUE
     }
 
 
@@ -592,6 +612,8 @@ prepare_print_plcp_3lvl <- function(x) {
 print.plcp_3lvl <- function(x, ...) {
     res <- prepare_print_plcp_3lvl(x)
     print(res, digits = 2)
+    if(!is.null(attr(res, "same_dist"))) message("The same random 'n2' sample is used for both treatment groups,\n'per_treatment' is needed to sample both groups independently.")
+
 }
 
 #' Print method for two-level \code{study_parameters}-objects
@@ -670,7 +692,9 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         out$dropout_cc <- dropout$control
         out <- subset(out, select = -dropout)
     }
-    if(all(n2$treatment_lab == n2$control_lab)) {
+
+    per_tx_n2 <- vapply(seq_along(object$n2), function(i) is.per_treatment(object$n2[i]), logical(1))
+    if(all(n2$treatment_lab == n2$control_lab) & !any(per_tx_n2)) {
         out$n2_lab <- n2$treatment_lab
         out$n2 <- n2$treatment
     } else {
@@ -781,16 +805,21 @@ eval_n2 <- function(n2) {
     n2 <- n2[n2 > 0]
     if(length(n2) < 1) stop("All clusters of size 0")
     attr(n2, "func") <- func
+    attr(n2, "per_treatment") <- FALSE
     n2
 }
 
 prepare_paras <- function(paras) {
     paras_tx <- paras
+    per_tx_n2 <- FALSE
     if (is.per_treatment(paras$n3)) {
         n3_tx <- paras$n3[[1]]$treatment
         n3_cc <- paras$n3[[1]]$control
         paras$n3 <- n3_cc
         paras_tx$n3 <- n3_tx
+
+       attr(paras$n3, "per_treatment") <- TRUE
+       attr(paras_tx$n3, "per_treatment") <- TRUE
     }
 
     if(is.per_treatment(paras$n2)) {
@@ -808,6 +837,10 @@ prepare_paras <- function(paras) {
             paras_tx$n3 <- length(paras_tx$n2)
 
         }
+
+        per_tx_n2 <- TRUE
+
+    } else {
     }
     if(is.unequal_clusters(paras$n2)) {
         paras$n2 <- eval_n2(paras$n2)
@@ -828,6 +861,9 @@ prepare_paras <- function(paras) {
     if(is.per_treatment(paras$dropout)) {
         paras_tx$dropout <- paras$dropout[[1]][[1]]
         paras$dropout <- paras$dropout[[1]][[2]]
+
+        attr(paras$dropout, "per_treatment") <- TRUE
+        attr(paras_tx$dropout, "per_treatment") <- TRUE
     }
 
     if(length(paras_tx$n2) == 1) {
@@ -836,6 +872,10 @@ prepare_paras <- function(paras) {
     if(length(paras$n2) == 1) {
         paras$n2 <- rep(paras$n2, paras$n3)
     }
+
+
+    attr(paras$n2, "per_treatment") <- per_tx_n2
+    attr(paras_tx$n2, "per_treatment") <- per_tx_n2
 
 
     out <- list(control = paras,
@@ -864,12 +904,13 @@ prepare_paras <- function(paras) {
 #'
 #' @details
 #' If \code{func} is used together with a function that generates random draws, e.g.
-#' \code{rnorm} or \code{rpois}, then cluster sizes  (and possible the number of clusters),
-#' will be treated as a random variable. This is mostly intended for simulations. However, if a
-#' random function is used with \code{get_power}, power will
-#' vary each time the function is called, and you would have to average over repeated calls
-#' to get the expected power. Functions that output decimal numbers will be rounded
-#' to the closest integer.
+#' \code{rnorm} or \code{rpois}, then cluster sizes  (and possibly the number of clusters),
+#' will be treated as a random variable. The expected power is then reported by averaging over
+#' multiple realizations of the random variables.
+#'
+#' Unless \code{per_treatment} is used, then the same realization of random cluster sizes
+#' will be used in both groups. To use independent realizations from the same distribution for
+#' each treatment group, simply combine the \code{unequal_clusters} with \code{per_treatment}.
 #'
 #' @return An object of type 'plcp_unequal_clusters'
 #' @seealso \code{\link{per_treatment}}
@@ -896,10 +937,22 @@ prepare_paras <- function(paras) {
 #'     group_by(treatment, cluster) %>%
 #'     summarise(n = n())
 #'
-#' # Poisson distributed cluster sizes
+#' # Poisson distributed cluster sizes, same in both groups
 #' n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
 #' p <- study_parameters(n1 = 11,
 #'                       n2 = n2,
+#'                       T_end = 10,
+#'                       icc_pre_subject = 0.5,
+#'                       icc_pre_cluster = 0,
+#'                       sigma_error = 1,
+#'                       var_ratio = 0.03,
+#'                       icc_slope = 0.05,
+#'                       cohend = -0.8)
+#'
+#' # Independent draws from same dist
+#' n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = per_treatment(n2, n2),
 #'                       T_end = 10,
 #'                       icc_pre_subject = 0.5,
 #'                       icc_pre_cluster = 0,

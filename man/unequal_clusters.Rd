@@ -25,12 +25,13 @@ Helps specifying unequal cluster sizes with \code{\link{study_parameters}}
 }
 \details{
 If \code{func} is used together with a function that generates random draws, e.g.
-\code{rnorm} or \code{rpois}, then cluster sizes  (and possible the number of clusters),
-will be treated as a random variable. This is mostly intended for simulations. However, if a
-random function is used with \code{get_power}, power will
-vary each time the function is called, and you would have to average over repeated calls
-to get the expected power. Functions that output decimal numbers will be rounded
-to the closest integer.
+\code{rnorm} or \code{rpois}, then cluster sizes  (and possibly the number of clusters),
+will be treated as a random variable. The expected power is then reported by averaging over
+multiple realizations of the random variables.
+
+Unless \code{per_treatment} is used, then the same realization of random cluster sizes
+will be used in both groups. To use independent realizations from the same distribution for
+each treatment group, simply combine the \code{unequal_clusters} with \code{per_treatment}.
 }
 \examples{
 library(dplyr)
@@ -53,10 +54,22 @@ d \%>\%
     group_by(treatment, cluster) \%>\%
     summarise(n = n())
 
-# Poisson distributed cluster sizes
+# Poisson distributed cluster sizes, same in both groups
 n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
 p <- study_parameters(n1 = 11,
                       n2 = n2,
+                      T_end = 10,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0,
+                      sigma_error = 1,
+                      var_ratio = 0.03,
+                      icc_slope = 0.05,
+                      cohend = -0.8)
+
+# Independent draws from same dist
+n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+p <- study_parameters(n1 = 11,
+                      n2 = per_treatment(n2, n2),
                       T_end = 10,
                       icc_pre_subject = 0.5,
                       icc_pre_cluster = 0,
