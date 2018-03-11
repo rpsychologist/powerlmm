@@ -87,8 +87,10 @@
 #' \bold{Cohen's d calculation}
 #'
 #' Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
-#' The choice of denominator differs between fields, and other options will be added in
-#' future releases. In the meanwhile you'll have to manually convert between the different
+#' For \bold{partially nested} designs the control groups baseline SD is used.
+#'
+#' The choice of denominator differs between fields, and adding a more flexible solution
+#' is high-priority. In the meanwhile you'll have to manually convert between the different
 #' standardizations.
 #'
 #' \bold{Two- or three-level models}
@@ -643,7 +645,13 @@ get_slope_diff <- function(paras) {
     paras$sigma_subject_intercept[is.na(paras$sigma_subject_intercept)] <- 0
     paras$sigma_cluster_intercept[is.na(paras$sigma_cluster_intercept)] <- 0
 
-    with(paras, cohend * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+    if(paras$partially_nested) {
+        with(paras, cohend * sqrt(sigma_subject_intercept^2  + sigma_error^2))
+    } else {
+        with(paras, cohend * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+    }
+
+
 }
 
 

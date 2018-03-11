@@ -171,7 +171,7 @@ print.plcp_power_3lvl <- function(x, ...) {
    }
     if(partially_nested) {
         if(is.null(x$note)) {
-            x$note <- "Study is partially-nested. Clustering only in treatment arm"
+            x$note <- "Study is partially-nested. Clustering only in treatment arm. Cohen's d is standardized using the control group's pretest SD."
         } else {
             x$note <- paste(x$note, "Study is partially-nested. Clustering only in treatment arm", sep = "\n      ")
         }
@@ -680,7 +680,7 @@ get_power.plcp_multi <- function(object, df = "between", alpha = 0.05, progress 
                "power_list",
                "df",
                "se",
-               "n2_list")]
+               "n2_list"), drop = FALSE]
 
     out_dense <- prepare_multi_power_out(object,
                                          x = x,
