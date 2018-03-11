@@ -709,7 +709,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     } else {
         out$dropout_tx <- dropout$treatment
         out$dropout_cc <- dropout$control
-        out <- subset(out, select = -dropout)
+        out$dropout <- NA
     }
 
     per_tx_n2 <- vapply(seq_along(object$n2), function(i) is.per_treatment(object$n2[i]), logical(1))
@@ -723,21 +723,21 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         out$n2_cc <- n2$control
         #out$n2_tx_lab <- n2$treatment_lab
         #out$n2_cc_lab <- n2$control_lab
-        out <- subset(out, select = -n2)
+        out$n2 <- NULL
     }
 
     unequal_clust <- lapply(seq_along(object$n2), function(i) is.unequal_clusters(object$n2[i]))
     unequal_clust <- unlist(unequal_clust)
 
     if(any(unequal_clust)) {
-        out <- subset(out, select = -n3)
+        out$n3 <- NULL
     } else {
         if(all(n3$treatment == n3$control)) {
             out$n3 <- n3$treatment
         } else {
             out$n3_tx <- n3$treatment
             out$n3_cc <- n3$control
-            out <- subset(out, select = -n3)
+            out$n3 <- NULL
         }
     }
 

@@ -1131,7 +1131,7 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
         Satt_NA <- FE[FE$parameter == "time:treatment", "Satt_NA"]
     }
 
-    FE <- subset(FE, select = -Satt_NA)
+    FE$Satt_NA <- NULL
 
 
     CI_NA <- 0
