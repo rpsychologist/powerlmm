@@ -82,10 +82,10 @@ knitr::opts_chunk$set(eval = FALSE)
 #                  save = FALSE)
 
 ## ------------------------------------------------------------------------
-#  # Summarize 'time:treatment' results
+#  # Summarize the 'time:treatment' results
 #  summary(res, para = "time:treatment", type = "fixed", model = "correct")
 #  
-#  # Summarize cluster-level random slope
+#  # Summarize the cluster-level random slope
 #  summary(res, para = "cluster_slope", type = "random", model = "correct")
 #  
 

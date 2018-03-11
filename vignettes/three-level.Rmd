@@ -122,9 +122,10 @@ Standardized        | Calculation
 `icc_pre_clusters`  | `sigma_cluster_intercept^2/(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2)`
 `icc_slope`         | `sigma_custer_slope^2/(sigma_cluster_slope^2 + sigma_subject_slope^2)`
 `var_ratio`         | `(sigma_subject_slope^2 + sigma_custer_slope^2)/sigma_error^2`
-`cohend`            | `slope_diff/(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2)`
+`cohend` (fully nested)            | `slope_diff/(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2)`
+`cohend` (partially nested)            | `slope_diff/(sigma_subject_intercept^2 + sigma_error^2)`
 
-
+N.B that partially nested models standardize Cohen's *d* using the control group's pretest SD. Addding more options, and support for unstandardize effects is high-priority.
 
 # Study setup
 This example will show  how to calculate power for the `time:treatment`-interaction. We assume that the two treatment arms will differ by a Cohen's *d* of 0.8 at post-test. The treatment period is 11 weeks with weekly measures, and each treatment group has 4 therapists that each treat 10 participants. We are expecting that 5 % of the total slope variance will be at the therapist level, and there will be a moderate amount of heterogeneity in change over time (var_ratio = 0.02), Lastly, 50 % of the baseline variance is at the subject level, and `icc_pre_cluster` is set to 0 since we are randomizing subjects to clusters, and hence there should be no therapist effect at baseline. 

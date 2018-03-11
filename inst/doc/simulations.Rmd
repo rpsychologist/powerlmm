@@ -48,7 +48,7 @@ get_monte_carlo_se(x, nsim = c(1000, 2000, 5000))
 ```
 We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power. 
 
-Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. However, parallelization relies on `parallel::mclapply` which does not support Windows. If you're using Windows use `cores = 1`. 
+Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computions will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used. 
 
 ```{r}
 f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
@@ -66,7 +66,7 @@ summary(res)
 ```
 
 ### Automatic formula creation
-It is also possible to automatically create the `formula` by leaving it blank. Then the `lmer-formula` is created by including parameters that are not specified as `NA` or `NULL` in the model, see `?create_lmer_formula`
+It is also possible to automatically create the `formula` by leaving it blank. Then the `lmer-formula` is created by including parameters that are not specified as `NA` or `NULL` in the model, see `?create_lmer_formula`. N.B., parameters specified as 0 are included in the model.
 
 
 ## Investigate model misspecification
@@ -89,7 +89,7 @@ summary(res)
 ```
 
 
-All of the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald *t* test using Satterthwaite's df approximation (from the **lmerTest** package).
+All of the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald *t* test using Satterthwaite's *df* approximation (from the **lmerTest** package).
 
 ## Compare multiple combinations of parameter values
 We can also simulate multiple designs and compare them. Let's compare 6 vs 12 clusters in the treatment arm, and `ìcc_slope` of 0.05 and 0.1, and a Cohen's d of 0.5 and 0.8. 
@@ -125,10 +125,10 @@ res <- simulate(object = p,
 The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups `nsim` number of simulations will be performed. With multiple designs `summary` works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.
 
 ```{r}
-# Summarize 'time:treatment' results 
+# Summarize the 'time:treatment' results 
 summary(res, para = "time:treatment", type = "fixed", model = "correct")
 
-# Summarize cluster-level random slope 
+# Summarize the cluster-level random slope 
 summary(res, para = "cluster_slope", type = "random", model = "correct")
 
 ```

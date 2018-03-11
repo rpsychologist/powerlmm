@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-02-15" />
+<meta name="date" content="2018-03-11" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-02-15</em></h4>
+<h4 class="date"><em>2018-03-11</em></h4>
 
 
 
@@ -106,7 +106,7 @@ p</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span><span class="kw">get_power</span>(p)
 <span class="kw">get_monte_carlo_se</span>(x, <span class="dt">nsim =</span> <span class="kw">c</span>(<span class="dv">1000</span>, <span class="dv">2000</span>, <span class="dv">5000</span>))</code></pre></div>
 <p>We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power.</p>
-<p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. However, parallelization relies on <code>parallel::mclapply</code> which does not support Windows. If you’re using Windows use <code>cores = 1</code>.</p>
+<p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computions will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
 
 cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="co"># use all cores</span>
@@ -121,7 +121,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 <span class="kw">summary</span>(res)</code></pre></div>
 <div id="automatic-formula-creation" class="section level3">
 <h3>Automatic formula creation</h3>
-<p>It is also possible to automatically create the <code>formula</code> by leaving it blank. Then the <code>lmer-formula</code> is created by including parameters that are not specified as <code>NA</code> or <code>NULL</code> in the model, see <code>?create_lmer_formula</code></p>
+<p>It is also possible to automatically create the <code>formula</code> by leaving it blank. Then the <code>lmer-formula</code> is created by including parameters that are not specified as <code>NA</code> or <code>NULL</code> in the model, see <code>?create_lmer_formula</code>. N.B., parameters specified as 0 are included in the model.</p>
 </div>
 </div>
 <div id="investigate-model-misspecification" class="section level2">
@@ -140,7 +140,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
                 <span class="dt">save =</span> <span class="ot">FALSE</span>)
 
 <span class="kw">summary</span>(res)</code></pre></div>
-<p>All of the parameters are summarized and presented for both models. Since we specified <code>satterthwaite = TRUE</code>, empirical power is both based on the Wald Z test and the Wald <em>t</em> test using Satterthwaite’s df approximation (from the <strong>lmerTest</strong> package).</p>
+<p>All of the parameters are summarized and presented for both models. Since we specified <code>satterthwaite = TRUE</code>, empirical power is both based on the Wald Z test and the Wald <em>t</em> test using Satterthwaite’s <em>df</em> approximation (from the <strong>lmerTest</strong> package).</p>
 </div>
 <div id="compare-multiple-combinations-of-parameter-values" class="section level2">
 <h2>Compare multiple combinations of parameter values</h2>
@@ -171,10 +171,10 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
                 <span class="dt">cores =</span> cores,
                 <span class="dt">save =</span> <span class="ot">FALSE</span>)</code></pre></div>
 <p>The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups <code>nsim</code> number of simulations will be performed. With multiple designs <code>summary</code> works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Summarize 'time:treatment' results </span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Summarize the 'time:treatment' results </span>
 <span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;time:treatment&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;fixed&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;correct&quot;</span>)
 
-<span class="co"># Summarize cluster-level random slope </span>
+<span class="co"># Summarize the cluster-level random slope </span>
 <span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;cluster_slope&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;correct&quot;</span>)</code></pre></div>
 </div>
 
