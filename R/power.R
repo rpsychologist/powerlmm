@@ -771,8 +771,10 @@ print.plcp_multi_power <- function(x, ...) {
 #' @method [ plcp_multi_power
 #' @export
 `[.plcp_multi_power` <- function(x, i, ...) {
+
     if(length(i) == 1 && i > nrow(x)) stop("Row number does not exist.", call. = FALSE)
     if(all(!i)) stop("Nothing to print, subset empty.", call. = FALSE)
+
     x_new <- attr(x, "x")[i, ]
     object <- attr(x, "object")[i, ]
 
@@ -781,6 +783,8 @@ print.plcp_multi_power <- function(x, ...) {
                                          R = attr(x, "R"),
                                          alpha = attr(x, "alpha"),
                                          df = attr(x, "df"))
+    class(out_dense) <-  append(class(out_dense), "plcp_filtered")
+
     out_dense
 }
 

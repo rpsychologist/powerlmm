@@ -1124,7 +1124,7 @@ update.plcp <- function(object, ...) {
 
     new_args <- list(...)
     new <- check_new_argument(args, new_args)
-    if(length(new) > 0) stop(paste0("Updating new arguments is not yet implemented. '", new, "' was not used in original call."))
+    if(length(new) > 0) stop(paste0("Updating new arguments is not yet implemented. '", new, "' was not used in original call."), call. = FALSE)
     for(i in seq_along(new_args)) {
         args[[names(new_args[i])]] <- new_args[[i]]
     }
@@ -1136,9 +1136,9 @@ update.plcp <- function(object, ...) {
 #' @method update plcp_multi
 #' @export
 update.plcp_multi <- function(object, ...) {
+    if("plcp_filtered" %in% class(object)) stop("Object is a subset. Update currently only works with the full object.", call. = FALSE)
     update.plcp(object, ...)
 }
-
 check_new_argument <- function(args, new) {
    x <- lapply(args[names(new)], is.null)
    x <- which(unlist(x))
