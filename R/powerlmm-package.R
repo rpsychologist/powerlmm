@@ -27,7 +27,7 @@
 #' \item Calculate the design effect, and estimated type I error when the
 #' third-level is ignored.
 #' \item Fast analytical power calculations for all supported designs.
-#' \item Explore bias, type 1 error and model misspecification using.
+#' \item Explore bias, Type I error and model misspecification using.
 #' convenient simulation methods
 #' \item Few clusters; accurate power analysis even with very few clusters,
 #' by using Satterthwaite's degrees of freedom approximation.

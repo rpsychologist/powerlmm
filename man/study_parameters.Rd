@@ -85,7 +85,7 @@ comparing two groups. Ordinary two-level models (subjects with repeated measures
 and longitudinal three-level models with clustering due to therapists, schools, provider etc,
 are supported. Random slopes at the subject level and cluster level are
 possible. Cluster sizes can be unbalanced, and vary by treatment.
-Partially-nested designs are supported. Missing data can also be accounted
+Partially nested designs are supported. Missing data can also be accounted
 for.
 }
 \details{
@@ -113,18 +113,21 @@ the standardized inputs are available in the two-level and three-level vignettes
 
 For the variance components \code{0} and \code{NA/NULL} have different meanings.
 A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
-a random intercept is estimated at the cluster level, but that the true value is 0.
+a random intercept is estimated at the cluster level, but the true value is 0.
 If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
-This choice will matter when simulation, or if Satterthwaite *dfs* are used.
+This choice will matter when running simulations, or if Satterthwaite \emph{dfs} are used.
 
 The default behavior if a parameters is not specified is that \code{cor_subject} and
-\code{cor_cluster} is 0, and the other variance components is \code{NULL}.
+\code{cor_cluster} is 0, and the other variance components are \code{NULL}.
 
 \bold{Cohen's d calculation}
 
 Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
-The choice of denominator differs between fields, and other options will be added in
-future releases.
+For \bold{partially nested} designs the control groups baseline SD is used.
+
+The choice of denominator differs between fields, and adding a more flexible solution
+is high-priority. In the meanwhile you'll have to manually convert between the different
+standardizations.
 
 \bold{Two- or three-level models}
 

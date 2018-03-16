@@ -2,7 +2,7 @@
 % Please edit documentation in R/helpers.R
 \name{get_ICC_pre_subjects}
 \alias{get_ICC_pre_subjects}
-\title{Calculates the amount of baseline variance at the subject level}
+\title{Calculate the subject-level ICC at pretest}
 \usage{
 get_ICC_pre_subjects(object, ...)
 }
@@ -12,11 +12,11 @@ get_ICC_pre_subjects(object, ...)
 \item{...}{Optional named arguments.}
 }
 \value{
-Returns the proportion of baseline variance at the subject level,
+Returns the proportion of baseline variance at the subject level (which also includes cluster-level variance),
 as a numeric vector.
 }
 \description{
-Calculates the amount of baseline variance at the subject level
+Calculate the subject-level ICC at pretest
 }
 \examples{
 paras <- study_parameters(n1 = 11,

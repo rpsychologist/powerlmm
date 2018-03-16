@@ -98,12 +98,12 @@ get_var_ratio.plcp_multi <- function(object, ...) {
 ##
 
 
-#' Calculates the amount of baseline variance at the subject level
+#' Calculate the subject-level ICC at pretest
 #'
 #' @param object An object created by \code{\link{study_parameters}}
 #' @param ... Optional named arguments.
 #'
-#' @return Returns the proportion of baseline variance at the subject level,
+#' @return Returns the proportion of baseline variance at the subject level (which also includes cluster-level variance),
 #' as a numeric vector.
 #' @export
 #'

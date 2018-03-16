@@ -5,7 +5,7 @@
 #' and longitudinal three-level models with clustering due to therapists, schools, provider etc,
 #' are supported. Random slopes at the subject level and cluster level are
 #' possible. Cluster sizes can be unbalanced, and vary by treatment.
-#' Partially-nested designs are supported. Missing data can also be accounted
+#' Partially nested designs are supported. Missing data can also be accounted
 #' for.
 #'
 #' @param n1 Number of level 1 units, e.g. measurements per subject.
@@ -79,7 +79,7 @@
 #' A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
 #' a random intercept is estimated at the cluster level, but the true value is 0.
 #' If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
-#' This choice will matter when running simulations, or if Satterthwaite *dfs* are used.
+#' This choice will matter when running simulations, or if Satterthwaite \emph{dfs} are used.
 #'
 #' The default behavior if a parameters is not specified is that \code{cor_subject} and
 #' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
@@ -96,7 +96,7 @@
 #' \bold{Two- or three-level models}
 #'
 #' If either \code{sigma_cluster_slope} or \code{icc_slope} and
-#'  \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is zero or
+#'  \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
 #' \code{NULL} it will be assumed a two-level design is wanted.
 #'
 #' \bold{Unequal cluster sizes and unbalanced allocation}
