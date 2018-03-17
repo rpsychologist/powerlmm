@@ -33,13 +33,12 @@ It is possible to include random slopes at both the cluster and subject level.
 Unbalanced designs are supported; e.g. treatments can have different number of subjects and/or clusters. It is also possible to have unbalanced cluster sizes within a treatment. 
 
 ## Missing data
-The power calculations can account for missing data, either by manually specifying dropout per time point, or by using a Weibull survival function. 
+The power calculations can account for missing data, either by manually specifying the dropout per time point, or by using a Weibull survival function. 
 
 
 # Two-level longitudinal linear mixed-effects model with random slopes
 This is the typical longitudinal linear mixed model, which in multilevel notion is written as
 
-## Model formulation
 $$
 \begin{align}
 \text{Level 1}& \notag\\\
@@ -82,7 +81,7 @@ $$
 All designs are setup using the `study_parameters` function. Parameters can be specified
 either directly or by their standardized counterpart.
 
-The corresponding arguments in `study_parameters` are
+The arguments in `study_parameters` are
 
 parameter        | `study_parameters()-`argument
 ---------------- | -----------
@@ -107,7 +106,7 @@ Standardized        | Calculation
 `cohend`            | $\gamma_{11}/(\sigma_{u_0}^2 + \sigma^2)$  
 
 ## Setting up the model using study_parameters()
-Here's an example of specifing the "same" model using standardized or unstandardized inputs.
+Here's an example of specifying the "same" model using standardized or unstandardized inputs.
 
 ```{r}
 p1 <- study_parameters(n1 = 11,
@@ -203,7 +202,7 @@ get_power(p2)$power
 ```
 
 # Power curves
-Since power is influenced by many different paremeters, the function `get_power_table` lets you compare the effect of up to 3 different parameters, and visualize the relationships. Let's see how the number of subjects and the variance ratio influences power. 
+Since power is influenced by many different parameters, the function `get_power_table` lets you compare the effect of up to 3 different parameters, and visualize the relationships. Let's see how the number of subjects and the variance ratio influences power. 
 ```{r}
 p1 <- study_parameters(n1 = 11,
                       n2 = 30,

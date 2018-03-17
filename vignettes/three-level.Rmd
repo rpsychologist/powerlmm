@@ -102,7 +102,7 @@ $\sigma$         | `sigma_error`
 
 ## Standardized and unstandardized formulation
 
-If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on `n1`, `n2`, `n3`, the amount of baseline variance at the subject level (`icc_pre_subjects`) and the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`), and the amount of random slope variance at the third-level (`icc_slope`). Power is also influenced by the ratio of the intercept variances to the residual variance (i.e., `icc_pre_subjects`), since the standardization of Cohen's *d* depends on those parameters. 
+If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on `n1`, `n2`, `n3`, the amount of baseline variance at the subject level (`icc_pre_subjects`) and the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`), and the amount of random slope variance at the third-level (`icc_slope`). Power is influenced by the ratio of the intercept variances to the residual variance (i.e., `icc_pre_subjects`), since the standardization of Cohen's *d* depends on those parameters. 
 
 The relative standardized inputs are calculated in the following way.
 
@@ -111,8 +111,9 @@ Standardized        | Calculation
 `icc_pre_subjects`  | $(\sigma_{u_0}^2 + \sigma_{v_0}^2)/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
 `icc_pre_clusters`  | $\sigma_{v_0}^2/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
 `icc_slope`         | $\sigma_{v_1}^2/(\sigma_{u_1}^2 + \sigma_{v_1}^2)$  
-`var_ratio`         | $(\sigma_{u_1}^2 + \sigma_{v_1}^2)/\sigma^2$  
-`cohend`            | $\gamma_{11}/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
+`var_ratio`                | $(\sigma_{u_1}^2 + \sigma_{v_1}^2)/\sigma^2$  
+`cohend` (fully nested)    | $\gamma_{11}/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
+`cohend` (partially nested)    | $\gamma_{11}/(\sigma_{u_0}^2 + \sigma^2)$  
 
 Using the argument names in `study_parameters`, the standardized inputs are calculated in the following way. 
 
@@ -125,7 +126,7 @@ Standardized        | Calculation
 `cohend` (fully nested)            | `slope_diff/(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2)`
 `cohend` (partially nested)            | `slope_diff/(sigma_subject_intercept^2 + sigma_error^2)`
 
-N.B that partially nested models standardize Cohen's *d* using the control group's pretest SD. Addding more options, and support for unstandardize effects is high-priority.
+N.B., that partially nested models standardize Cohen's *d* using the control group's pretest SD. Adding more options, and support for unstandardized effects is a high-priority.
 
 # Study setup
 This example will show  how to calculate power for the `time:treatment`-interaction. We assume that the two treatment arms will differ by a Cohen's *d* of 0.8 at post-test. The treatment period is 11 weeks with weekly measures, and each treatment group has 4 therapists that each treat 10 participants. We are expecting that 5 % of the total slope variance will be at the therapist level, and there will be a moderate amount of heterogeneity in change over time (var_ratio = 0.02), Lastly, 50 % of the baseline variance is at the subject level, and `icc_pre_cluster` is set to 0 since we are randomizing subjects to clusters, and hence there should be no therapist effect at baseline. 
@@ -143,7 +144,7 @@ p
 ```
 
 ## Power 
-To calcalute power for the study, we use the `get_power`-method using the object created with `study_parameters`.
+To calculate power for the study, we use the `get_power`-method using the object created with `study_parameters`.
 ```{r}
 get_power(p)
 ```
@@ -170,8 +171,7 @@ Lastly, a longitudinal study with random slopes implies that the standard deviat
 get_sds(p)
 ```
 
-Since, we defined our study using only standardized inputs, `get_sds` tells us by what magnitude 
-the SDs change over time. At week the SDs will be 1.4 times larger than at baseline. If we used raw values for all parameters defined with `study_parameters`, then these SDs would be the actual model implied
+Since, we defined our study using only standardized inputs, `get_sds` prints the SDs for a default `sigma_error` = 10. At week 10 the SDs will be 20/14 = 1.4 times larger than at baseline. If we used raw values for all parameters defined with `study_parameters`, then these SDs would be the actual model implied
 standard deviations per time points. Its useful to check that these values make sense. 
 
 # Compare different values
@@ -254,8 +254,8 @@ p
 ```
 
 ## Random cluster sizes
-Instead of excactly specifing the numbers of subjects per cluster, we can treat is as a random variable and instead specify
-a probability distribution. This is probably preferable, unless it is exactly known how patients will be allocated. Since each power calcution will be based on a differet realization of cluster sizes, it is wise to repeatly calcaulte power for repeated realization from the distribution of cluster sizes. This is done automatically by adding the argument `R`, the output is then show the expected values by averaging over the realizations. Here's an example using the Poisson distribution.
+Instead of exactly specifying the numbers of subjects per cluster, we can treat it as a random variable and instead specify
+a probability distribution. This is probably preferable, unless it is exactly known how patients will be allocated. Since each power calculation will be based on a different realization of cluster sizes, it is wise to repeatedly calculate power for repeated realization from the distribution of cluster sizes. This is done automatically by adding the argument `R`, the output is then show the expected values by averaging over the realizations. Here's an example using the Poisson distribution.
 
 ```{r}
 n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
@@ -268,6 +268,17 @@ p <- study_parameters(n1 = 3,
                       var_ratio = 0.02,
                       cohend = -0.8)
 get_power(p, R = 10, progress = FALSE)
+```
+
+N.B., in this case cluster sizes are *not* sampled independently for each treatment group, i.e. both groups will have excactly the same cluster imbalance. To sample each group independently, either from the same or from a different distribution, use `per_treatment`.
+
+```{r}
+# sample cluster sizes in each treatment group independently
+# but from the same distribution
+func <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+n2 <- per_treatment(control = func, 
+                    treatment = func)
+
 ```
 
 

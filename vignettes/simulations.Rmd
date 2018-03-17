@@ -13,13 +13,13 @@ library(powerlmm)
 knitr::opts_chunk$set(eval = FALSE)
 ```
 
-This vignettes shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters. 
+This vignette shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the model, e.g. estimates of cluster-level random effects with only a few clusters. 
 
 ## Setup
-The simulation-function accepts the same study setup-object that we're used in the two- and three-level power vignettes. The analytical solution used by the `get_power`-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in **powerlmm**. 
+The simulation-function accepts the same study setup-object that we've used in the two- and three-level power vignettes. The simulation-function supports all models that are available in **powerlmm**. As an example we'll investigate the partially nested three-level model.
 
 ## Partially nested three-level model
-When doing simulations I recommend specifying the raw values to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
+When doing simulations it can be a good idea to specify the model using raw values, to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
 ```{r}
 p <- study_parameters(n1 = 11,
                       n2 = 10,
@@ -48,7 +48,7 @@ get_monte_carlo_se(x, nsim = c(1000, 2000, 5000))
 ```
 We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power. 
 
-Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computions will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used. 
+Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computations will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and the simulation is run non-interactively in a terminal then forking is used. 
 
 ```{r}
 f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
@@ -66,8 +66,7 @@ summary(res)
 ```
 
 ### Automatic formula creation
-It is also possible to automatically create the `formula` by leaving it blank. Then the `lmer-formula` is created by including parameters that are not specified as `NA` or `NULL` in the model, see `?create_lmer_formula`. N.B., parameters specified as 0 are included in the model.
-
+It is also possible to automatically create the `formula` by leaving it blank. Then the `lmer-formula` is created by including the parameters that are not specified as `NA` or `NULL` in the model, see `?create_lmer_formula`. N.B., parameters specified as 0 are included in the model.
 
 ## Investigate model misspecification
 Let's compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a `correct` and `wrong` formula. By setting `cohend` to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.

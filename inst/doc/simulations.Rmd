@@ -48,7 +48,7 @@ get_monte_carlo_se(x, nsim = c(1000, 2000, 5000))
 ```
 We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power. 
 
-Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computions will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used. 
+Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computations will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used. 
 
 ```{r}
 f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"

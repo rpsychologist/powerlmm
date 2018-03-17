@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-03-16" />
+<meta name="date" content="2018-03-17" />
 
 <title>Power Analysis for Three-level Longitudinal Models with Missing Data</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Power Analysis for Three-level Longitudinal Models with Missing Data</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-03-16</em></h4>
+<h4 class="date"><em>2018-03-17</em></h4>
 
 
 <div id="TOC">
@@ -222,7 +222,7 @@ R_{ijk} \sim\mathcal{N}(0, ~\sigma^2)
 </div>
 <div id="standardized-and-unstandardized-formulation" class="section level2">
 <h2>Standardized and unstandardized formulation</h2>
-<p>If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on <code>n1</code>, <code>n2</code>, <code>n3</code>, the amount of baseline variance at the subject level (<code>icc_pre_subjects</code>) and the ratio of subject-level random slope variance to the within-subject error variance (<code>var_ratio</code>), and the amount of random slope variance at the third-level (<code>icc_slope</code>). Power is also influenced by the ratio of the intercept variances to the residual variance (i.e., <code>icc_pre_subjects</code>), since the standardization of Cohen’s <em>d</em> depends on those parameters.</p>
+<p>If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on <code>n1</code>, <code>n2</code>, <code>n3</code>, the amount of baseline variance at the subject level (<code>icc_pre_subjects</code>) and the ratio of subject-level random slope variance to the within-subject error variance (<code>var_ratio</code>), and the amount of random slope variance at the third-level (<code>icc_slope</code>). Power is influenced by the ratio of the intercept variances to the residual variance (i.e., <code>icc_pre_subjects</code>), since the standardization of Cohen’s <em>d</em> depends on those parameters.</p>
 <p>The relative standardized inputs are calculated in the following way.</p>
 <table style="width:44%;">
 <colgroup>
@@ -253,8 +253,12 @@ R_{ijk} \sim\mathcal{N}(0, ~\sigma^2)
 <td><span class="math inline">\((\sigma_{u_1}^2 + \sigma_{v_1}^2)/\sigma^2\)</span></td>
 </tr>
 <tr class="odd">
-<td><code>cohend</code></td>
+<td><code>cohend</code> (fully nested)</td>
 <td><span class="math inline">\(\gamma_{11}/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)\)</span></td>
+</tr>
+<tr class="even">
+<td><code>cohend</code> (partially nested)</td>
+<td><span class="math inline">\(\gamma_{11}/(\sigma_{u_0}^2 + \sigma^2)\)</span></td>
 </tr>
 </tbody>
 </table>
@@ -297,7 +301,7 @@ R_{ijk} \sim\mathcal{N}(0, ~\sigma^2)
 </tr>
 </tbody>
 </table>
-<p>N.B that partially nested models standardize Cohen’s <em>d</em> using the control group’s pretest SD. Addding more options, and support for unstandardize effects is high-priority.</p>
+<p>N.B., that partially nested models standardize Cohen’s <em>d</em> using the control group’s pretest SD. Adding more options, and support for unstandardized effects is a high-priority.</p>
 </div>
 </div>
 <div id="study-setup" class="section level1">
@@ -332,7 +336,7 @@ p</code></pre></div>
 ##        Cohen's d = -0.8</code></pre>
 <div id="power" class="section level2">
 <h2>Power</h2>
-<p>To calcalute power for the study, we use the <code>get_power</code>-method using the object created with <code>study_parameters</code>.</p>
+<p>To calculate power for the study, we use the <code>get_power</code>-method using the object created with <code>study_parameters</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">get_power</span>(p)</code></pre></div>
 <pre><code>## 
 ##      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
@@ -418,7 +422,7 @@ p</code></pre></div>
 ## 9                   14
 ## 10                  14
 ## 11                  14</code></pre>
-<p>Since, we defined our study using only standardized inputs, <code>get_sds</code> tells us by what magnitude the SDs change over time. At week the SDs will be 1.4 times larger than at baseline. If we used raw values for all parameters defined with <code>study_parameters</code>, then these SDs would be the actual model implied standard deviations per time points. Its useful to check that these values make sense.</p>
+<p>Since, we defined our study using only standardized inputs, <code>get_sds</code> prints the SDs for a default <code>sigma_error</code> = 10. At week 10 the SDs will be 20/14 = 1.4 times larger than at baseline. If we used raw values for all parameters defined with <code>study_parameters</code>, then these SDs would be the actual model implied standard deviations per time points. Its useful to check that these values make sense.</p>
 </div>
 </div>
 <div id="compare-different-values" class="section level1">
@@ -554,7 +558,7 @@ p</code></pre></div>
 </div>
 <div id="random-cluster-sizes" class="section level2">
 <h2>Random cluster sizes</h2>
-<p>Instead of excactly specifing the numbers of subjects per cluster, we can treat is as a random variable and instead specify a probability distribution. This is probably preferable, unless it is exactly known how patients will be allocated. Since each power calcution will be based on a differet realization of cluster sizes, it is wise to repeatly calcaulte power for repeated realization from the distribution of cluster sizes. This is done automatically by adding the argument <code>R</code>, the output is then show the expected values by averaging over the realizations. Here’s an example using the Poisson distribution.</p>
+<p>Instead of exactly specifying the numbers of subjects per cluster, we can treat it as a random variable and instead specify a probability distribution. This is probably preferable, unless it is exactly known how patients will be allocated. Since each power calculation will be based on a different realization of cluster sizes, it is wise to repeatedly calculate power for repeated realization from the distribution of cluster sizes. This is done automatically by adding the argument <code>R</code>, the output is then show the expected values by averaging over the realizations. Here’s an example using the Poisson distribution.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n2 &lt;-<span class="st"> </span><span class="kw">unequal_clusters</span>(<span class="dt">func =</span> <span class="kw">rpois</span>(<span class="dt">n =</span> <span class="dv">5</span>, <span class="dt">lambda =</span> <span class="dv">5</span>))
 
 p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">3</span>,
@@ -575,9 +579,9 @@ p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span c
 ##               n3 = 5                        (treatment)
 ##                    5                        (control)
 ##                    10                       (total)
-##          total_n = 25.7                     (control)
-##                    25.7                     (treatment)
-##                    51.4                     (total)
+##          total_n = 26.9                     (control)
+##                    26.9                     (treatment)
+##                    53.8                     (total)
 ##          dropout = No missing data
 ## icc_pre_subjects = 0.5
 ## icc_pre_clusters = 0
@@ -586,9 +590,15 @@ p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span c
 ##        Cohen's d = -0.8
 ##               df = 8
 ##            alpha = 0.05
-##            power = 68% (MCSE: 3%)
+##            power = 71% (MCSE: 1%)
 ## 
 ## NOTE: n2 is randomly sampled. Values are the mean from R = 10 realizations.</code></pre>
+<p>N.B., in this case cluster sizes are <em>not</em> sampled independently for each treatment group, i.e. both groups will have excactly the same cluster imbalance. To sample each group independently, either from the same or from a different distribution, use <code>per_treatment</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># sample cluster sizes in each treatment group independently</span>
+<span class="co"># but from the same distribution</span>
+func &lt;-<span class="st"> </span><span class="kw">unequal_clusters</span>(<span class="dt">func =</span> <span class="kw">rpois</span>(<span class="dt">n =</span> <span class="dv">5</span>, <span class="dt">lambda =</span> <span class="dv">5</span>))
+n2 &lt;-<span class="st"> </span><span class="kw">per_treatment</span>(<span class="dt">control =</span> func, 
+                    <span class="dt">treatment =</span> func)</code></pre></div>
 </div>
 </div>
 <div id="partially-nesting" class="section level1">
@@ -788,11 +798,11 @@ p2 &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span 
                       <span class="dt">cohend =</span> <span class="op">-</span><span class="fl">0.5</span>)
 <span class="kw">get_DEFT</span>(p2)</code></pre></div>
 <pre><code>##   icc_slope var_ratio     DEFT approx_type1
-## 1      0.05      0.02 1.050459   0.06206707
-## 2      0.05      0.02 1.110769   0.07764604
-## 3      0.05      0.02 1.168176   0.09338656
-## 4      0.05      0.02 1.222404   0.10885339
-## 5      0.05      0.02 1.325349   0.13918625</code></pre>
+## 1      0.05      0.02 1.050600   0.06210195
+## 2      0.05      0.02 1.110314   0.07752452
+## 3      0.05      0.02 1.168965   0.09360767
+## 4      0.05      0.02 1.222373   0.10884444
+## 5      0.05      0.02 1.325114   0.13911615</code></pre>
 <p>We can see that the design effect increases with more subjects per cluster. Even when only 5 % of the slope variance is at the cluster level, Type I errors can be considerably inflated if the random slope at the third-level is ignored.</p>
 </div>
 

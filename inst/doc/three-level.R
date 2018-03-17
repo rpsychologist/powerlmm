@@ -91,6 +91,14 @@ p <- study_parameters(n1 = 3,
 get_power(p, R = 10, progress = FALSE)
 
 ## ------------------------------------------------------------------------
+# sample cluster sizes in each treatment group independently
+# but from the same distribution
+func <- unequal_clusters(func = rpois(n = 5, lambda = 5))
+n2 <- per_treatment(control = func, 
+                    treatment = func)
+
+
+## ------------------------------------------------------------------------
 p <- study_parameters(n1 = 11,
                       n2 = unequal_clusters(2, 5, 10, 30),
                       icc_pre_subject = 0.5,

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-03-16" />
+<meta name="date" content="2018-03-17" />
 
 <title>Power Analysis for Two-level Longitudinal Models with Missing Data</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Power Analysis for Two-level Longitudinal Models with Missing Data</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-03-16</em></h4>
+<h4 class="date"><em>2018-03-17</em></h4>
 
 
 
@@ -96,14 +96,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </div>
 <div id="missing-data" class="section level2">
 <h2>Missing data</h2>
-<p>The power calculations can account for missing data, either by manually specifying dropout per time point, or by using a Weibull survival function.</p>
+<p>The power calculations can account for missing data, either by manually specifying the dropout per time point, or by using a Weibull survival function.</p>
 </div>
 </div>
 <div id="two-level-longitudinal-linear-mixed-effects-model-with-random-slopes" class="section level1">
 <h1>Two-level longitudinal linear mixed-effects model with random slopes</h1>
 <p>This is the typical longitudinal linear mixed model, which in multilevel notion is written as</p>
-<div id="model-formulation" class="section level2">
-<h2>Model formulation</h2>
 <p><span class="math display">\[
 \begin{align}
 \text{Level 1}&amp; \notag\\\
@@ -138,7 +136,7 @@ R_{ij} \sim\mathcal{N}(0, ~\sigma^2)
 \end{equation}
 \]</span></p>
 <p>All designs are setup using the <code>study_parameters</code> function. Parameters can be specified either directly or by their standardized counterpart.</p>
-<p>The corresponding arguments in <code>study_parameters</code> are</p>
+<p>The arguments in <code>study_parameters</code> are</p>
 <table style="width:40%;">
 <colgroup>
 <col width="23%"></col>
@@ -185,7 +183,6 @@ R_{ij} \sim\mathcal{N}(0, ~\sigma^2)
 </tr>
 </tbody>
 </table>
-</div>
 <div id="standardized-and-unstandardized-formulation" class="section level2">
 <h2>Standardized and unstandardized formulation</h2>
 <p>For a two-level model power depends on <code>n1</code>, <code>n2</code>, the amount of baseline variance at the subject level (<code>icc_pre_subjects</code>) and the ratio of subject-level random slope variance to the within-subject error variance (<code>var_ratio</code>).</p>
@@ -214,7 +211,7 @@ R_{ij} \sim\mathcal{N}(0, ~\sigma^2)
 </div>
 <div id="setting-up-the-model-using-study_parameters" class="section level2">
 <h2>Setting up the model using study_parameters()</h2>
-<p>Here’s an example of specifing the “same” model using standardized or unstandardized inputs.</p>
+<p>Here’s an example of specifying the “same” model using standardized or unstandardized inputs.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p1 &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">11</span>,
                       <span class="dt">n2 =</span> <span class="dv">25</span>,
                       <span class="dt">sigma_subject_intercept =</span> <span class="fl">1.44</span>,
@@ -357,7 +354,7 @@ p1</code></pre></div>
 </div>
 <div id="power-curves" class="section level1">
 <h1>Power curves</h1>
-<p>Since power is influenced by many different paremeters, the function <code>get_power_table</code> lets you compare the effect of up to 3 different parameters, and visualize the relationships. Let’s see how the number of subjects and the variance ratio influences power.</p>
+<p>Since power is influenced by many different parameters, the function <code>get_power_table</code> lets you compare the effect of up to 3 different parameters, and visualize the relationships. Let’s see how the number of subjects and the variance ratio influences power.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p1 &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">11</span>,
                       <span class="dt">n2 =</span> <span class="dv">30</span>,
                       <span class="dt">icc_pre_subject =</span> <span class="fl">0.5</span>,

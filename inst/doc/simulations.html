@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-03-16" />
+<meta name="date" content="2018-03-17" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-03-16</em></h4>
+<h4 class="date"><em>2018-03-17</em></h4>
 
 
 
@@ -106,7 +106,7 @@ p</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span><span class="kw">get_power</span>(p)
 <span class="kw">get_monte_carlo_se</span>(x, <span class="dt">nsim =</span> <span class="kw">c</span>(<span class="dv">1000</span>, <span class="dv">2000</span>, <span class="dv">5000</span>))</code></pre></div>
 <p>We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power.</p>
-<p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computions will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used.</p>
+<p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computations will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
 
 cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="co"># use all cores</span>
