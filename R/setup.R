@@ -219,12 +219,19 @@ study_parameters <- function(n1,
                              icc_slope = NULL,
                              icc_pre_subject = NULL,
                              icc_pre_cluster = NULL,
-                             cohend = 0L,
+                             effect_size = 0L,
+                             cohend = NULL,
                              partially_nested = FALSE,
                              dropout = 0L,
                              deterministic_dropout = TRUE) {
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
+
+    # depracated Cohen's d
+    if(!is.null(cohend)) {
+        warning("Argument 'cohend' is deprecated, please see '?effect_size'.", call. = FALSE)
+        effect_size <- cohend
+    }
 
     # drop out checks
     if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
@@ -299,7 +306,7 @@ study_parameters <- function(n1,
         icc_pre_subject = icc_pre_subject,
         icc_pre_cluster = icc_pre_cluster,
         icc_slope = icc_slope,
-        cohend = cohend,
+        effect_size = effect_size,
         partially_nested = partially_nested,
         dropout = dropout,
         deterministic_dropout = deterministic_dropout
@@ -548,7 +555,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     icc_pre_clusters <- round(get_ICC_pre_clusters(x), 2)
     icc_pre_subjects <- round(get_ICC_pre_subjects(x), 2)
 
-    cohend <- x$cohend
+    effect <- get_effect_size(x)
 
     gd <- get_dropout(x)
     gd$time <- format(gd$time, nsmall = 0, digits = 3, width = 2)
@@ -566,7 +573,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                           icc_pre_clusters = icc_pre_clusters,
                           icc_slope = icc_slope,
                           var_ratio = var_ratio,
-                          `Cohen's d` = cohend,
+                          `effect` = effect$ES,
                           method = "Study setup (three-level)"),
                      class = "power.htest")
     attr(res, "width") <- width
@@ -640,21 +647,57 @@ print.plcp_2lvl <- function(x, ...) {
     print(res, digits = 2, ...)
 }
 
+
+# return the difference at post test
+
+## TODO
+#' add standardizers
+#' * pooled pre or posttest
+#' * control group SD
+#' * random slope SD
 get_slope_diff <- function(paras) {
 
     paras$sigma_subject_intercept[is.na(paras$sigma_subject_intercept)] <- 0
     paras$sigma_cluster_intercept[is.na(paras$sigma_cluster_intercept)] <- 0
 
-    if(paras$partially_nested) {
-        with(paras, cohend * sqrt(sigma_subject_intercept^2  + sigma_error^2))
-    } else {
-        with(paras, cohend * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+    if(is.function(paras$effect_size[[1]]$set)) {
+        slope <- paras$effect_size[[1]]$set(paras)
+    } else if(is.numeric(paras$effect_size)) {
+        slope <- paras$effect_size
     }
 
-
+    slope
 }
 
+cohend <- function(ES, standardizer = "pretest_SD") {
+    if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
+    # return a ES func
+    # that get_slope_diff can evaluate
+    if(standardizer == "pretest_SD") {
+        f <- function(paras) {
+            if(paras$partially_nested) {
+                with(paras, ES * sqrt(sigma_subject_intercept^2  + sigma_error^2))
+            } else {
+                with(paras, ES * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+            }
+        }
+    }
+    get <- function() {
+        list("ES" = ES, "standardizer" = standardizer)
+    }
+    list(list("set" = f, "get" = get))
 
+}
+get_effect_size <- function(paras) {
+    ES <- paras$effect_size
+    if(is.function(ES[[1]]$get)) {
+        out <- ES[[1]]$get()
+    } else {
+        out <- ES
+    }
+
+    out
+}
 # print multi-sim ---------------------------------------------------------
 
 replace_repeating <- function(x, empty) {

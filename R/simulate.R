@@ -63,8 +63,8 @@ simulate_data.plcp <- function(paras, n = NULL) {
     paras_tx <- tmp$treatment
 
     slope_diff <- get_slope_diff(paras) / paras$T_end
-    paras$cohend <- NULL
-    paras_tx$cohend <- NULL
+    paras$effect_size <- NULL
+    paras_tx$effect_size <- NULL
 
     paras_tx$fixed_slope <- paras_tx$fixed_slope + slope_diff
 
