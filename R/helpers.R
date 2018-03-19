@@ -394,8 +394,8 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
 }
 
 #' @export
-plot.plcp_multi <- function(x, n = 1, ...) {
-    plot.plcp(x, n = n)
+plot.plcp_multi <- function(x, n = 1, type = "both", ...) {
+    plot.plcp(x, n = n, type = type)
 }
 
 # power curve
