@@ -23,13 +23,13 @@ The purpose of `powerlmm` is to help design longitudinal treatment studies, with
 Installation
 ------------
 
-`powerlmm` can be installed from CRAN and GitHub. Currently, the GitHub version is the beta of version 0.2.0.
+`powerlmm` can be installed from CRAN and GitHub.
 
 ``` r
-# CRAN, version 0.1.0
+# CRAN, version 0.2.0
 install.packages("powerlmm")
 
-# GitHub, version 0.2.0 beta
+# GitHub, dev version
 devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
 ```
 
@@ -104,7 +104,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>        Cohen's d = -0.8
-#>               df = 7.911211
+#>               df = 7.9523
 #>            alpha = 0.05
 #>            power = 68%
 ```
@@ -165,13 +165,13 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #> 
 #>               n1 = 11
 #>               n2 = rpois(5, 5) (treatment)
-#>                    rpois(5, 5) (control)
+#>                    -           (control)
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 24.97       (control)
-#>                    24.97       (treatment)
-#>                    49.94       (total)
+#>          total_n = 24.93       (control)
+#>                    24.93       (treatment)
+#>                    49.86       (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
