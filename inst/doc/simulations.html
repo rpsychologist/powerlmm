@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-03-17" />
+<meta name="date" content="2018-03-20" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,18 +70,18 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-03-17</em></h4>
+<h4 class="date"><em>2018-03-20</em></h4>
 
 
 
-<p>This vignettes shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the models, e.g. estimates of cluster-level random effects with only a few clusters.</p>
+<p>This vignette shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the model, e.g. estimates of cluster-level random effects with only a few clusters.</p>
 <div id="setup" class="section level2">
 <h2>Setup</h2>
-<p>The simulation-function accepts the same study setup-object that we’re used in the two- and three-level power vignettes. The analytical solution used by the <code>get_power</code>-function only have experimental support for partially nested three-level models. Therefore, this vignette will show how to simulate power for this model. However, the simulation-function support all models that are available in <strong>powerlmm</strong>.</p>
+<p>The simulation-function accepts the same study setup-object that we’ve used in the two- and three-level power vignettes. The simulation-function supports all models that are available in <strong>powerlmm</strong>. As an example we’ll investigate the partially nested three-level model.</p>
 </div>
 <div id="partially-nested-three-level-model" class="section level2">
 <h2>Partially nested three-level model</h2>
-<p>When doing simulations I recommend specifying the raw values to ensure all parameters are reasonable. Here I use estimates from a real clinical trial.</p>
+<p>When doing simulations it can be a good idea to specify the model using raw values, to ensure all parameters are reasonable. Here I use estimates from a real clinical trial.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">11</span>,
                       <span class="dt">n2 =</span> <span class="dv">10</span>,
                       <span class="dt">n3 =</span> <span class="dv">6</span>,
@@ -106,7 +106,7 @@ p</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span><span class="kw">get_power</span>(p)
 <span class="kw">get_monte_carlo_se</span>(x, <span class="dt">nsim =</span> <span class="kw">c</span>(<span class="dv">1000</span>, <span class="dv">2000</span>, <span class="dv">5000</span>))</code></pre></div>
 <p>We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power.</p>
-<p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computations will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and called run in a terminal then forking is used.</p>
+<p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computations will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and the simulation is run non-interactively in a terminal then forking is used.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
 
 cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="co"># use all cores</span>
@@ -121,7 +121,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 <span class="kw">summary</span>(res)</code></pre></div>
 <div id="automatic-formula-creation" class="section level3">
 <h3>Automatic formula creation</h3>
-<p>It is also possible to automatically create the <code>formula</code> by leaving it blank. Then the <code>lmer-formula</code> is created by including parameters that are not specified as <code>NA</code> or <code>NULL</code> in the model, see <code>?create_lmer_formula</code>. N.B., parameters specified as 0 are included in the model.</p>
+<p>It is also possible to automatically create the <code>formula</code> by leaving it blank. Then the <code>lmer-formula</code> is created by including the parameters that are not specified as <code>NA</code> or <code>NULL</code> in the model, see <code>?create_lmer_formula</code>. N.B., parameters specified as 0 are included in the model.</p>
 </div>
 </div>
 <div id="investigate-model-misspecification" class="section level2">

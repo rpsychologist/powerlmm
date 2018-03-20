@@ -20,7 +20,7 @@
   designs with unequal clusters and/or missing data, when cluster sizes are
   large. The calculations now use the much faster implementation used by lme4.
 * Cleaner print-methods for `plcp_multi`-objects.
-* Multiple power calculations can no be performed in parallel, via the
+* Multiple power calculations can now be performed in parallel, via the
   argument `cores`.
 * `simulate.plcp_multi` now have more options for saving intermediate results.
 * `print.plcp_multi_power` now has better support for subsetting via either [], 
@@ -44,7 +44,7 @@ without missing values added. This makes it easy to compare the complete and inc
 data set, e.g. via `simulate()`.
 * `simulate()` new argument `batch_progress` enables showing progress when doing
   multiple simulations.
-* Fix bug in `summary.plcp_sim` where the wrong % convergence was calculated.
+* Bugfix for `summary.plcp_sim` where the wrong % convergence was calculated.
 * Simulation function now accepts lme4 formulas containing "||".
 * The cluster-level intercept variance is now also set to zero in the control
   group, when a partially nested design is requested.
@@ -52,7 +52,7 @@ data set, e.g. via `simulate()`.
   `icc_cluster_pre = NULL` and all inputs are standardized.
 * Fix bug that would cause all slopes to be zero when `var_ratio` argument was
   passed a vector of values including a 0, e.g. `var_ratio = c(0, 0.1, 0.2)`.
-* Fix bug for multi-sim objects that caused the wrong class the be used for,
+* Bugfix for multi-sim objects that caused the wrong class the be used for,
   e.g. `res[[1]]$paras`, and thus the single simulation would not print
   correctly.
 * Results from multi-sim objects can now be summarized for all random effects
@@ -60,11 +60,11 @@ data set, e.g. via `simulate()`.
 * More support for summarizing random effects from partially nested formulas,
   e.g. `cluster_intercept` and `cluster_slope` is now correctly extracted from
   `(0 + treatment + treatment:time || cluster)`.
-* When Satterthwaite's method fails the between clusters/subjects DFs
+* When Satterthwaite's method fails the between clusters/subjects *dfs*
   are used to calculate *p*-values.
 * `Power.plcp_multi` is now exported.
 * `get_power.plcp_multi` now shows a progress bar.
-* Fix a bug that caused dropout to be wrong when one condition had 0 dropout, and
+* Fix bug that caused dropout to be wrong when one condition had 0 dropout, and
 `deterministic_dropout = FALSE`.
 
 # Changes in version 0.1.0

@@ -107,7 +107,8 @@ create_G <- function(p, d) {
 }
 
 # Approximate asymptotic covariance of random effects
-# from package pbkrtest
+# from package 'pbkrtest'
+# License: GPL (>= 2)
 vcovAdj16_internal <- function (Phi, SigmaG, X)
 {
     SigmaInv <- SigmaG$iV
@@ -153,7 +154,8 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     attr(WW, "P") <- PP
     WW
 }
-# from package pbkrtest
+# from package 'pbkrtest'
+# License: GPL (>= 2)
 .indexSymmat2vec <- function (i, j, N)
 {
     k <- if (i <= j) {

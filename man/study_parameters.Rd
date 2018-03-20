@@ -132,7 +132,7 @@ standardizations.
 \bold{Two- or three-level models}
 
 If either \code{sigma_cluster_slope} or \code{icc_slope} and
- \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is zero or
+ \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
 \code{NULL} it will be assumed a two-level design is wanted.
 
 \bold{Unequal cluster sizes and unbalanced allocation}

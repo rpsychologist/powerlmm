@@ -67,12 +67,11 @@ The available model terms are:
 
 See \emph{Examples} and the simulation-vignette for formula examples. For
 \code{object}s that contain a single study setup, then the lmer formula
-can be created automatically using \code{\link{create_lmer_formula}}, by
-\code{formula = NULL}.
+can be created automatically using \code{\link{create_lmer_formula}}.
 
 \strong{Satterthwaite's approximation, and CI coverage}
 
-To decrease the simulation time Satterthwaite's DFs and the CIs' coverage rates
+To decrease the simulation time Satterthwaite's \emph{dfs} and the CIs' coverage rates
 will only be calculated for the test of 'time:treatment'-interaction.
 
 Confidence intervals are both calculated using profile likelihood and by
@@ -86,9 +85,9 @@ control saving behavior:
 
 \itemize{
  \item \code{'save'}, \code{logical}, if \code{TRUE} each batch is saved as a
- \code{RDS}-file. Results are saved in your working directory in the directory
+ \code{RDS}-file. Results are saved in your working directory, in the directory
  specified by \code{save_folder}.
- \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{save}.
+ \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{'save'}.
  \item \code{'save_folder_create'},  \code{logical}, if \code{TRUE} then \code{save_folder}
  will be created if it does not exist in your working directory.
 }
