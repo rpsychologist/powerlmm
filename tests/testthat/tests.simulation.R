@@ -73,23 +73,15 @@ test_that("extract results", {
     pnames <- c( "subject_(Intercept)", "subject_time", "cluster_time",
                  "Residual_NA", "subject_(Intercept)_time")
     expect_equal(x$parameter, pnames)
+
+    # satterth
+    tmp <- extract_results(list(fit), satterthwaite = TRUE, CI = FALSE, df_bw = 8, tot_n = 100)
+
+    expect_false(is.na(tmp[[1]]$FE[4,"pval"]))
+    expect_false(is.na(tmp[[1]]$FE[4,"df"]))
+
+
 })
-test_that("extract results satterthwaite", {
-    set.seed(34534)
-    d <- simulate_data(p)
-    fit <- lmerTest::lmer(y ~ treatment * time + (1 + time | subject) +
-                              (0 + time | cluster), data = d)
-    tmp <- extract_results(list(fit), CI = FALSE, df_bw = 8, tot_n = 100)
-
-    x <- tmp[[1]]$RE
-    expect_equal(x$vcov, c(2.330233, 0.032569, 0.008725, 2.070966, -0.193),
-                 tolerance = 0.001)
-
-    pnames <- c( "subject_(Intercept)", "subject_time", "cluster_time",
-                 "Residual_NA", "subject_(Intercept)_time")
-    expect_equal(x$parameter, pnames)
-})
-
 
 
 test_that("simulation summary", {

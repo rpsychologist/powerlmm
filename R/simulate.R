@@ -622,6 +622,8 @@ extract_random_effects <- function(fit) {
 
     rbind(vcovs, correlations)
 }
+
+#' @importFrom utils packageVersion
 add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
     tmp <- tryCatch(summary(fit))
     tmp <- tmp$coefficients
@@ -634,15 +636,23 @@ add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
         L <- rep(0, length(ff))
         L[ind] <- 1
 
-        satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
-                                          error = function(e) { NA }))
-
+        # calcSatterth will be deprecated
+        if(packageVersion("lmerTest") >= "3.0.0") {
+            satt <- suppressMessages(tryCatch(lmerTest::contest(fit, L),
+                                              error = function(e) { NA }))
+        } else {
+            satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
+                                              error = function(e) { NA }))
+        }
         df <- rep(NA, length(ff))
         p <- rep(NA, length(ff))
 
-        if(is.list(satt)) {
+        if(inherits(satt, "list")) {
             df[ind] <- satt$denom
             p[ind] <- satt$pvalue
+        } else if(inherits(satt, "data.frame")) {
+            df[ind] <- satt$DenDF
+            p[ind] <- satt$`Pr(>F)`
         }
         if(is.na(p[ind])) {
             tval <- tmp[ind, "t value"]

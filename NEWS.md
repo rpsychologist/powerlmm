@@ -1,3 +1,8 @@
+
+# Changes in version 0.2.0.9000
+
+* Package updated to support lmerTest 3.0
+
 # Changes in version 0.2.0
 ## New features
 * Analytical power calculations now support using Satterthwaite's degrees of
