@@ -57,13 +57,20 @@ Perform a simulation study using a \code{study_parameters}-object
 
 The available model terms are:
 \itemize{
- \item \code{y} the outcome vector
- \item \code{time} the time vector
- \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment")
+ \item \code{y} the outcome vector, with potential missing data.
+ \item \code{y_c} the complete vesion of \code{y}, before dropout was simulated.
+ \item \code{time} the time vector.
+ \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment").
  \item \code{subject} subject-level id variable, from 1 to total number of subjects.
  \item \code{cluster} for three-level models; the cluster-level id variable,
  from 1 to the total number of clusters.
 }
+
+Currently, the models are assumed to be of the form "\code{y ~ time * treatment + (time | subject) + (time | clusters)}",
+i.e., "\code{subject}" and "\code{cluster}" are included as random effects.
+The \code{\link{summary.plcp_sim}} method will not
+work if you include parameters that are not defined by the study_parameters-object,
+e.g. "\code{y ~ time * cluster + (1 | subject)}".
 
 See \emph{Examples} and the simulation-vignette for formula examples. For
 \code{object}s that contain a single study setup, then the lmer formula
