@@ -1011,6 +1011,7 @@ summarize_RE <- function(res, theta) {
         para <- parms[[i]]
         vcov <- d[d$parameter == para, "vcov"]
         theta_i <- theta[theta$parameter == para, "theta"]
+        theta_i[is.na(theta_i)] <- 0 # for when para is NA
         est <- mean(vcov, na.rm=TRUE)
         res <- data.frame(
             parameter = para,

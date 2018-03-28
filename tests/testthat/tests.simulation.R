@@ -134,6 +134,32 @@ test_that("simulation summary", {
     expect_equal(df[!is.na(df)], c(8,8,8))
 })
 
+test_that("simulate with NA para", {
+    set.seed(45446)
+    p <- study_parameters(n1 = 3,
+                          n2 = 5,
+                          n3 = 3,
+                          icc_pre_subject = 0.5,
+                          icc_pre_cluster = NA,
+                          var_ratio = 0.02,
+                          icc_slope = 0.05,
+                          cohend = 0
+    )
+
+
+    res <- simulate(p,
+                    nsim = 2,
+                    formula = "y ~ time * treatment + (1 | subject) + (1 | cluster)")
+
+    res
+    x <- summary(res)
+    x <- x$summary$correct$RE
+    # cluster_intercept is NA, but still in moddel formula
+    # theta should be 0
+    expect_true(x[x$parameter == "cluster_intercept", "theta"] == 0)
+
+})
+
 test_that("simulation summary alpha", {
 
     set.seed(5446)
