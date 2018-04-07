@@ -660,7 +660,7 @@ get_slope_diff <- function(paras) {
     paras$sigma_subject_intercept[is.na(paras$sigma_subject_intercept)] <- 0
     paras$sigma_cluster_intercept[is.na(paras$sigma_cluster_intercept)] <- 0
 
-    if(is.function(paras$effect_size[[1]]$set)) {
+    if(inherits(paras$effect_size[[1]], "plcp_cohend")) {
         slope <- paras$effect_size[[1]]$set(paras)
     } else if(is.numeric(paras$effect_size)) {
         slope <- paras$effect_size
@@ -685,15 +685,18 @@ cohend <- function(ES, standardizer = "pretest_SD") {
     get <- function() {
         list("ES" = ES, "standardizer" = standardizer)
     }
-    list(list("set" = f, "get" = get))
+    x <- list("set" = f, "get" = get)
+    class(x) <- "plcp_cohend"
+
+    list(x)
 
 }
 get_effect_size <- function(paras) {
     ES <- paras$effect_size
-    if(is.function(ES[[1]]$get)) {
+    if(inherits(ES[[1]], "plcp_cohend")) {
         out <- ES[[1]]$get()
     } else {
-        out <- ES
+        out <- list("ES" = ES, "standardizer" = "raw")
     }
 
     out
@@ -741,6 +744,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     object$icc_pre_subject <- get_ICC_pre_subjects(object)
     object$icc_slope <- get_ICC_slope(object)
     object$var_ratio <- get_var_ratio(object)
+    obect$effect_size <-
 
     out <- object
 
@@ -815,9 +819,8 @@ get_multi_title.plcp_3lvl <- function(object) {
 select_setup_cols <- function(x) {
     cols <- c("n1",
               "n2_lab", "n2_tx_lab", "n2_cc_lab",
-
               "dropout", "dropout_tx", "dropout_cc",
-              "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "cohend")
+              "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "effect_size")
     cols[cols %in% colnames(x)]
 }
 
