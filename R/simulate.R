@@ -144,13 +144,20 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' The available model terms are:
 #' \itemize{
-#'  \item \code{y} the outcome vector
-#'  \item \code{time} the time vector
-#'  \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment")
+#'  \item \code{y} the outcome vector, with potential missing data.
+#'  \item \code{y_c} the complete vesion of \code{y}, before dropout was simulated.
+#'  \item \code{time} the time vector.
+#'  \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment").
 #'  \item \code{subject} subject-level id variable, from 1 to total number of subjects.
 #'  \item \code{cluster} for three-level models; the cluster-level id variable,
 #'  from 1 to the total number of clusters.
 #' }
+#'
+#' Currently, the models are assumed to be of the form "\code{y ~ time * treatment + (time | subject) + (time | clusters)}",
+#' i.e., "\code{subject}" and "\code{cluster}" are included as random effects.
+#' The \code{\link{summary.plcp_sim}} method will not
+#' work if you include parameters that are not defined by the study_parameters-object,
+#' e.g. "\code{y ~ time * cluster + (1 | subject)}".
 #'
 #' See \emph{Examples} and the simulation-vignette for formula examples. For
 #' \code{object}s that contain a single study setup, then the lmer formula
@@ -555,7 +562,7 @@ check_formula_terms <- function(f) {
     f <- as.formula(f)
 
     x <- all.vars(f)
-    ind <- x %in% c("y", "treatment", "time", "subject", "cluster")
+    ind <- x %in% c("y", "y_c", "treatment", "time", "subject", "cluster")
     wrong <- x[!ind]
 
     if (length(wrong) > 0) {
@@ -569,7 +576,7 @@ check_formula_terms <- function(f) {
 
     # test functions
     x <- all.vars(f, functions = TRUE)
-    ind <- x %in% c("y", "treatment", "time", "subject", "cluster")
+    ind <- x %in% c("y", "y_c", "treatment", "time", "subject", "cluster")
     x <- x[!ind]
     ind <- x %in% c("~", "+", "*", "(", "|", "||", ":")
     x <- x[!ind]
@@ -622,27 +629,40 @@ extract_random_effects <- function(fit) {
 
     rbind(vcovs, correlations)
 }
+
+#' @importFrom utils packageVersion
 add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
     tmp <- tryCatch(summary(fit))
     tmp <- tmp$coefficients
 
+    ff <- rownames(tmp)
+    # satterth dfs only for time:treatment
+    satterth_term <- any(ff %in%  c("treatment:time", "time:treatment"))
     ## satterthwaite
-    if(satterthwaite) {
-        ff <- rownames(tmp)
+    if(satterthwaite & satterth_term) {
         ind <- which(ff %in%  c("treatment:time", "time:treatment"))
 
         L <- rep(0, length(ff))
         L[ind] <- 1
 
-        satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
-                                          error = function(e) { NA }))
+        # calcSatterth will be deprecated
+        if(packageVersion("lmerTest") >= "3.0.0") {
+            satt <- suppressMessages(tryCatch(lmerTest::contest(fit, L),
+                                              error = function(e) { NA }))
+        } else {
+            satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
+                                              error = function(e) { NA }))
+        }
 
         df <- rep(NA, length(ff))
         p <- rep(NA, length(ff))
 
-        if(is.list(satt)) {
+        if(inherits(satt, "list")) {
             df[ind] <- satt$denom
             p[ind] <- satt$pvalue
+        } else if(inherits(satt, "data.frame")) {
+            df[ind] <- satt$DenDF
+            p[ind] <- satt$`Pr(>F)`
         }
         if(is.na(p[ind])) {
             tval <- tmp[ind, "t value"]
@@ -1000,6 +1020,8 @@ summarize_RE <- function(res, theta) {
         para <- parms[[i]]
         vcov <- d[d$parameter == para, "vcov"]
         theta_i <- theta[theta$parameter == para, "theta"]
+        theta_i[is.na(theta_i)] <- 0 # for when para is NA
+        if(length(theta_i) == 0) theta_i <- 0 # for when para does not exist
         est <- mean(vcov, na.rm=TRUE)
         res <- data.frame(
             parameter = para,

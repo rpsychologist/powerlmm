@@ -57,22 +57,28 @@ Perform a simulation study using a \code{study_parameters}-object
 
 The available model terms are:
 \itemize{
- \item \code{y} the outcome vector
- \item \code{time} the time vector
- \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment")
+ \item \code{y} the outcome vector, with potential missing data.
+ \item \code{y_c} the complete vesion of \code{y}, before dropout was simulated.
+ \item \code{time} the time vector.
+ \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment").
  \item \code{subject} subject-level id variable, from 1 to total number of subjects.
  \item \code{cluster} for three-level models; the cluster-level id variable,
  from 1 to the total number of clusters.
 }
 
+Currently, the models are assumed to be of the form "\code{y ~ time * treatment + (time | subject) + (time | clusters)}",
+i.e., "\code{subject}" and "\code{cluster}" are included as random effects.
+The \code{\link{summary.plcp_sim}} method will not
+work if you include parameters that are not defined by the study_parameters-object,
+e.g. "\code{y ~ time * cluster + (1 | subject)}".
+
 See \emph{Examples} and the simulation-vignette for formula examples. For
 \code{object}s that contain a single study setup, then the lmer formula
-can be created automatically using \code{\link{create_lmer_formula}}, by
-\code{formula = NULL}.
+can be created automatically using \code{\link{create_lmer_formula}}.
 
 \strong{Satterthwaite's approximation, and CI coverage}
 
-To decrease the simulation time Satterthwaite's DFs and the CIs' coverage rates
+To decrease the simulation time Satterthwaite's \emph{dfs} and the CIs' coverage rates
 will only be calculated for the test of 'time:treatment'-interaction.
 
 Confidence intervals are both calculated using profile likelihood and by
@@ -86,9 +92,9 @@ control saving behavior:
 
 \itemize{
  \item \code{'save'}, \code{logical}, if \code{TRUE} each batch is saved as a
- \code{RDS}-file. Results are saved in your working directory in the directory
+ \code{RDS}-file. Results are saved in your working directory, in the directory
  specified by \code{save_folder}.
- \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{save}.
+ \item \code{'save_folder'} a \code{character} indicating the folder name. Default is \code{'save'}.
  \item \code{'save_folder_create'},  \code{logical}, if \code{TRUE} then \code{save_folder}
  will be created if it does not exist in your working directory.
 }

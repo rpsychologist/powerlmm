@@ -132,7 +132,7 @@ standardizations.
 \bold{Two- or three-level models}
 
 If either \code{sigma_cluster_slope} or \code{icc_slope} and
- \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is zero or
+ \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
 \code{NULL} it will be assumed a two-level design is wanted.
 
 \bold{Unequal cluster sizes and unbalanced allocation}
@@ -153,11 +153,11 @@ patterns per treatment group using \code{\link{per_treatment}}. See their
 respective help pages for examples of their use.
 
 If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-However, excactly which subjects dropout is randomy sampled within treatments. Thus,
+However, exactly which subjects dropout is randomy sampled within treatments. Thus,
 clusters can become slightly unbalanced, but generally power varies little over realizations.
 
 For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
-of dropout is converted to the probability of having excactly \emph{i} measurements,
+of dropout is converted to the probability of having exactly \emph{i} measurements,
 and the actual dropout is sampled from a multinomial distribution. In this case, the proportion of
 dropout varies over the realizations from the multinomial distribution, but will
 match the dropout proportions in expectation. The random dropout in

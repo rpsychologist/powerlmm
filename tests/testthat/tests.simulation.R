@@ -73,23 +73,15 @@ test_that("extract results", {
     pnames <- c( "subject_(Intercept)", "subject_time", "cluster_time",
                  "Residual_NA", "subject_(Intercept)_time")
     expect_equal(x$parameter, pnames)
+
+    # satterth
+    tmp <- extract_results(list(fit), satterthwaite = TRUE, CI = FALSE, df_bw = 8, tot_n = 100)
+
+    expect_false(is.na(tmp[[1]]$FE[4,"pval"]))
+    expect_false(is.na(tmp[[1]]$FE[4,"df"]))
+
+
 })
-test_that("extract results satterthwaite", {
-    set.seed(34534)
-    d <- simulate_data(p)
-    fit <- lmerTest::lmer(y ~ treatment * time + (1 + time | subject) +
-                              (0 + time | cluster), data = d)
-    tmp <- extract_results(list(fit), CI = FALSE, df_bw = 8, tot_n = 100)
-
-    x <- tmp[[1]]$RE
-    expect_equal(x$vcov, c(2.330233, 0.032569, 0.008725, 2.070966, -0.193),
-                 tolerance = 0.001)
-
-    pnames <- c( "subject_(Intercept)", "subject_time", "cluster_time",
-                 "Residual_NA", "subject_(Intercept)_time")
-    expect_equal(x$parameter, pnames)
-})
-
 
 
 test_that("simulation summary", {
@@ -140,6 +132,32 @@ test_that("simulation summary", {
     # df_bw
     df <- res$res$correct$FE$df_bw
     expect_equal(df[!is.na(df)], c(8,8,8))
+})
+
+test_that("simulate with NA para", {
+    set.seed(45446)
+    p <- study_parameters(n1 = 3,
+                          n2 = 5,
+                          n3 = 3,
+                          icc_pre_subject = 0.5,
+                          icc_pre_cluster = NA,
+                          var_ratio = 0.02,
+                          icc_slope = 0.05,
+                          cohend = 0
+    )
+
+
+    res <- simulate(p,
+                    nsim = 2,
+                    formula = "y ~ time * treatment + (1 | subject) + (1 | cluster)")
+
+    res
+    x <- summary(res)
+    x <- x$summary$correct$RE
+    # cluster_intercept is NA, but still in moddel formula
+    # theta should be 0
+    expect_true(x[x$parameter == "cluster_intercept", "theta"] == 0)
+
 })
 
 test_that("simulation summary alpha", {

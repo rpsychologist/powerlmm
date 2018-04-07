@@ -35,12 +35,12 @@ groups, or physician), and missing data. The main features of the package are:
 * Explore bias, Type 1 errors and model misspecification using convenient simulation methods.
 
 ## Installation
-`powerlmm` can be installed from CRAN and GitHub. Currently, the GitHub version is the beta of version 0.2.0.
+`powerlmm` can be installed from CRAN and GitHub. 
 ```{r, eval = FALSE}
-# CRAN, version 0.1.0
+# CRAN, version 0.2.0
 install.packages("powerlmm")
 
-# GitHub, version 0.2.0 beta
+# GitHub, dev version
 devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
 ```
 
