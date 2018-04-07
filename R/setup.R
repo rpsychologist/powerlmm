@@ -669,7 +669,21 @@ get_slope_diff <- function(paras) {
     slope
 }
 
+#' TODO
+#' - add different SD options
+#' - baseline/posttests SD
+#' - control or tx SD
+#' - random slope SD, add ref
+#' -export functions
+#' - document
+#' - finish tests
 cohend <- function(ES, standardizer = "pretest_SD") {
+    if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
+    vapply(ES, .cohend,
+           standardizer = standardizer,
+           list(1))
+}
+.cohend <- function(ES, standardizer) {
     if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
     # return a ES func
     # that get_slope_diff can evaluate
@@ -686,20 +700,33 @@ cohend <- function(ES, standardizer = "pretest_SD") {
         list("ES" = ES, "standardizer" = standardizer)
     }
     x <- list("set" = f, "get" = get)
-    class(x) <- "plcp_cohend"
+    class(x) <- append(class(x), "plcp_cohend")
 
     list(x)
 
 }
-get_effect_size <- function(paras) {
-    ES <- paras$effect_size
+get_effect_size <- function(object) {
+        UseMethod("get_effect_size")
+}
+
+get_effect_size.plcp <- function(object) {
+    ES <- object$effect_size
     if(inherits(ES[[1]], "plcp_cohend")) {
         out <- ES[[1]]$get()
     } else {
+        ES <- unlist(ES)
         out <- list("ES" = ES, "standardizer" = "raw")
     }
 
     out
+}
+get_effect_size.plcp_multi <- function(object) {
+    x <- lapply(1:nrow(object), function(i) {
+        data.frame(get_effect_size.plcp(object[i,]))
+        }
+    )
+    x <- do.call(rbind, x)
+    x
 }
 # print multi-sim ---------------------------------------------------------
 
@@ -744,7 +771,6 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     object$icc_pre_subject <- get_ICC_pre_subjects(object)
     object$icc_slope <- get_ICC_slope(object)
     object$var_ratio <- get_var_ratio(object)
-    obect$effect_size <-
 
     out <- object
 
@@ -793,6 +819,8 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     out$icc_pre_subject <- round(object$icc_pre_subject, digits)
     out$icc_slope <- round(object$icc_slope, digits)
     out$var_ratio <- round(object$var_ratio, digits)
+    ES <- get_effect_size(object)
+    out$effect_size <- ES$ES
     for(i in 1:ncol(out)) {
         out[,i] <- replace_repeating(out[,i], empty = empty)
     }
