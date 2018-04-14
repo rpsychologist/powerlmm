@@ -161,13 +161,19 @@ print.plcp_VPC <- function(x, digits = 2, ...) {
 #' # plot
 #' plot(get_sds(paras))
 #'
-get_sds <- function(object, n = 1) {
+get_sds <- function(object, group, n = 1) {
      UseMethod("get_sds")
 }
 
 #' @export
-get_sds.plcp <- function(object, n = NULL) {
+get_sds.plcp <- function(object, group = "treatment", n = NULL) {
     .p <- NA_to_zero(object)
+    .p <- prepare_paras(.p)
+    if(group == "treatment") {
+        .p <- .p$treatment
+    } else if(group == "control") {
+        .p <- .p$control
+    }
     .p$retention <- NULL
     .p$n2 <- NULL
     .p <- .p[c("sigma_subject_intercept",

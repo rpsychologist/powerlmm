@@ -689,17 +689,42 @@ cohend <- function(ES, standardizer = "pretest_SD") {
     # that get_slope_diff can evaluate
     if(standardizer == "pretest_SD") {
         f <- function(paras) {
+            paras <- NA_to_zero(paras)
             if(paras$partially_nested) {
-                with(paras, ES * sqrt(sigma_subject_intercept^2  + sigma_error^2))
+              with(paras, ES * sqrt(sigma_subject_intercept^2  + sigma_error^2))
             } else {
-                with(paras, ES * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+              with(paras, ES * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+            }
+        }
+    } else if(standardizer == "posttest_SD") {
+        f <- function(paras) {
+            paras <- NA_to_zero(paras)
+            if(paras$partially_nested) {
+                SD <- get_sds(paras, group = "control")
+                SD <- SD[nrow(SD), "SD_with_random_slopes"]
+                ES * SD
+            } else {
+                SD <- get_sds(paras, group = "treatment")
+                SD <- SD[nrow(SD), "SD_with_random_slopes"]
+                ES * SD
+            }
+        }
+    } else if(standardizer == "slope_SD") {
+        f <- function(paras) {
+            paras <- NA_to_zero(paras)
+            if(paras$partially_nested) {
+                with(paras, ES * sqrt(sigma_subject_slope^2) * T_end)
+            } else {
+                with(paras, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
             }
         }
     }
     get <- function() {
-        list("ES" = ES, "standardizer" = standardizer)
+        list("ES" = ES,
+             "standardizer" = standardizer)
     }
-    x <- list("set" = f, "get" = get)
+    x <- list("set" = f,
+              "get" = get)
     class(x) <- append(class(x), "plcp_cohend")
 
     list(x)
