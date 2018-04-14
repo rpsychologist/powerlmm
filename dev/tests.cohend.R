@@ -54,3 +54,22 @@ p1 <- study_parameters(n1 = n1,
 
 get_power(p1)
 
+
+p1 <- study_parameters(n1 = n1,
+                       n2 = 238/2,
+                       n3 = 4,
+                       T_end = D,
+                       icc_pre_subject = 0.5,
+                       icc_slope = 0.1,
+                       var_ratio = 0.05,
+                       sigma_error = 10,
+                       effect_size = cohend(0.4, "slope_SD"))
+
+p1
+p2 <- update(p1, partially_nested = TRUE)
+
+get_slope_diff(p1)
+get_slope_diff(p2)
+
+get_power(p1)
+get_power(p2)

@@ -1,5 +1,3 @@
-
-
 ## ICC SLOPE
 
 #' Calculate the amount of slope variance at the third level

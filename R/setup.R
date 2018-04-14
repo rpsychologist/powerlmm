@@ -556,6 +556,12 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     icc_pre_subjects <- round(get_ICC_pre_subjects(x), 2)
 
     effect <- get_effect_size(x)
+    effect_label <- ifelse(effect$standardizer == "raw", "raw", "Cohen's d")
+    effect_label <- ifelse(effect_label == "Cohen's d",
+                           paste(effect_label, " [SD: ", effect$standardizer,
+                                 ", ", effect$group, "]", sep = ""),
+                           effect_label)
+    effect <- paste(effect$ES, " (", effect_label,")", sep = "")
 
     gd <- get_dropout(x)
     gd$time <- format(gd$time, nsmall = 0, digits = 3, width = 2)
@@ -573,7 +579,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                           icc_pre_clusters = icc_pre_clusters,
                           icc_slope = icc_slope,
                           var_ratio = var_ratio,
-                          `effect` = effect$ES,
+                          `effect_size` = effect,
                           method = "Study setup (three-level)"),
                      class = "power.htest")
     attr(res, "width") <- width
@@ -677,51 +683,46 @@ get_slope_diff <- function(paras) {
 #' -export functions
 #' - document
 #' - finish tests
-cohend <- function(ES, standardizer = "pretest_SD") {
+cohend <- function(ES, standardizer = "pretest_SD", group = "control") {
     if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
     vapply(ES, .cohend,
            standardizer = standardizer,
+           group = group,
            list(1))
 }
-.cohend <- function(ES, standardizer) {
+.cohend <- function(ES, standardizer, group) {
     if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
     # return a ES func
     # that get_slope_diff can evaluate
     if(standardizer == "pretest_SD") {
-        f <- function(paras) {
-            paras <- NA_to_zero(paras)
-            if(paras$partially_nested) {
-              with(paras, ES * sqrt(sigma_subject_intercept^2  + sigma_error^2))
-            } else {
-              with(paras, ES * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
-            }
-        }
+        f <- calc_slope_from_d(ES, time = "pre", group = group)
     } else if(standardizer == "posttest_SD") {
-        f <- function(paras) {
-            paras <- NA_to_zero(paras)
-            if(paras$partially_nested) {
-                SD <- get_sds(paras, group = "control")
-                SD <- SD[nrow(SD), "SD_with_random_slopes"]
-                ES * SD
-            } else {
-                SD <- get_sds(paras, group = "treatment")
-                SD <- SD[nrow(SD), "SD_with_random_slopes"]
-                ES * SD
-            }
-        }
+        f <- calc_slope_from_d(ES, time = "post", group = group)
     } else if(standardizer == "slope_SD") {
         f <- function(paras) {
-            paras <- NA_to_zero(paras)
-            if(paras$partially_nested) {
-                with(paras, ES * sqrt(sigma_subject_slope^2) * T_end)
+            p <- NA_to_zero(paras)
+            p <- prepare_paras(p)
+            if(group == "control") {
+                with(p$control, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
             } else {
-                with(paras, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+                with(p$treatment, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+            }
+        }
+    } else if(standardizer == "slope_SD_subject") {
+        f <- function(paras) {
+            p <- NA_to_zero(paras)
+            p <- prepare_paras(p)
+            if(group == "control") {
+                with(p$control, ES * sqrt(sigma_subject_slope^2) * T_end)
+            } else {
+                with(p$treatment, ES * sqrt(sigma_subject_slope^2) * T_end)
             }
         }
     }
     get <- function() {
         list("ES" = ES,
-             "standardizer" = standardizer)
+             "standardizer" = standardizer,
+             "group" = group)
     }
     x <- list("set" = f,
               "get" = get)
@@ -729,6 +730,16 @@ cohend <- function(ES, standardizer = "pretest_SD") {
 
     list(x)
 
+}
+# cohend
+calc_slope_from_d <- function(ES, time, group) {
+    function(paras) {
+        paras <- NA_to_zero(paras)
+        SD <- get_sds(paras, group = group)
+        ind <- ifelse(time == "post", nrow(SD), 1)
+        SD <- SD[ind, "SD_with_random_slopes"]
+        ES * SD
+    }
 }
 get_effect_size <- function(object) {
         UseMethod("get_effect_size")
