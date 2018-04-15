@@ -137,6 +137,9 @@ print.plcp_VPC <- function(x, digits = 2, ...) {
 #' Calculate the model implied standard deviations per time point
 #'
 #' @param object An object created by \code{\link{study_parameters}}
+#' @param treatment \code{character}; either \code{"treatment"} or \code{"control"}.
+#' Indicates for which group SDs should be calculated for. This only makes a difference
+#' for 3-level partially nested designs.
 #' @param n Optional; selects row n if \code{object} is a \code{data.frame} of
 #' parameters
 #'
@@ -161,17 +164,18 @@ print.plcp_VPC <- function(x, digits = 2, ...) {
 #' # plot
 #' plot(get_sds(paras))
 #'
-get_sds <- function(object, group, n = 1) {
+get_sds <- function(object, treatment, n = 1) {
+    if(!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'", call. = FALSE)
      UseMethod("get_sds")
 }
 
 #' @export
-get_sds.plcp <- function(object, group = "treatment", n = NULL) {
+get_sds.plcp <- function(object, treatment = "treatment", n = NULL) {
     .p <- NA_to_zero(object)
     .p <- prepare_paras(.p)
-    if(group == "treatment") {
+    if(treatment == "treatment") {
         .p <- .p$treatment
-    } else if(group == "control") {
+    } else if(treatment == "control") {
         .p <- .p$control
     }
     .p$retention <- NULL

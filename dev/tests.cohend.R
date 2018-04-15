@@ -73,3 +73,15 @@ get_slope_diff(p2)
 
 get_power(p1)
 get_power(p2)
+
+
+# subject-levle slope SD
+study_parameters(n1 = n1,
+                       n2 = 238/2,
+                       n3 = 4,
+                       T_end = D,
+                       icc_pre_subject = 0.5,
+                       icc_slope = 0.1,
+                       var_ratio = 0.05,
+                       sigma_error = 10,
+                       effect_size = cohend(0.4, "slope_SD_subject"))

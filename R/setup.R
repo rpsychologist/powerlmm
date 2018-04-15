@@ -38,8 +38,11 @@
 #' and slopes.
 #' @param cor_within Correlation of the level 1 residual. Currently ignored in
 #' the analytical power calculations.
-#' @param cohend Standardized between-group treatment effect at the last time point,
-#' see \emph{Details}.
+#' @param effect_size The treatment effect. Either a \code{numeric} indicating the mean
+#' difference (unstandarized) between the treatments at posttest, or a standardized effect
+#' using the \code{\link{cohend}} helper function.
+#' @param cohend \emph{Deprecated}; now act as a shortcut to \code{\link{cohend}} helper function.
+#' Equivalent to using \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}
 #' @param partially_nested \code{logical}; indicates if there's clustering in both
 #' arms or only in the treatment arm.
 #' @param dropout Dropout process, see \code{\link{dropout_weibull}} or
@@ -84,14 +87,15 @@
 #' The default behavior if a parameters is not specified is that \code{cor_subject} and
 #' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
 #'
-#' \bold{Cohen's d calculation}
+#' \bold{Effect size and Cohen's d}
 #'
-#' Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
-#' For \bold{partially nested} designs the control groups baseline SD is used.
+#' The argument \code{effect_size} let's you specify the average difference in change
+#' between the treatment groups. You can either pass a \code{numeric} value to define
+#' the raw difference in means at posttest, or use an standardized effect size, see
+#' \code{\link{cohend}} for more details on the standardized effects.
 #'
-#' The choice of denominator differs between fields, and adding a more flexible solution
-#' is high-priority. In the meanwhile you'll have to manually convert between the different
-#' standardizations.
+#' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
+#' \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
 #'
 #' \bold{Two- or three-level models}
 #'
@@ -130,7 +134,7 @@
 #' Generally, power based on fixed dropout is a good approximation of random dropout.
 #'
 #'
-#' @seealso \code{\link{get_power}}, \code{\link{simulate.plcp}}
+#' @seealso \code{\link{cohend}}, \code{\link{get_power}}, \code{\link{simulate.plcp}}
 #'
 #'
 #' @examples
@@ -230,7 +234,7 @@ study_parameters <- function(n1,
     # depracated Cohen's d
     if(!is.null(cohend)) {
         warning("Argument 'cohend' is deprecated, please see '?effect_size'.", call. = FALSE)
-        effect_size <- cohend
+        effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
     # drop out checks
@@ -675,54 +679,101 @@ get_slope_diff <- function(paras) {
     slope
 }
 
-#' TODO
-#' - add different SD options
-#' - baseline/posttests SD
-#' - control or tx SD
-#' - random slope SD, add ref
-#' -export functions
-#' - document
-#' - finish tests
-cohend <- function(ES, standardizer = "pretest_SD", group = "control") {
+
+
+#' Use Cohen's d as the effect size in \code{study_parameters}
+#'
+#' Thus function is used as input to the \code{effect_size} argument in \code{study_parameters},
+#' if standardized effect sizes should be used. The choice of denominator differs between fields,
+#' and this function supports the common one of using: pre- or posttest SD, or the random slope SD.
+#'
+#' @param ES \code{numeric}; value of the standardized effect size. Can be a vector.
+#' @param standardizer \code{character}; the standardizer (denominator) used to calculate
+#' Cohen's d. Allows options are: "pretest_SD", "posttest_SD", or "slope_SD".
+#' See Details from more information.
+#' @param treatment \code{character}; indicates if the \code{standardizer} should
+#' be based on the "treatment" or "control" group---this only matters for 3-level partially
+#' nested designs.
+#'
+#' @details
+#'
+#' \strong{Standardizing using the \code{pretest_SD} or \code{posttest_SD}}
+#'
+#' For these effect sizes, ES indicates the standardized differences between
+#' the treatment groups at the posttest (\code{T_end}), standardized by using
+#' either the implied standard deviation at pretest or posttest. Thus, the actual
+#' raw differences in average slopes between the treatments are,
+#'
+#' \code{slope_diff = (ES * SD)/T_end}.
+#'
+#' \strong{\code{slope_SD}: standardizing using the random slopes}
+#'
+#' This standardization is quite different from using the pretest or posttest SD.
+#' Here the average slope difference is standardized using the total SD of the random slopes.
+#' This is done in by e.g. Raudenbush and Liu (2001). \strong{NB}, for this effect size
+#' \code{ES} indicates the difference in change per unit time, and not at posttest. Thus, the raw
+#' difference in average slopes is,
+#'
+#' \code{slope_diff = ES * slope_SD}.
+#'
+#' For a 3-level model \code{slope_SD = sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2)}.
+#'
+#' @seealso \code{\link{study_parameters}}
+#'
+#' @references Raudenbush, S. W., & Liu, X. F. (2001). Effects of study duration,
+#' frequency of observation, and sample size on power in studies of group differences
+#' in polynomial change. \emph{Psychological methods}, 6(4), 387.
+#'
+#' @return A \code{list} of the same length as \code{ES}. Each element is a named list
+#' of class \code{plcp_cohend}, with the elements:
+#' \itemize{
+#' \item \code{set}: A helper \code{function} that converts the standardized ES to raw values.
+#' Accepts a \code{study_parameters} objects, and returns a \code{numeric} indicating the
+#' raw difference between the treatment at posttest.
+#' \item \code{get}: contains a list with the original call: "ES", "standardizer", and "treatment".
+#' }
+#'
+#'
+#' @export
+#'
+#' @examples
+#'
+#'
+cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
     if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
+    if(!standardizer %in% c("pretest_SD",
+                           "posttest_SD",
+                           "slope_SD")) stop("Wrong 'standardizer', allowed options are: 'pretest_SD', 'posttest_SD', and 'slope_SD'.", call. = FALSE)
+    if(!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'")
+
     vapply(ES, .cohend,
            standardizer = standardizer,
-           group = group,
+           treatment = treatment,
            list(1))
 }
-.cohend <- function(ES, standardizer, group) {
+.cohend <- function(ES, standardizer, treatment) {
     if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
     # return a ES func
     # that get_slope_diff can evaluate
     if(standardizer == "pretest_SD") {
-        f <- calc_slope_from_d(ES, time = "pre", group = group)
+        f <- calc_slope_from_d(ES, time = "pre", treatment = treatment)
     } else if(standardizer == "posttest_SD") {
-        f <- calc_slope_from_d(ES, time = "post", group = group)
+        f <- calc_slope_from_d(ES, time = "post", treatment = treatment)
     } else if(standardizer == "slope_SD") {
         f <- function(paras) {
             p <- NA_to_zero(paras)
             p <- prepare_paras(p)
-            if(group == "control") {
+            if(treatment == "control") {
                 with(p$control, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
             } else {
                 with(p$treatment, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
-            }
-        }
-    } else if(standardizer == "slope_SD_subject") {
-        f <- function(paras) {
-            p <- NA_to_zero(paras)
-            p <- prepare_paras(p)
-            if(group == "control") {
-                with(p$control, ES * sqrt(sigma_subject_slope^2) * T_end)
-            } else {
-                with(p$treatment, ES * sqrt(sigma_subject_slope^2) * T_end)
             }
         }
     }
     get <- function() {
         list("ES" = ES,
              "standardizer" = standardizer,
-             "group" = group)
+             "treatment" = treatment)
     }
     x <- list("set" = f,
               "get" = get)
@@ -732,10 +783,10 @@ cohend <- function(ES, standardizer = "pretest_SD", group = "control") {
 
 }
 # cohend
-calc_slope_from_d <- function(ES, time, group) {
+calc_slope_from_d <- function(ES, time, treatment) {
     function(paras) {
         paras <- NA_to_zero(paras)
-        SD <- get_sds(paras, group = group)
+        SD <- get_sds(paras, treatment = treatment)
         ind <- ifelse(time == "post", nrow(SD), 1)
         SD <- SD[ind, "SD_with_random_slopes"]
         ES * SD
