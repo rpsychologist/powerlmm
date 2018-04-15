@@ -72,12 +72,11 @@ rauden_liu <- function(D, f, n = 238) {
 }
 
 ## Table 1 in Raudenbush & Liu 2001
-## NB looks like there is an error in column 1 in Raudenbush & Liu 2001
+## NB, it looks like they made an error in column 1.
 g <- expand.grid(D = 2:8,
                  f = c(0.5, 1:6))
 g$power <- mapply(rauden_liu, D = g$D, f = g$f)
-
-spread(g, f, power)
+tidyr::spread(g, f, power)
 
 
 ## Table 3 Table 1 in Raudenbush & Liu 2001
@@ -85,7 +84,7 @@ g <- expand.grid(n = seq(100, 800, by = 100),
                  D = 4,
                  f = c(0.5, 1:6))
 g$power <- mapply(rauden_liu, n = g$n, f = g$f, D = g$D)
-spread(g, n, power)
+tidyr::spread(g, n, power)
 
 }
 \references{
