@@ -105,7 +105,7 @@ simulate_data.plcp <- function(paras, n = NULL) {
     dt
 }
 simulate_data.plcp_multi <- function(paras, n = 1) {
-    simulate_data.plcp(paras[n,])
+    simulate_data.plcp(as.plcp(paras[n,]))
 }
 
 #' Perform a simulation study using a \code{study_parameters}-object

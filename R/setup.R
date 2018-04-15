@@ -563,7 +563,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     effect_label <- ifelse(effect$standardizer == "raw", "raw", "Cohen's d")
     effect_label <- ifelse(effect_label == "Cohen's d",
                            paste(effect_label, " [SD: ", effect$standardizer,
-                                 ", ", effect$group, "]", sep = ""),
+                                 ", ", effect$treatment, "]", sep = ""),
                            effect_label)
     effect <- paste(effect$ES, " (", effect_label,")", sep = "")
 
@@ -738,6 +738,35 @@ get_slope_diff <- function(paras) {
 #'
 #' @examples
 #'
+#' # Random slope SD
+#' ## Recreate results in Raudenbush & Liu 2001
+#' rauden_liu <- function(D, f, n = 238) {
+#'     n1 <- f * D + 1
+#'     p <- study_parameters(n1 = n1,
+#'                           n2 = n/2,
+#'                           T_end = D,
+#'                           sigma_subject_intercept = sqrt(0.0333),
+#'                           sigma_subject_slope = sqrt(0.0030),
+#'                           sigma_error = sqrt(0.0262),
+#'                           effect_size = cohend(0.4, standardizer = "slope_SD"))
+#'     x <- get_power(p)
+#'     round(x$power, 2)
+#' }
+#'
+#' ## Table 1 in Raudenbush & Liu 2001
+#' ## NB, it looks like they made an error in column 1.
+#' g <- expand.grid(D = 2:8,
+#'                  f = c(0.5, 1:6))
+#' g$power <- mapply(rauden_liu, D = g$D, f = g$f)
+#' tidyr::spread(g, f, power)
+#'
+#'
+#' ## Table 3 Table 1 in Raudenbush & Liu 2001
+#' g <- expand.grid(n = seq(100, 800, by = 100),
+#'                  D = 4,
+#'                  f = c(0.5, 1:6))
+#' g$power <- mapply(rauden_liu, n = g$n, f = g$f, D = g$D)
+#' tidyr::spread(g, n, power)
 #'
 cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
     if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)

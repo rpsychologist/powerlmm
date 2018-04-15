@@ -4,7 +4,7 @@
 \alias{get_sds}
 \title{Calculate the model implied standard deviations per time point}
 \usage{
-get_sds(object, treatment, n = 1)
+get_sds(object, treatment = "treatment", n = 1)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}

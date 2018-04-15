@@ -164,7 +164,7 @@ print.plcp_VPC <- function(x, digits = 2, ...) {
 #' # plot
 #' plot(get_sds(paras))
 #'
-get_sds <- function(object, treatment, n = 1) {
+get_sds <- function(object, treatment = "treatment", n = 1) {
     if(!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'", call. = FALSE)
      UseMethod("get_sds")
 }
@@ -198,8 +198,8 @@ get_sds.plcp <- function(object, treatment = "treatment", n = NULL) {
 }
 
 #' @export
-get_sds.plcp_multi <- function(object, n = 1) {
-    get_sds.plcp(object[n, ])
+get_sds.plcp_multi <- function(object, treatment = "treatment", n = 1) {
+    get_sds.plcp(as.plcp(object[n, ]), treatment = treatment)
 
 }
 
