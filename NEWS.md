@@ -1,7 +1,15 @@
 
 # Changes in version 0.2.0.9000
 
-* Package updated to support lmerTest 3.0
+## New features
+* More flexible effect size specification. This version adds support for:
+   - unstandardized effect sizes, e.g. `effect_size = 5`,
+   - and Cohen's d effect sizes that are standardized 
+   using either the pre- or posttest SD, or the random slope SD,
+   e.g. `effect_size = cohend(0.5, "posttest_sd")`
+
+## Other changes
+* Fix breaking changes in lmerTest 3.0.
 
 # Changes in version 0.2.0
 ## New features
