@@ -1,5 +1,3 @@
-
-
 ## ICC SLOPE
 
 #' Calculate the amount of slope variance at the third level
@@ -458,6 +456,7 @@ get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05, R = 1
     arg[which(is.na(names(arg)))] <- NULL
 
     paras <- do.call(update.plcp, arg)
+    if(inherits(paras, "plcp")) stop("Only 1 power value requested, add more parameter values.", call. = FALSE)
 
     res <- get_power(paras, updateProgress = updateProgress, df = df, alpha = alpha, R = R, cores = cores)
 
@@ -496,6 +495,12 @@ get_power_table <- function(object, n2, ..., df = "between", alpha = 0.05, R = 1
         res$dropout <- "no missing"
     }
     #res$tot_n <- paras$n2  * paras$n3
+
+    if("effect_size" %in% colnames(res)) {
+        res$effect_size <- get_effect_size.plcp_multi(res)$ES
+    }
+
+
 
     for(i in extra_args) {
         res[, i] <- factor(res[, i])

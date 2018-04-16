@@ -26,6 +26,9 @@ The \code{plot} method returns a \code{ggplot2::ggplot} object.
 \description{
 Calculate the variance partitioning coefficient
 }
+\details{
+For partially nested studies, the VPC is calculated for the treatment group.
+}
 \examples{
 paras <- study_parameters(n1 = 11,
                           n2 = 10,

@@ -9,7 +9,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 p
 
 ## ------------------------------------------------------------------------
@@ -38,7 +39,9 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD")
+                      )
 p
 
 ## ------------------------------------------------------------------------
@@ -51,7 +54,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 p
 
 ## ------------------------------------------------------------------------
@@ -61,7 +65,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 p
 
 ## ------------------------------------------------------------------------
@@ -75,7 +80,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 p
 
 ## ------------------------------------------------------------------------
@@ -87,7 +93,8 @@ p <- study_parameters(n1 = 3,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 get_power(p, R = 10, progress = FALSE)
 
 ## ------------------------------------------------------------------------
@@ -106,7 +113,8 @@ p <- study_parameters(n1 = 11,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
                       partially_nested = TRUE,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p
 
@@ -118,8 +126,9 @@ p1 <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      partially_nested = TRUE,
-                      cohend = -0.8)
+                      partially_nested = TRUE,                      
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p2 <- study_parameters(n1 = 11,
                       n2 = per_treatment(control = 50, 
@@ -130,8 +139,9 @@ p2 <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      partially_nested = TRUE,
-                      cohend = -0.8)
+                      partially_nested = TRUE,                      
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p1
 p2
@@ -146,8 +156,9 @@ p <- study_parameters(n1 = 11,
                       icc_slope = 0.05,
                       dropout = dropout_weibull(proportion = 0.3, 
                                                 rate = 1/2),
-                      fixed_slope = -0.5/10,
-                      cohend = -0.5)
+                      fixed_slope = -0.5/10,                      
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p
 
@@ -171,8 +182,9 @@ p2 <- study_parameters(n1 = 11,
                       var_ratio = 0.02,
                       icc_slope = 0.05,
                       dropout = d,
-                      fixed_slope = -0.5/10,
-                      cohend = -0.5)
+                      fixed_slope = -0.5/10,                      
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 plot(p2, type = "dropout")
 
@@ -187,6 +199,7 @@ p2 <- study_parameters(n1 = 11,
                       dropout = dropout_weibull(proportion = 0.3, 
                                                 rate = 1/2),
                       fixed_slope = -0.5/10,
-                      cohend = -0.5)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 get_DEFT(p2)
 

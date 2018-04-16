@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 Power Analysis for Longitudinal Multilevel/Linear Mixed-Effects Models.
 
 ## Overview
-The purpose of `powerlmm` is to help design longitudinal treatment studies, with
+The purpose of `powerlmm` is to help design longitudinal treatment studies (parallel groups), with
 or without higher-level clustering (e.g. longitudinally clustered by therapists, 
 groups, or physician), and missing data. The main features of the package are:
 
@@ -32,7 +32,7 @@ groups, or physician), and missing data. The main features of the package are:
 * Design effect, and estimated type I error when the third-level is ignored.
 * Fast analytical power calculations for all designs.
 * Power for small samples sizes using Satterthwaite's degrees of freedom approximation.
-* Explore bias, Type 1 errors and model misspecification using convenient simulation methods.
+* Explore bias, Type I errors and model misspecification using convenient simulation methods.
 
 ## Installation
 `powerlmm` can be installed from CRAN and GitHub. 
@@ -61,7 +61,8 @@ p <- study_parameters(n1 = 11,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
                       dropout = d,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p
 ```
@@ -85,7 +86,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 get_power(p)
 ```
@@ -98,7 +100,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 get_power(p, R = 100, progress = FALSE) # expected power by averaging over R realizations
 ```
@@ -110,7 +113,7 @@ Several convenience functions are also included, e.g. for creating power curves.
 x <- get_power_table(p, 
                      n2 = 5:10, 
                      n3 = c(4, 8, 12), 
-                     cohend = c(0.5, 0.8))
+                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"))
 ```
 
 ```{r, eval = FALSE}

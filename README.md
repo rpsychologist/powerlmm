@@ -9,7 +9,7 @@ Power Analysis for Longitudinal Multilevel/Linear Mixed-Effects Models.
 Overview
 --------
 
-The purpose of `powerlmm` is to help design longitudinal treatment studies, with or without higher-level clustering (e.g. longitudinally clustered by therapists, groups, or physician), and missing data. The main features of the package are:
+The purpose of `powerlmm` is to help design longitudinal treatment studies (parallel groups), with or without higher-level clustering (e.g. longitudinally clustered by therapists, groups, or physician), and missing data. The main features of the package are:
 
 -   Longitudinal two- and three-level (nested) linear mixed-effects models, and partially nested designs.
 -   Random slopes at the subject- and cluster-level.
@@ -18,7 +18,7 @@ The purpose of `powerlmm` is to help design longitudinal treatment studies, with
 -   Design effect, and estimated type I error when the third-level is ignored.
 -   Fast analytical power calculations for all designs.
 -   Power for small samples sizes using Satterthwaite's degrees of freedom approximation.
--   Explore bias, Type 1 errors and model misspecification using convenient simulation methods.
+-   Explore bias, Type I errors and model misspecification using convenient simulation methods.
 
 Installation
 ------------
@@ -50,7 +50,8 @@ p <- study_parameters(n1 = 11,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
                       dropout = d,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p
 #> 
@@ -72,7 +73,7 @@ p
 #> icc_pre_clusters = 0
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
-#>        Cohen's d = -0.8
+#>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 ```
 
 ``` r
@@ -103,8 +104,8 @@ get_power(p, df = "satterthwaite")
 #> icc_pre_clusters = 0
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
-#>        Cohen's d = -0.8
-#>               df = 7.9523
+#>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
+#>               df = 7.947873
 #>            alpha = 0.05
 #>            power = 68%
 ```
@@ -120,7 +121,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 get_power(p)
 #> 
@@ -141,7 +143,7 @@ get_power(p)
 #> icc_pre_clusters = 0
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
-#>        Cohen's d = -0.8
+#>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 #>               df = 6
 #>            alpha = 0.05
 #>            power = 44%
@@ -156,7 +158,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
                       var_ratio = 0.02,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 get_power(p, R = 100, progress = FALSE) # expected power by averaging over R realizations
 #> 
@@ -169,15 +172,15 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 24.93       (control)
-#>                    24.93       (treatment)
-#>                    49.86       (total)
+#>          total_n = 24.89       (control)
+#>                    24.89       (treatment)
+#>                    49.78       (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
-#>        Cohen's d = -0.8
+#>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 #>               df = 8
 #>            alpha = 0.05
 #>            power = 48% (MCSE: 1%)
@@ -193,7 +196,7 @@ Several convenience functions are also included, e.g. for creating power curves.
 x <- get_power_table(p, 
                      n2 = 5:10, 
                      n3 = c(4, 8, 12), 
-                     cohend = c(0.5, 0.8))
+                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"))
 ```
 
 ``` r

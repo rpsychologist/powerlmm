@@ -9,8 +9,9 @@ study_parameters(n1, n2, n3 = 1, T_end = NULL, fixed_intercept = 0L,
   sigma_subject_slope = NULL, sigma_cluster_intercept = NULL,
   sigma_cluster_slope = NULL, sigma_error = 10, cor_subject = 0L,
   cor_cluster = 0L, cor_within = 0L, var_ratio = NULL, icc_slope = NULL,
-  icc_pre_subject = NULL, icc_pre_cluster = NULL, cohend = 0L,
-  partially_nested = FALSE, dropout = 0L, deterministic_dropout = TRUE)
+  icc_pre_subject = NULL, icc_pre_cluster = NULL, effect_size = 0L,
+  cohend = NULL, partially_nested = FALSE, dropout = 0L,
+  deterministic_dropout = TRUE)
 }
 \arguments{
 \item{n1}{Number of level 1 units, e.g. measurements per subject.}
@@ -61,8 +62,12 @@ be the subject-level ICC, i.e. correlation between time points.}
 \item{icc_pre_cluster}{Amount of baseline
 variance at the cluster level.}
 
-\item{cohend}{Standardized between-group treatment effect at the last time point,
-see \emph{Details}.}
+\item{effect_size}{The treatment effect. Either a \code{numeric} indicating the mean
+difference (unstandardized) between the treatments at posttest, or a standardized effect
+using the \code{\link{cohend}} helper function.}
+
+\item{cohend}{\emph{Deprecated}; now act as a shortcut to \code{\link{cohend}} helper function.
+Equivalent to using \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}}
 
 \item{partially_nested}{\code{logical}; indicates if there's clustering in both
 arms or only in the treatment arm.}
@@ -120,14 +125,15 @@ This choice will matter when running simulations, or if Satterthwaite \emph{dfs}
 The default behavior if a parameters is not specified is that \code{cor_subject} and
 \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
 
-\bold{Cohen's d calculation}
+\bold{Effect size and Cohen's d}
 
-Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
-For \bold{partially nested} designs the control groups baseline SD is used.
+The argument \code{effect_size} let's you specify the average difference in change
+between the treatment groups. You can either pass a \code{numeric} value to define
+the raw difference in means at posttest, or use an standardized effect size, see
+\code{\link{cohend}} for more details on the standardized effects.
 
-The choice of denominator differs between fields, and adding a more flexible solution
-is high-priority. In the meanwhile you'll have to manually convert between the different
-standardizations.
+The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
+\code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
 
 \bold{Two- or three-level models}
 
@@ -153,7 +159,7 @@ patterns per treatment group using \code{\link{per_treatment}}. See their
 respective help pages for examples of their use.
 
 If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-However, exactly which subjects dropout is randomy sampled within treatments. Thus,
+However, exactly which subjects dropout is randomly sampled within treatments. Thus,
 clusters can become slightly unbalanced, but generally power varies little over realizations.
 
 For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
@@ -175,7 +181,7 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       var_ratio = 0.03,
                       icc_slope = 0.05,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 
 get_power(p)
 
@@ -193,7 +199,7 @@ p <- study_parameters(n1 = 11,
                       sigma_error = 2.8,
                       cor_subject = -0.5,
                       cor_cluster = 0,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 get_power(p)
 
 # Standardized and unstandardized inputs
@@ -205,7 +211,7 @@ p <- study_parameters(n1 = 11,
                       sigma_subject_slope = 0.47,
                       icc_slope = 0.05,
                       sigma_error = 2.8,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 
 get_power(p)
 
@@ -214,7 +220,7 @@ p <- study_parameters(n1 = 11,
                       n2 = 40,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.03,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 get_power(p)
 
 # add missing data
@@ -229,10 +235,11 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       var_ratio = 0.03,
                       icc_slope = c(0, 0.05),
-                      cohend = c(-0.5, -0.8))
+                      effect_size = cohend(c(-0.5, -0.8))
+                      )
 
 get_power(p)
 }
 \seealso{
-\code{\link{get_power}}, \code{\link{simulate.plcp}}
+\code{\link{cohend}}, \code{\link{get_power}}, \code{\link{simulate.plcp}}
 }

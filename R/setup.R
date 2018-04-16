@@ -38,8 +38,11 @@
 #' and slopes.
 #' @param cor_within Correlation of the level 1 residual. Currently ignored in
 #' the analytical power calculations.
-#' @param cohend Standardized between-group treatment effect at the last time point,
-#' see \emph{Details}.
+#' @param effect_size The treatment effect. Either a \code{numeric} indicating the mean
+#' difference (unstandardized) between the treatments at posttest, or a standardized effect
+#' using the \code{\link{cohend}} helper function.
+#' @param cohend \emph{Deprecated}; now act as a shortcut to \code{\link{cohend}} helper function.
+#' Equivalent to using \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}
 #' @param partially_nested \code{logical}; indicates if there's clustering in both
 #' arms or only in the treatment arm.
 #' @param dropout Dropout process, see \code{\link{dropout_weibull}} or
@@ -84,14 +87,15 @@
 #' The default behavior if a parameters is not specified is that \code{cor_subject} and
 #' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
 #'
-#' \bold{Cohen's d calculation}
+#' \bold{Effect size and Cohen's d}
 #'
-#' Cohen's \emph{d} is calculated by using the baseline standard deviation as the denominator.
-#' For \bold{partially nested} designs the control groups baseline SD is used.
+#' The argument \code{effect_size} let's you specify the average difference in change
+#' between the treatment groups. You can either pass a \code{numeric} value to define
+#' the raw difference in means at posttest, or use an standardized effect size, see
+#' \code{\link{cohend}} for more details on the standardized effects.
 #'
-#' The choice of denominator differs between fields, and adding a more flexible solution
-#' is high-priority. In the meanwhile you'll have to manually convert between the different
-#' standardizations.
+#' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
+#' \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
 #'
 #' \bold{Two- or three-level models}
 #'
@@ -117,7 +121,7 @@
 #' respective help pages for examples of their use.
 #'
 #' If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-#' However, exactly which subjects dropout is randomy sampled within treatments. Thus,
+#' However, exactly which subjects dropout is randomly sampled within treatments. Thus,
 #' clusters can become slightly unbalanced, but generally power varies little over realizations.
 #'
 #' For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
@@ -130,7 +134,7 @@
 #' Generally, power based on fixed dropout is a good approximation of random dropout.
 #'
 #'
-#' @seealso \code{\link{get_power}}, \code{\link{simulate.plcp}}
+#' @seealso \code{\link{cohend}}, \code{\link{get_power}}, \code{\link{simulate.plcp}}
 #'
 #'
 #' @examples
@@ -143,7 +147,7 @@
 #'                       icc_pre_cluster = 0,
 #'                       var_ratio = 0.03,
 #'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #'
 #' get_power(p)
 #'
@@ -161,7 +165,7 @@
 #'                       sigma_error = 2.8,
 #'                       cor_subject = -0.5,
 #'                       cor_cluster = 0,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #' get_power(p)
 #'
 #' # Standardized and unstandardized inputs
@@ -173,7 +177,7 @@
 #'                       sigma_subject_slope = 0.47,
 #'                       icc_slope = 0.05,
 #'                       sigma_error = 2.8,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #'
 #' get_power(p)
 #'
@@ -182,7 +186,7 @@
 #'                       n2 = 40,
 #'                       icc_pre_subject = 0.5,
 #'                       var_ratio = 0.03,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #' get_power(p)
 #'
 #' # add missing data
@@ -197,7 +201,8 @@
 #'                       icc_pre_cluster = 0,
 #'                       var_ratio = 0.03,
 #'                       icc_slope = c(0, 0.05),
-#'                       cohend = c(-0.5, -0.8))
+#'                       effect_size = cohend(c(-0.5, -0.8))
+#'                       )
 #'
 #' get_power(p)
 #' @export
@@ -219,12 +224,18 @@ study_parameters <- function(n1,
                              icc_slope = NULL,
                              icc_pre_subject = NULL,
                              icc_pre_cluster = NULL,
-                             cohend = 0L,
+                             effect_size = 0L,
+                             cohend = NULL,
                              partially_nested = FALSE,
                              dropout = 0L,
                              deterministic_dropout = TRUE) {
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
+
+    # deprecated Cohen's d
+    if(!is.null(cohend)) {
+        effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
+    }
 
     # drop out checks
     if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
@@ -299,7 +310,7 @@ study_parameters <- function(n1,
         icc_pre_subject = icc_pre_subject,
         icc_pre_cluster = icc_pre_cluster,
         icc_slope = icc_slope,
-        cohend = cohend,
+        effect_size = effect_size,
         partially_nested = partially_nested,
         dropout = dropout,
         deterministic_dropout = deterministic_dropout
@@ -548,7 +559,20 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     icc_pre_clusters <- round(get_ICC_pre_clusters(x), 2)
     icc_pre_subjects <- round(get_ICC_pre_subjects(x), 2)
 
-    cohend <- x$cohend
+    effect <- get_effect_size(x)
+    effect_label <- ifelse(effect$standardizer == "raw", "raw", "Cohen's d")
+    if(x$partially_nested) {
+        effect_label <- ifelse(effect_label == "Cohen's d",
+                               paste(effect_label, " [SD: ", effect$standardizer,
+                                     ", ", effect$treatment, "]", sep = ""),
+                               effect_label)
+    } else {
+        effect_label <- ifelse(effect_label == "Cohen's d",
+                               paste(effect_label, " [SD: ", effect$standardizer, "]", sep = ""),
+                               effect_label)
+    }
+
+    effect <- paste(effect$ES, " (", effect_label,")", sep = "")
 
     gd <- get_dropout(x)
     gd$time <- format(gd$time, nsmall = 0, digits = 3, width = 2)
@@ -566,7 +590,7 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                           icc_pre_clusters = icc_pre_clusters,
                           icc_slope = icc_slope,
                           var_ratio = var_ratio,
-                          `Cohen's d` = cohend,
+                          `effect_size` = effect,
                           method = "Study setup (three-level)"),
                      class = "power.htest")
     attr(res, "width") <- width
@@ -640,21 +664,271 @@ print.plcp_2lvl <- function(x, ...) {
     print(res, digits = 2, ...)
 }
 
-get_slope_diff <- function(paras) {
 
-    paras$sigma_subject_intercept[is.na(paras$sigma_subject_intercept)] <- 0
-    paras$sigma_cluster_intercept[is.na(paras$sigma_cluster_intercept)] <- 0
+#' Return the raw difference between the groups at posttest
+#'
+#' Used internally to calculate the difference in change over time
+#' between the two treatment groups.
+#'
+#' @param object A \code{\link{study_parameters}}-object.
+#'
+#' @return A \code{numeric} indicating the mean difference between the treatment and
+#' control group at posttest.
+#' @export
+get_slope_diff <- function(object) {
+    UseMethod("get_slope_diff")
+}
 
-    if(paras$partially_nested) {
-        with(paras, cohend * sqrt(sigma_subject_intercept^2  + sigma_error^2))
-    } else {
-        with(paras, cohend * sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2 + sigma_error^2))
+#' @rdname get_slope_diff
+#' @export
+get_slope_diff.plcp <- function(object) {
+    object$sigma_subject_intercept[is.na(object$sigma_subject_intercept)] <- 0
+    object$sigma_cluster_intercept[is.na(object$sigma_cluster_intercept)] <- 0
+
+    if(inherits(object$effect_size[[1]], "plcp_cohend")) {
+        slope <- object$effect_size[[1]]$set(object)
+    } else if(is.numeric(unlist(object$effect_size))) {
+        slope <- unlist(object$effect_size)
     }
 
+    slope
+}
+#' @rdname get_slope_diff
+#' @export
+get_slope_diff.plcp_multi <- function(object) {
+    vapply(1:nrow(object), function(i) {
+        p <- as.plcp(object[i, ])
+        get_slope_diff.plcp(p)
+    },
+    numeric(1))
 
 }
 
 
+
+#' Use Cohen's d as the effect size in \code{study_parameters}
+#'
+#' This function is used as input to the \code{effect_size} argument in \code{study_parameters},
+#' if standardized effect sizes should be used. The choice of the denominator differs between fields,
+#' and this function supports the common ones of using: pre- or posttest SD, or the random slope SD.
+#'
+#' @param ES \code{numeric}; value of the standardized effect size. Can be a vector.
+#' @param standardizer \code{character}; the standardizer (denominator) used to calculate
+#' Cohen's d. Allows options are: "pretest_SD", "posttest_SD", or "slope_SD".
+#' See Details from more information.
+#' @param treatment \code{character}; indicates if the \code{standardizer} should
+#' be based on the "treatment" or "control" group---this only matters for 3-level partially
+#' nested designs.
+#'
+#' @details
+#'
+#' \strong{Standardizing using the \code{pretest_SD} or \code{posttest_SD}}
+#'
+#' For these effect sizes, ES indicates the standardized differences between
+#' the treatment groups at the posttest (\code{T_end}), standardized by using
+#' either the implied standard deviation at pretest or posttest. Thus, the actual
+#' raw differences in average slopes between the treatments are,
+#'
+#' \code{slope_diff = (ES * SD)/T_end}.
+#'
+#' \strong{\code{slope_SD}: standardizing using the random slopes}
+#'
+#' This standardization is quite different from using the pretest or posttest SD.
+#' Here the average slope difference is standardized using the total SD of the random slopes.
+#' This is done in by e.g. Raudenbush and Liu (2001). \strong{NB}, for this effect size
+#' \code{ES} indicates the difference in change per unit time, and not at posttest. Thus, the raw
+#' difference in average slopes is,
+#'
+#' \code{slope_diff = ES * slope_SD}.
+#'
+#' For a 3-level model \code{slope_SD = sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2)}.
+#'
+#' @seealso \code{\link{study_parameters}}
+#'
+#' @references Raudenbush, S. W., & Liu, X. F. (2001). Effects of study duration,
+#' frequency of observation, and sample size on power in studies of group differences
+#' in polynomial change. \emph{Psychological methods}, 6(4), 387.
+#'
+#' @return A \code{list} of the same length as \code{ES}. Each element is a named list
+#' of class \code{plcp_cohend}, with the elements:
+#' \itemize{
+#' \item \code{set}: A helper \code{function} that converts the standardized ES to raw values.
+#' Accepts a \code{study_parameters} objects, and returns a \code{numeric} indicating the
+#' raw difference between the treatment at posttest.
+#' \item \code{get}: contains a list with the original call: "ES", "standardizer", and "treatment".
+#' }
+#'
+#'
+#' @export
+#'
+#' @examples
+#'
+#' # Pretest SD
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       icc_pre_subject = 0.5,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       effect_size = cohend(0.4, standardizer = "pretest_SD"))
+#'
+#' get_slope_diff(p)
+#'
+#' # using posttest SD,
+#' # due to random slope SD will be larger at posttest
+#' # thus ES = 0.4 indicate larger raw slope difference
+#' # using posttest SD
+#' p <- update(p, effect_size = cohend(0.4,
+#'                                     standardizer = "posttest_SD"))
+#' get_slope_diff(p)
+#'
+#'
+#' # Random slope SD
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       icc_pre_subject = 0.5,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       effect_size = cohend(0.4, standardizer = "slope_SD"))
+#'
+#' # Partially nested ----------------------------------------------------------
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       n3 = 4,
+#'                       icc_pre_subject = 0.5,
+#'                       icc_pre_cluster = 0.25,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       partially_nested = TRUE,
+#'                       effect_size = cohend(0.4, standardizer = "pretest_SD")
+#'                       )
+#' # Default is to use control groups SD
+#' get_slope_diff(p)
+#'
+#' # Treatment group's SD also include cluster-level intercept variance.
+#' # Thus, ES of 0.4 will indicate a larger raw difference
+#' # using the treatment group's SD
+#' p <- update(p, effect_size = cohend(0.4,
+#'                                     standardizer = "pretest_SD",
+#'                                     treatment = "treatment"))
+#' get_slope_diff(p)
+#'
+#' ## Combine multiple values, and raw and standardized effects ----------------
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       icc_pre_subject = 0.5,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       effect_size = c(-5, 9,
+#'                                       cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+#'                                       cohend(c(0.5, 0.8), standardizer = "posttest_SD")))
+#'
+#'
+#' ## Recreate results in Raudenbush & Liu 2001 --------------------------------
+#' rauden_liu <- function(D, f, n = 238) {
+#'     n1 <- f * D + 1
+#'     p <- study_parameters(n1 = n1,
+#'                           n2 = n/2,
+#'                           T_end = D,
+#'                           sigma_subject_intercept = sqrt(0.0333),
+#'                           sigma_subject_slope = sqrt(0.0030),
+#'                           sigma_error = sqrt(0.0262),
+#'                           effect_size = cohend(0.4, standardizer = "slope_SD"))
+#'     x <- get_power(p)
+#'     round(x$power, 2)
+#' }
+#'
+#' ## Table 1 in Raudenbush & Liu 2001
+#' ## NB, it looks like they made an error in column 1.
+#' g <- expand.grid(D = 2:8,
+#'                  f = c(0.5, 1:6))
+#' g$power <- mapply(rauden_liu, D = g$D, f = g$f)
+#' tidyr::spread(g, f, power)
+#'
+#'
+#' ## Table 3 Table 1 in Raudenbush & Liu 2001
+#' g <- expand.grid(n = seq(100, 800, by = 100),
+#'                  D = 4,
+#'                  f = c(0.5, 1:6))
+#' g$power <- mapply(rauden_liu, n = g$n, f = g$f, D = g$D)
+#' tidyr::spread(g, n, power)
+#'
+cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
+    if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
+    if(!standardizer %in% c("pretest_SD",
+                           "posttest_SD",
+                           "slope_SD")) stop("Wrong 'standardizer', allowed options are: 'pretest_SD', 'posttest_SD', and 'slope_SD'.", call. = FALSE)
+    if(!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'")
+
+    vapply(ES, .cohend,
+           standardizer = standardizer,
+           treatment = treatment,
+           list(1))
+}
+.cohend <- function(ES, standardizer, treatment) {
+    if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
+    # return a ES func
+    # that get_slope_diff can evaluate
+    if(standardizer == "pretest_SD") {
+        f <- calc_slope_from_d(ES, time = "pre", treatment = treatment)
+    } else if(standardizer == "posttest_SD") {
+        f <- calc_slope_from_d(ES, time = "post", treatment = treatment)
+    } else if(standardizer == "slope_SD") {
+        f <- function(paras) {
+            p <- NA_to_zero(paras)
+            p <- prepare_paras(p)
+            if(treatment == "control") {
+                with(p$control, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+            } else {
+                with(p$treatment, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+            }
+        }
+    }
+    get <- function() {
+        list("ES" = ES,
+             "standardizer" = standardizer,
+             "treatment" = treatment)
+    }
+    x <- list("set" = f,
+              "get" = get)
+    class(x) <- append(class(x), "plcp_cohend")
+
+    list(x)
+
+}
+# cohend
+calc_slope_from_d <- function(ES, time, treatment) {
+    function(paras) {
+        paras <- NA_to_zero(paras)
+        SD <- get_sds(paras, treatment = treatment)
+        ind <- ifelse(time == "post", nrow(SD), 1)
+        SD <- SD[ind, "SD_with_random_slopes"]
+        ES * SD
+    }
+}
+get_effect_size <- function(object) {
+        UseMethod("get_effect_size")
+}
+
+get_effect_size.plcp <- function(object) {
+    ES <- object$effect_size
+    if(inherits(ES[[1]], "plcp_cohend")) {
+        out <- ES[[1]]$get()
+    } else {
+        ES <- unlist(ES)
+        out <- list("ES" = ES, "standardizer" = "raw", treatment = "")
+    }
+
+    out
+}
+get_effect_size.plcp_multi <- function(object) {
+    x <- lapply(1:nrow(object), function(i) {
+        data.frame(get_effect_size.plcp(object[i,]))
+        }
+    )
+    x <- do.call(rbind, x)
+    x$standardizer <- as.character(x$standardizer)
+    x
+}
 # print multi-sim ---------------------------------------------------------
 
 replace_repeating <- function(x, empty) {
@@ -746,6 +1020,8 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     out$icc_pre_subject <- round(object$icc_pre_subject, digits)
     out$icc_slope <- round(object$icc_slope, digits)
     out$var_ratio <- round(object$var_ratio, digits)
+    ES <- get_effect_size(object)
+    out$effect_size <- ES$ES
     for(i in 1:ncol(out)) {
         out[,i] <- replace_repeating(out[,i], empty = empty)
     }
@@ -772,9 +1048,8 @@ get_multi_title.plcp_3lvl <- function(object) {
 select_setup_cols <- function(x) {
     cols <- c("n1",
               "n2_lab", "n2_tx_lab", "n2_cc_lab",
-
               "dropout", "dropout_tx", "dropout_cc",
-              "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "cohend")
+              "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "effect_size")
     cols[cols %in% colnames(x)]
 }
 
@@ -1123,6 +1398,12 @@ update.plcp <- function(object, ...) {
     args <- attr(paras, "call")
 
     new_args <- list(...)
+
+    # suport legacy argument 'cohend'
+    if("cohend" %in% names(new_args)) {
+        new_args$effect_size <- cohend(new_args$cohend)
+        new_args$cohend <- NULL
+    }
     new <- check_new_argument(args, new_args)
     if(length(new) > 0) stop(paste0("Updating new arguments is not yet implemented. '", new, "' was not used in original call."), call. = FALSE)
     for(i in seq_along(new_args)) {

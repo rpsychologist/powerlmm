@@ -5,6 +5,8 @@
 #'
 #' @param object An object created by \code{\link{study_parameters}}
 #'
+#' @details For partially nested studies, the VPC is calculated for the treatment group.
+#'
 #' @return a \code{data.frame} with class \code{plcp_VPC} containing the
 #'  percentage of variance per level and time point. The column
 #'  \code{between_clusters} is also the intraclass correlation for level three,
@@ -137,6 +139,9 @@ print.plcp_VPC <- function(x, digits = 2, ...) {
 #' Calculate the model implied standard deviations per time point
 #'
 #' @param object An object created by \code{\link{study_parameters}}
+#' @param treatment \code{character}; either \code{"treatment"} or \code{"control"}.
+#' Indicates for which group SDs should be calculated for. This only makes a difference
+#' for 3-level partially nested designs.
 #' @param n Optional; selects row n if \code{object} is a \code{data.frame} of
 #' parameters
 #'
@@ -161,13 +166,20 @@ print.plcp_VPC <- function(x, digits = 2, ...) {
 #' # plot
 #' plot(get_sds(paras))
 #'
-get_sds <- function(object, n = 1) {
+get_sds <- function(object, treatment = "treatment", n = 1) {
+    if(!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'", call. = FALSE)
      UseMethod("get_sds")
 }
 
 #' @export
-get_sds.plcp <- function(object, n = NULL) {
+get_sds.plcp <- function(object, treatment = "treatment", n = NULL) {
     .p <- NA_to_zero(object)
+    .p <- prepare_paras(.p)
+    if(treatment == "treatment") {
+        .p <- .p$treatment
+    } else if(treatment == "control") {
+        .p <- .p$control
+    }
     .p$retention <- NULL
     .p$n2 <- NULL
     .p <- .p[c("sigma_subject_intercept",
@@ -188,8 +200,8 @@ get_sds.plcp <- function(object, n = NULL) {
 }
 
 #' @export
-get_sds.plcp_multi <- function(object, n = 1) {
-    get_sds.plcp(object[n, ])
+get_sds.plcp_multi <- function(object, treatment = "treatment", n = 1) {
+    get_sds.plcp(as.plcp(object[n, ]), treatment = treatment)
 
 }
 

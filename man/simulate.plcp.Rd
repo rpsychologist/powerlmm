@@ -58,7 +58,7 @@ Perform a simulation study using a \code{study_parameters}-object
 The available model terms are:
 \itemize{
  \item \code{y} the outcome vector, with potential missing data.
- \item \code{y_c} the complete vesion of \code{y}, before dropout was simulated.
+ \item \code{y_c} the complete version of \code{y}, before dropout was simulated.
  \item \code{time} the time vector.
  \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment").
  \item \code{subject} subject-level id variable, from 1 to total number of subjects.
@@ -107,7 +107,7 @@ p <- study_parameters(n1 = 11,
                       sigma_subject_intercept = 1.44,
                       sigma_subject_slope = 0.2,
                       sigma_error = 1.44,
-                      cohend = 0.5)
+                      effect_size = cohend(0.5))
 
 f <- "y ~ treatment * time + (1 + time | subject)"
 
@@ -132,7 +132,7 @@ p <- study_parameters(n1 = 10,
                       sigma_subject_slope = 0.2,
                       icc_slope = 0.05,
                       sigma_error = 1.44,
-                      cohend = 0.5)
+                      effect_size = cohend(0.5))
 
 ## compare correct and miss-specified model
 f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
@@ -160,7 +160,7 @@ p <- study_parameters(n1 = 11,
                       icc_slope = 0.05,
                       sigma_error = 1.44,
                       partially_nested = TRUE,
-                      cohend = -0.5)
+                      effect_size = cohend(-0.5))
 
 f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
 
@@ -183,7 +183,7 @@ p <- study_parameters(n1 = 10,
                       sigma_subject_slope = 0.2,
                       icc_slope = 0.05,
                       sigma_error = 1.44,
-                      cohend = 0.5)
+                      effect_size = cohend(0.5))
 
 f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
           "wrong" = "y ~ treatment * time + (1 + time | subject)")

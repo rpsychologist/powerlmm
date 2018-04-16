@@ -63,8 +63,8 @@ simulate_data.plcp <- function(paras, n = NULL) {
     paras_tx <- tmp$treatment
 
     slope_diff <- get_slope_diff(paras) / paras$T_end
-    paras$cohend <- NULL
-    paras_tx$cohend <- NULL
+    paras$effect_size <- NULL
+    paras_tx$effect_size <- NULL
 
     paras_tx$fixed_slope <- paras_tx$fixed_slope + slope_diff
 
@@ -104,8 +104,10 @@ simulate_data.plcp <- function(paras, n = NULL) {
 
     dt
 }
+#' @rdname simulate_data
+#' @export
 simulate_data.plcp_multi <- function(paras, n = 1) {
-    simulate_data.plcp(paras[n,])
+    simulate_data.plcp(as.plcp(paras[n,]))
 }
 
 #' Perform a simulation study using a \code{study_parameters}-object
@@ -145,7 +147,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' The available model terms are:
 #' \itemize{
 #'  \item \code{y} the outcome vector, with potential missing data.
-#'  \item \code{y_c} the complete vesion of \code{y}, before dropout was simulated.
+#'  \item \code{y_c} the complete version of \code{y}, before dropout was simulated.
 #'  \item \code{time} the time vector.
 #'  \item \code{treatment} treatment indicator (0 = "control", 1 = "treatment").
 #'  \item \code{subject} subject-level id variable, from 1 to total number of subjects.
@@ -196,7 +198,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_subject_intercept = 1.44,
 #'                       sigma_subject_slope = 0.2,
 #'                       sigma_error = 1.44,
-#'                       cohend = 0.5)
+#'                       effect_size = cohend(0.5))
 #'
 #' f <- "y ~ treatment * time + (1 + time | subject)"
 #'
@@ -221,7 +223,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_subject_slope = 0.2,
 #'                       icc_slope = 0.05,
 #'                       sigma_error = 1.44,
-#'                       cohend = 0.5)
+#'                       effect_size = cohend(0.5))
 #'
 #' ## compare correct and miss-specified model
 #' f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
@@ -249,7 +251,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       icc_slope = 0.05,
 #'                       sigma_error = 1.44,
 #'                       partially_nested = TRUE,
-#'                       cohend = -0.5)
+#'                       effect_size = cohend(-0.5))
 #'
 #' f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
 #'
@@ -272,7 +274,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_subject_slope = 0.2,
 #'                       icc_slope = 0.05,
 #'                       sigma_error = 1.44,
-#'                       cohend = 0.5)
+#'                       effect_size = cohend(0.5))
 #'
 #' f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
 #'           "wrong" = "y ~ treatment * time + (1 + time | subject)")

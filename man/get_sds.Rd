@@ -4,10 +4,14 @@
 \alias{get_sds}
 \title{Calculate the model implied standard deviations per time point}
 \usage{
-get_sds(object, n = 1)
+get_sds(object, treatment = "treatment", n = 1)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}
+
+\item{treatment}{\code{character}; either \code{"treatment"} or \code{"control"}.
+Indicates for which group SDs should be calculated for. This only makes a difference
+for 3-level partially nested designs.}
 
 \item{n}{Optional; selects row n if \code{object} is a \code{data.frame} of
 parameters}

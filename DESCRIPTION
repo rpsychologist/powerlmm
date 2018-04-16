@@ -4,12 +4,13 @@ Title: Power Analysis for Longitudinal Multilevel Models
 Version: 0.2.0.9000
 Authors@R: person("Kristoffer", "Magnusson", email = "hello@kristoffer.email",
     role = c("aut", "cre"))
-Description: Calculate power for two- and three-level multilevel longitudinal
-    studies with missing data. Both the third-level factor (e.g. therapists,
-    schools, or physicians), and the second-level factor (e.g. subjects),
-    can be assigned random slopes. Studies with partially nested designs,
-    unequal cluster sizes, unequal allocation to treatment arms, and different
-    dropout patterns per treatment are supported. For all designs power can be
+Description: Calculate power for the time x treatment difference
+    in two- and three-level multilevel longitudinal studies with missing data.
+    Both the third-level factor (e.g. therapists, schools, or physicians),
+    and the second-level factor (e.g. subjects), can be assigned random slopes.
+    Studies with partially nested designs, unequal cluster sizes,
+    unequal allocation to treatment arms, and different dropout patterns
+    per treatment are supported. For all designs power can be
     calculated both analytically and via simulations. The analytical
     calculations extends the method described in Galbraith et al. (2002)
     <doi:10.1016/S0197-2456(02)00205-2>, to three-level models.
