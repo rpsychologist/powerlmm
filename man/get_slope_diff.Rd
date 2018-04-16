@@ -2,16 +2,24 @@
 % Please edit documentation in R/setup.R
 \name{get_slope_diff}
 \alias{get_slope_diff}
-\title{add standardizers
-* pooled pre or posttest
-* control group SD
-* random slope SD}
+\alias{get_slope_diff.plcp}
+\alias{get_slope_diff.plcp_multi}
+\title{Return the raw difference between the groups at posttest}
 \usage{
-get_slope_diff(paras)
+get_slope_diff(object)
+
+\method{get_slope_diff}{plcp}(object)
+
+\method{get_slope_diff}{plcp_multi}(object)
+}
+\arguments{
+\item{object}{A \code{\link{study_parameters}}-object.}
+}
+\value{
+A \code{numeric} indicating the mean difference between the treatment and
+control group at posttest.
 }
 \description{
-add standardizers
-* pooled pre or posttest
-* control group SD
-* random slope SD
+Used internally to calculate the difference in change over time
+between the two treatment groups.
 }

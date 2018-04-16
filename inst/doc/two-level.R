@@ -7,13 +7,15 @@ p1 <- study_parameters(n1 = 11,
                       sigma_subject_intercept = 1.44,
                       sigma_subject_slope = 0.2,
                       sigma_error = 1.44,
-                      cohend = 0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 
 p2 <- study_parameters(n1 = 11,
                       n2 = 25,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
-                      cohend = 0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 p1
 
 ## ------------------------------------------------------------------------
@@ -26,7 +28,8 @@ p2 <- study_parameters(n1 = 11,
                       var_ratio = 0.019,
                       dropout = dropout_weibull(proportion = 0.3, 
                                                 rate = 1/2),
-                      cohend = -0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 
 ## ---- fig.width=8--------------------------------------------------------
 plot(p2)
@@ -46,7 +49,8 @@ p2 <- study_parameters(n1 = 11,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
                       dropout = d,
-                      cohend = -0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 
 plot(p2, type = "dropout")
 
@@ -55,13 +59,15 @@ p1 <- study_parameters(n1 = 11,
                       n2 = 30,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
-                      cohend = -0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 p2 <- study_parameters(n1 = 11,
                       n2 = per_treatment(control = 10,
                                          treatment = 50),
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
-                      cohend = -0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 
 p1
 p2
@@ -75,7 +81,8 @@ p1 <- study_parameters(n1 = 11,
                       n2 = 30,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.019,
-                      cohend = -0.5)
+                      effect_size = cohend(-0.5, 
+                                           standardizer = "pretest_SD"))
 
 x <- get_power_table(p1, n2 = seq(10, 30, by = 5), var_ratio = c(0.01, 0.02, 0.05))
 x

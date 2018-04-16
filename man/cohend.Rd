@@ -56,8 +56,59 @@ For a 3-level model \code{slope_SD = sqrt(sigma_subject_slope^2 + sigma_cluster_
 }
 \examples{
 
+# Pretest SD
+p <- study_parameters(n1 = 11,
+                      n2 = 20,
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.4,
+                      var_ratio = 0.03,
+                      effect_size = cohend(0.4, standardizer = "pretest_SD"))
+
+get_slope_diff(p)
+
+# using posttest SD,
+# due to random slope SD will be larger at posttest
+# thus ES = 0.4 indicate larger raw slope difference
+# using posttest SD
+p <- update(p, effect_size = cohend(0.4,
+                                    standardizer = "posttest_SD"))
+get_slope_diff(p)
+
+
 # Random slope SD
-## Recreate results in Raudenbush & Liu 2001
+p <- study_parameters(n1 = 11,
+                      n2 = 20,
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.4,
+                      var_ratio = 0.03,
+                      effect_size = cohend(0.4, standardizer = "slope_SD"))
+
+
+
+# Partially nested ----------------------------------------------------------
+p <- study_parameters(n1 = 11,
+                      n2 = 20,
+                      n3 = 4,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0.25,
+                      cor_subject = -0.4,
+                      var_ratio = 0.03,
+                      partially_nested = TRUE,
+                      effect_size = cohend(0.4,
+                                           standardizer = "pretest_SD")
+                      # Default is to use control groups SD
+                      get_slope_diff(p)
+
+                      # Treatment group's SD also include cluster-level intercept variance.
+                      # Thus, ES of 0.4 will indicate a larger raw difference
+                      # using the treatment group's SD
+                      p <- update(p, effect_size = cohend(0.4,
+                                                          standardizer = "pretest_SD",
+                                                          treatment = "treatment"))
+                      get_slope_diff(p)
+
+
+## Recreate results in Raudenbush & Liu 2001 --------------------------------
 rauden_liu <- function(D, f, n = 238) {
     n1 <- f * D + 1
     p <- study_parameters(n1 = n1,
@@ -72,12 +123,11 @@ rauden_liu <- function(D, f, n = 238) {
 }
 
 ## Table 1 in Raudenbush & Liu 2001
-## NB looks like there is an error in column 1 in Raudenbush & Liu 2001
+## NB, it looks like they made an error in column 1.
 g <- expand.grid(D = 2:8,
                  f = c(0.5, 1:6))
 g$power <- mapply(rauden_liu, D = g$D, f = g$f)
-
-spread(g, f, power)
+tidyr::spread(g, f, power)
 
 
 ## Table 3 Table 1 in Raudenbush & Liu 2001
@@ -85,7 +135,7 @@ g <- expand.grid(n = seq(100, 800, by = 100),
                  D = 4,
                  f = c(0.5, 1:6))
 g$power <- mapply(rauden_liu, n = g$n, f = g$f, D = g$D)
-spread(g, n, power)
+tidyr::spread(g, n, power)
 
 }
 \references{

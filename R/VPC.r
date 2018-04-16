@@ -5,6 +5,8 @@
 #'
 #' @param object An object created by \code{\link{study_parameters}}
 #'
+#' @details For partially nested studies, the VPC is calculated for the treatment group.
+#'
 #' @return a \code{data.frame} with class \code{plcp_VPC} containing the
 #'  percentage of variance per level and time point. The column
 #'  \code{between_clusters} is also the intraclass correlation for level three,

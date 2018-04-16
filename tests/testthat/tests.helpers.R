@@ -300,6 +300,17 @@ test_that("get_SDS", {
     expect_error(x, NA)
 
 
+    # Control, partially nested
+    p <- study_parameters(n1 = 11,
+                          n2 = per_treatment(20, 40),
+                          n3 = 4,
+                          sigma_subject_intercept = 10,
+                          sigma_cluster_intercept = 5,
+                          sigma_error = 10,
+                          partially_nested = TRUE)
+
+    expect_true(all(get_sds(p, treatment = "treatment")$SD_with_random_slopes == sqrt(10^2 + 5^2 + 10^2)))
+    expect_true(all(get_sds(p, treatment = "control")$SD_with_random_slopes == sqrt(10^2 + 10^2)))
 
 })
 

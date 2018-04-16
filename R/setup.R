@@ -231,9 +231,8 @@ study_parameters <- function(n1,
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
 
-    # depracated Cohen's d
+    # deprecated Cohen's d
     if(!is.null(cohend)) {
-        warning("Argument 'cohend' is deprecated, please see '?effect_size'.", call. = FALSE)
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
@@ -658,25 +657,43 @@ print.plcp_2lvl <- function(x, ...) {
 }
 
 
-# return the difference at post test
+#' Return the raw difference between the groups at posttest
+#'
+#' Used internally to calculate the difference in change over time
+#' between the two treatment groups.
+#'
+#' @param object A \code{\link{study_parameters}}-object.
+#'
+#' @return A \code{numeric} indicating the mean difference between the treatment and
+#' control group at posttest.
+#' @export
+get_slope_diff <- function(object) {
+    UseMethod("get_slope_diff")
+}
 
-## TODO
-#' add standardizers
-#' * pooled pre or posttest
-#' * control group SD
-#' * random slope SD
-get_slope_diff <- function(paras) {
+#' @rdname get_slope_diff
+#' @export
+get_slope_diff.plcp <- function(object) {
+    object$sigma_subject_intercept[is.na(object$sigma_subject_intercept)] <- 0
+    object$sigma_cluster_intercept[is.na(object$sigma_cluster_intercept)] <- 0
 
-    paras$sigma_subject_intercept[is.na(paras$sigma_subject_intercept)] <- 0
-    paras$sigma_cluster_intercept[is.na(paras$sigma_cluster_intercept)] <- 0
-
-    if(inherits(paras$effect_size[[1]], "plcp_cohend")) {
-        slope <- paras$effect_size[[1]]$set(paras)
-    } else if(is.numeric(paras$effect_size)) {
-        slope <- paras$effect_size
+    if(inherits(object$effect_size[[1]], "plcp_cohend")) {
+        slope <- object$effect_size[[1]]$set(object)
+    } else if(is.numeric(object$effect_size)) {
+        slope <- object$effect_size
     }
 
     slope
+}
+#' @rdname get_slope_diff
+#' @export
+get_slope_diff.plcp_multi <- function(object) {
+    vapply(1:nrow(object), function(i) {
+        p <- as.plcp(object[i, ])
+        get_slope_diff.plcp(p)
+    },
+    numeric(1))
+
 }
 
 
@@ -738,8 +755,59 @@ get_slope_diff <- function(paras) {
 #'
 #' @examples
 #'
+#' # Pretest SD
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       icc_pre_subject = 0.5,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       effect_size = cohend(0.4, standardizer = "pretest_SD"))
+#'
+#' get_slope_diff(p)
+#'
+#' # using posttest SD,
+#' # due to random slope SD will be larger at posttest
+#' # thus ES = 0.4 indicate larger raw slope difference
+#' # using posttest SD
+#' p <- update(p, effect_size = cohend(0.4,
+#'                                     standardizer = "posttest_SD"))
+#' get_slope_diff(p)
+#'
+#'
 #' # Random slope SD
-#' ## Recreate results in Raudenbush & Liu 2001
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       icc_pre_subject = 0.5,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       effect_size = cohend(0.4, standardizer = "slope_SD"))
+#'
+#'
+#'
+#' # Partially nested ----------------------------------------------------------
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       n3 = 4,
+#'                       icc_pre_subject = 0.5,
+#'                       icc_pre_cluster = 0.25,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       partially_nested = TRUE,
+#'                       effect_size = cohend(0.4,
+#'                                            standardizer = "pretest_SD")
+#'                       # Default is to use control groups SD
+#'                       get_slope_diff(p)
+#'
+#'                       # Treatment group's SD also include cluster-level intercept variance.
+#'                       # Thus, ES of 0.4 will indicate a larger raw difference
+#'                       # using the treatment group's SD
+#'                       p <- update(p, effect_size = cohend(0.4,
+#'                                                           standardizer = "pretest_SD",
+#'                                                           treatment = "treatment"))
+#'                       get_slope_diff(p)
+#'
+#'
+#' ## Recreate results in Raudenbush & Liu 2001 --------------------------------
 #' rauden_liu <- function(D, f, n = 238) {
 #'     n1 <- f * D + 1
 #'     p <- study_parameters(n1 = n1,
