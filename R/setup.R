@@ -560,10 +560,17 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
 
     effect <- get_effect_size(x)
     effect_label <- ifelse(effect$standardizer == "raw", "raw", "Cohen's d")
-    effect_label <- ifelse(effect_label == "Cohen's d",
-                           paste(effect_label, " [SD: ", effect$standardizer,
-                                 ", ", effect$treatment, "]", sep = ""),
-                           effect_label)
+    if(x$partially_nested) {
+        effect_label <- ifelse(effect_label == "Cohen's d",
+                               paste(effect_label, " [SD: ", effect$standardizer,
+                                     ", ", effect$treatment, "]", sep = ""),
+                               effect_label)
+    } else {
+        effect_label <- ifelse(effect_label == "Cohen's d",
+                               paste(effect_label, " [SD: ", effect$standardizer, "]", sep = ""),
+                               effect_label)
+    }
+
     effect <- paste(effect$ES, " (", effect_label,")", sep = "")
 
     gd <- get_dropout(x)

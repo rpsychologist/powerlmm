@@ -104,6 +104,8 @@ simulate_data.plcp <- function(paras, n = NULL) {
 
     dt
 }
+#' @rdname simulate_data
+#' @export
 simulate_data.plcp_multi <- function(paras, n = 1) {
     simulate_data.plcp(as.plcp(paras[n,]))
 }
