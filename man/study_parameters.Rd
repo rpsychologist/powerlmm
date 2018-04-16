@@ -63,7 +63,7 @@ be the subject-level ICC, i.e. correlation between time points.}
 variance at the cluster level.}
 
 \item{effect_size}{The treatment effect. Either a \code{numeric} indicating the mean
-difference (unstandarized) between the treatments at posttest, or a standardized effect
+difference (unstandardized) between the treatments at posttest, or a standardized effect
 using the \code{\link{cohend}} helper function.}
 
 \item{cohend}{\emph{Deprecated}; now act as a shortcut to \code{\link{cohend}} helper function.
@@ -159,7 +159,7 @@ patterns per treatment group using \code{\link{per_treatment}}. See their
 respective help pages for examples of their use.
 
 If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-However, exactly which subjects dropout is randomy sampled within treatments. Thus,
+However, exactly which subjects dropout is randomly sampled within treatments. Thus,
 clusters can become slightly unbalanced, but generally power varies little over realizations.
 
 For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
@@ -181,7 +181,7 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       var_ratio = 0.03,
                       icc_slope = 0.05,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 
 get_power(p)
 
@@ -199,7 +199,7 @@ p <- study_parameters(n1 = 11,
                       sigma_error = 2.8,
                       cor_subject = -0.5,
                       cor_cluster = 0,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 get_power(p)
 
 # Standardized and unstandardized inputs
@@ -211,7 +211,7 @@ p <- study_parameters(n1 = 11,
                       sigma_subject_slope = 0.47,
                       icc_slope = 0.05,
                       sigma_error = 2.8,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 
 get_power(p)
 
@@ -220,7 +220,7 @@ p <- study_parameters(n1 = 11,
                       n2 = 40,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.03,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8))
 get_power(p)
 
 # add missing data
@@ -235,7 +235,8 @@ p <- study_parameters(n1 = 11,
                       icc_pre_cluster = 0,
                       var_ratio = 0.03,
                       icc_slope = c(0, 0.05),
-                      cohend = c(-0.5, -0.8))
+                      effect_size = cohend(c(-0.5, -0.8))
+                      )
 
 get_power(p)
 }

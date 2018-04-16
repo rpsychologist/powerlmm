@@ -29,8 +29,8 @@ the cluster-level random slope. The standard error for the misspecified model is
 calculated by assuming that the cluster-level random slope variance is added
 to the subject-level random slope.
 
-The approximate type 1 error under the miss-specified model is also calculated.
-The effect of wrongly ignoring a third-level random slope on the type 1 errors, depends on
+The approximate Type I error under the miss-specified model is also calculated.
+The effect of wrongly ignoring a third-level random slope on the Type I errors, depends on
 \code{n1, n2, n3, icc_slope}, and, \code{var_ratio}.
 }
 \examples{

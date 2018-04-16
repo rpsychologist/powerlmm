@@ -35,7 +35,8 @@ p <- study_parameters(n1 = 11,
                       dropout = dropout_weibull(proportion = 0.3, 
                                                 rate = 1/2),
                       partially_nested = TRUE,
-                      cohend = -0.8)
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
 
 p
 ```
@@ -69,10 +70,10 @@ summary(res)
 It is also possible to automatically create the `formula` by leaving it blank. Then the `lmer-formula` is created by including the parameters that are not specified as `NA` or `NULL` in the model, see `?create_lmer_formula`. N.B., parameters specified as 0 are included in the model.
 
 ## Investigate model misspecification
-Let's compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a `correct` and `wrong` formula. By setting `cohend` to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.
+Let's compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a `correct` and `wrong` formula. By setting `effect_size` to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.
 
 ```{r}
-p <- update(p, cohend = 0)
+p <- update(p, effect_size = 0)
 
 f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)",
           "wrong" = "y ~ treatment * time + (1 + time | subject)")
@@ -108,7 +109,8 @@ p <- study_parameters(n1 = 11,
                       dropout = dropout_weibull(proportion = 0.3, 
                                                 rate = 1/2),
                       partially_nested = TRUE,
-                      cohend = -c(0.5, 0.8))
+                      effect_size = cohend(c(0.5, 0.8), 
+                                           standardizer = "pretest_SD"))
 
 
 f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"

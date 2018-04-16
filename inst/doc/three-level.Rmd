@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output: 
     rmarkdown::html_vignette:
         toc: yes
+bibliography: citations.bib
 vignette: >
   %\VignetteIndexEntry{Tutorial: Three-level Longitudinal Power Analysis}
   %\VignetteEngine{knitr::rmarkdown}
@@ -123,7 +124,23 @@ Standardized        | Calculation
 `var_ratio`         | `(sigma_subject_slope^2 + sigma_custer_slope^2)/sigma_error^2`
 
 ### Effect sizes
-The argument `effect_size` either accepts the raw difference between the groups at posttest, or a standardized effect size by passing the `cohend(...)` function. Cohen's *d* can be calculated using either the pretest, posttest, or random slope SD as the standardizer (denominator).
+The argument `effect_size` either accepts the raw difference between the groups at posttest, or a standardized effect size by passing the `cohend(...)` function. Cohen's *d* can be calculated using either the pretest, posttest, or random slope SD as the standardizer (denominator). See `?cohend` for options.
+
+
+For standardized effect sizes that use either the pretest or posttest SD, the effect size refers to the standardized difference between the groups at posttest,
+$$\delta_{101} = \frac{\text{ES} \times \sigma}{T_{end}}.$$
+Where the standardizer $\sigma$ is one of the following standardizers (based either on the treatment or control groups variance components):
+
+- pretest SD,
+$$ \sigma_{pre} = \sqrt{\sigma_{u0}^2 + \sigma_{v0}^2 + \sigma_{e}^2}.$$
+- posttest SD,
+$$ \sigma_{post} =  \sqrt{\sigma_{u0}^2 + 2T_{end}\sigma_{u01} + T_{end}^2\sigma_{u1}^2 + \sigma_{v0}^2+2T_{end}\sigma_{v01}+T_{end}^2\sigma_{v1}^2 + \sigma_{e}^2}.$$
+
+If the random slope SD (cf. @Raudenbush_Xiao-Feng_2001) is used as the standardizer, the ES now indicate the difference per unit of time, 
+$$\delta_{101} = \text{ES} \times \sigma_{slopes},$$
+where the standardizer is,
+$$ \sigma_{slopes} = \sqrt{\sigma_{u1}^2 + \sigma_{v1}^2}.$$
+
 
 
 # Study setup
@@ -275,7 +292,7 @@ p <- study_parameters(n1 = 3,
 get_power(p, R = 10, progress = FALSE)
 ```
 
-N.B., in this case cluster sizes are *not* sampled independently for each treatment group, i.e. both groups will have excactly the same cluster imbalance. To sample each group independently, either from the same or from a different distribution, use `per_treatment`.
+N.B., in this case cluster sizes are *not* sampled independently for each treatment group, i.e. both groups will have exactly the same cluster imbalance. To sample each group independently, either from the same or from a different distribution, use `per_treatment`.
 
 ```{r}
 # sample cluster sizes in each treatment group independently
@@ -417,3 +434,5 @@ get_DEFT(p2)
 ```
 
 We can see that the design effect increases with more subjects per cluster. Even when only 5 % of the slope variance is at the cluster level, Type I errors can be considerably inflated if the random slope at the third-level is ignored. 
+
+# References

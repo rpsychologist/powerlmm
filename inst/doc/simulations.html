@@ -96,7 +96,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
                       <span class="dt">dropout =</span> <span class="kw">dropout_weibull</span>(<span class="dt">proportion =</span> <span class="fl">0.3</span>, 
                                                 <span class="dt">rate =</span> <span class="dv">1</span><span class="op">/</span><span class="dv">2</span>),
                       <span class="dt">partially_nested =</span> <span class="ot">TRUE</span>,
-                      <span class="dt">cohend =</span> <span class="op">-</span><span class="fl">0.8</span>)
+                      <span class="dt">effect_size =</span> <span class="kw">cohend</span>(<span class="op">-</span><span class="fl">0.8</span>, 
+                                           <span class="dt">standardizer =</span> <span class="st">&quot;pretest_SD&quot;</span>))
 
 p</code></pre></div>
 </div>
@@ -126,8 +127,8 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 </div>
 <div id="investigate-model-misspecification" class="section level2">
 <h2>Investigate model misspecification</h2>
-<p>Let’s compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a <code>correct</code> and <code>wrong</code> formula. By setting <code>cohend</code> to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">cohend =</span> <span class="dv">0</span>)
+<p>Let’s compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a <code>correct</code> and <code>wrong</code> formula. By setting <code>effect_size</code> to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">effect_size =</span> <span class="dv">0</span>)
 
 f &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;correct&quot;</span> =<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>,
           <span class="st">&quot;wrong&quot;</span> =<span class="st"> &quot;y ~ treatment * time + (1 + time | subject)&quot;</span>)
@@ -159,7 +160,8 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
                       <span class="dt">dropout =</span> <span class="kw">dropout_weibull</span>(<span class="dt">proportion =</span> <span class="fl">0.3</span>, 
                                                 <span class="dt">rate =</span> <span class="dv">1</span><span class="op">/</span><span class="dv">2</span>),
                       <span class="dt">partially_nested =</span> <span class="ot">TRUE</span>,
-                      <span class="dt">cohend =</span> <span class="op">-</span><span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.8</span>))
+                      <span class="dt">effect_size =</span> <span class="kw">cohend</span>(<span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.8</span>), 
+                                           <span class="dt">standardizer =</span> <span class="st">&quot;pretest_SD&quot;</span>))
 
 
 f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>

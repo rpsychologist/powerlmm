@@ -39,7 +39,7 @@
 #' @param cor_within Correlation of the level 1 residual. Currently ignored in
 #' the analytical power calculations.
 #' @param effect_size The treatment effect. Either a \code{numeric} indicating the mean
-#' difference (unstandarized) between the treatments at posttest, or a standardized effect
+#' difference (unstandardized) between the treatments at posttest, or a standardized effect
 #' using the \code{\link{cohend}} helper function.
 #' @param cohend \emph{Deprecated}; now act as a shortcut to \code{\link{cohend}} helper function.
 #' Equivalent to using \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}
@@ -121,7 +121,7 @@
 #' respective help pages for examples of their use.
 #'
 #' If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-#' However, exactly which subjects dropout is randomy sampled within treatments. Thus,
+#' However, exactly which subjects dropout is randomly sampled within treatments. Thus,
 #' clusters can become slightly unbalanced, but generally power varies little over realizations.
 #'
 #' For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
@@ -147,7 +147,7 @@
 #'                       icc_pre_cluster = 0,
 #'                       var_ratio = 0.03,
 #'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #'
 #' get_power(p)
 #'
@@ -165,7 +165,7 @@
 #'                       sigma_error = 2.8,
 #'                       cor_subject = -0.5,
 #'                       cor_cluster = 0,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #' get_power(p)
 #'
 #' # Standardized and unstandardized inputs
@@ -177,7 +177,7 @@
 #'                       sigma_subject_slope = 0.47,
 #'                       icc_slope = 0.05,
 #'                       sigma_error = 2.8,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #'
 #' get_power(p)
 #'
@@ -186,7 +186,7 @@
 #'                       n2 = 40,
 #'                       icc_pre_subject = 0.5,
 #'                       var_ratio = 0.03,
-#'                       cohend = -0.8)
+#'                       effect_size = cohend(-0.8))
 #' get_power(p)
 #'
 #' # add missing data
@@ -201,7 +201,8 @@
 #'                       icc_pre_cluster = 0,
 #'                       var_ratio = 0.03,
 #'                       icc_slope = c(0, 0.05),
-#'                       cohend = c(-0.5, -0.8))
+#'                       effect_size = cohend(c(-0.5, -0.8))
+#'                       )
 #'
 #' get_power(p)
 #' @export
@@ -686,8 +687,8 @@ get_slope_diff.plcp <- function(object) {
 
     if(inherits(object$effect_size[[1]], "plcp_cohend")) {
         slope <- object$effect_size[[1]]$set(object)
-    } else if(is.numeric(object$effect_size)) {
-        slope <- object$effect_size
+    } else if(is.numeric(unlist(object$effect_size))) {
+        slope <- unlist(object$effect_size)
     }
 
     slope
@@ -707,9 +708,9 @@ get_slope_diff.plcp_multi <- function(object) {
 
 #' Use Cohen's d as the effect size in \code{study_parameters}
 #'
-#' Thus function is used as input to the \code{effect_size} argument in \code{study_parameters},
-#' if standardized effect sizes should be used. The choice of denominator differs between fields,
-#' and this function supports the common one of using: pre- or posttest SD, or the random slope SD.
+#' This function is used as input to the \code{effect_size} argument in \code{study_parameters},
+#' if standardized effect sizes should be used. The choice of the denominator differs between fields,
+#' and this function supports the common ones of using: pre- or posttest SD, or the random slope SD.
 #'
 #' @param ES \code{numeric}; value of the standardized effect size. Can be a vector.
 #' @param standardizer \code{character}; the standardizer (denominator) used to calculate
@@ -789,8 +790,6 @@ get_slope_diff.plcp_multi <- function(object) {
 #'                       var_ratio = 0.03,
 #'                       effect_size = cohend(0.4, standardizer = "slope_SD"))
 #'
-#'
-#'
 #' # Partially nested ----------------------------------------------------------
 #' p <- study_parameters(n1 = 11,
 #'                       n2 = 20,
@@ -800,18 +799,28 @@ get_slope_diff.plcp_multi <- function(object) {
 #'                       cor_subject = -0.4,
 #'                       var_ratio = 0.03,
 #'                       partially_nested = TRUE,
-#'                       effect_size = cohend(0.4,
-#'                                            standardizer = "pretest_SD")
-#'                       # Default is to use control groups SD
-#'                       get_slope_diff(p)
+#'                       effect_size = cohend(0.4, standardizer = "pretest_SD")
+#'                       )
+#' # Default is to use control groups SD
+#' get_slope_diff(p)
 #'
-#'                       # Treatment group's SD also include cluster-level intercept variance.
-#'                       # Thus, ES of 0.4 will indicate a larger raw difference
-#'                       # using the treatment group's SD
-#'                       p <- update(p, effect_size = cohend(0.4,
-#'                                                           standardizer = "pretest_SD",
-#'                                                           treatment = "treatment"))
-#'                       get_slope_diff(p)
+#' # Treatment group's SD also include cluster-level intercept variance.
+#' # Thus, ES of 0.4 will indicate a larger raw difference
+#' # using the treatment group's SD
+#' p <- update(p, effect_size = cohend(0.4,
+#'                                     standardizer = "pretest_SD",
+#'                                     treatment = "treatment"))
+#' get_slope_diff(p)
+#'
+#' ## Combine multiple values, and raw and standardized effects ----------------
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       icc_pre_subject = 0.5,
+#'                       cor_subject = -0.4,
+#'                       var_ratio = 0.03,
+#'                       effect_size = c(-5, 9,
+#'                                       cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+#'                                       cohend(c(0.5, 0.8), standardizer = "posttest_SD")))
 #'
 #'
 #' ## Recreate results in Raudenbush & Liu 2001 --------------------------------
@@ -906,7 +915,7 @@ get_effect_size.plcp <- function(object) {
         out <- ES[[1]]$get()
     } else {
         ES <- unlist(ES)
-        out <- list("ES" = ES, "standardizer" = "raw")
+        out <- list("ES" = ES, "standardizer" = "raw", treatment = "")
     }
 
     out
@@ -917,6 +926,7 @@ get_effect_size.plcp_multi <- function(object) {
         }
     )
     x <- do.call(rbind, x)
+    x$standardizer <- as.character(x$standardizer)
     x
 }
 # print multi-sim ---------------------------------------------------------
@@ -1388,6 +1398,12 @@ update.plcp <- function(object, ...) {
     args <- attr(paras, "call")
 
     new_args <- list(...)
+
+    # suport legacy argument 'cohend'
+    if("cohend" %in% names(new_args)) {
+        new_args$effect_size <- cohend(new_args$cohend)
+        new_args$cohend <- NULL
+    }
     new <- check_new_argument(args, new_args)
     if(length(new) > 0) stop(paste0("Updating new arguments is not yet implemented. '", new, "' was not used in original call."), call. = FALSE)
     for(i in seq_along(new_args)) {

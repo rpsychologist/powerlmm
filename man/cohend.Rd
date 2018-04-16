@@ -28,9 +28,9 @@ raw difference between the treatment at posttest.
 }
 }
 \description{
-Thus function is used as input to the \code{effect_size} argument in \code{study_parameters},
-if standardized effect sizes should be used. The choice of denominator differs between fields,
-and this function supports the common one of using: pre- or posttest SD, or the random slope SD.
+This function is used as input to the \code{effect_size} argument in \code{study_parameters},
+if standardized effect sizes should be used. The choice of the denominator differs between fields,
+and this function supports the common ones of using: pre- or posttest SD, or the random slope SD.
 }
 \details{
 \strong{Standardizing using the \code{pretest_SD} or \code{posttest_SD}}
@@ -83,8 +83,6 @@ p <- study_parameters(n1 = 11,
                       var_ratio = 0.03,
                       effect_size = cohend(0.4, standardizer = "slope_SD"))
 
-
-
 # Partially nested ----------------------------------------------------------
 p <- study_parameters(n1 = 11,
                       n2 = 20,
@@ -94,18 +92,28 @@ p <- study_parameters(n1 = 11,
                       cor_subject = -0.4,
                       var_ratio = 0.03,
                       partially_nested = TRUE,
-                      effect_size = cohend(0.4,
-                                           standardizer = "pretest_SD")
-                      # Default is to use control groups SD
-                      get_slope_diff(p)
+                      effect_size = cohend(0.4, standardizer = "pretest_SD")
+                      )
+# Default is to use control groups SD
+get_slope_diff(p)
 
-                      # Treatment group's SD also include cluster-level intercept variance.
-                      # Thus, ES of 0.4 will indicate a larger raw difference
-                      # using the treatment group's SD
-                      p <- update(p, effect_size = cohend(0.4,
-                                                          standardizer = "pretest_SD",
-                                                          treatment = "treatment"))
-                      get_slope_diff(p)
+# Treatment group's SD also include cluster-level intercept variance.
+# Thus, ES of 0.4 will indicate a larger raw difference
+# using the treatment group's SD
+p <- update(p, effect_size = cohend(0.4,
+                                    standardizer = "pretest_SD",
+                                    treatment = "treatment"))
+get_slope_diff(p)
+
+## Combine multiple values, and raw and standardized effects ----------------
+p <- study_parameters(n1 = 11,
+                      n2 = 20,
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.4,
+                      var_ratio = 0.03,
+                      effect_size = c(-5, 9,
+                                      cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+                                      cohend(c(0.5, 0.8), standardizer = "posttest_SD")))
 
 
 ## Recreate results in Raudenbush & Liu 2001 --------------------------------

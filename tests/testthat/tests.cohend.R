@@ -161,3 +161,26 @@ test_that("multi cohen's d", {
 
     expect_equal(get_slope_diff(p), c(0.1, 0.1, 0.1) * sqrt(10^2 + 10^2))
 })
+
+
+
+# combine types -----------------------------------------------------------
+test_that("combine ES types", {
+    p <- study_parameters(n1 = 11,
+                          n2 = 5,
+                          T_end = 10,
+                          sigma_subject_intercept = 10,
+                          sigma_subject_slope = 2.2,
+                          sigma_error = 10,
+                          effect_size = c(-5, 9,
+                                          cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+                                          cohend(c(0.5, 0.8), standardizer = "posttest_SD")))
+
+    expect_equal(get_slope_diff(p), c(-5, 9, c(0.5, 0.8) * sqrt(10^2+10^2), c(0.5, 0.8) * sqrt(10^2+10^2 + 2.2^2*10^2)))
+    tmp <- get_effect_size(p)
+    expect_equal(tmp$ES, c(-5, 9, 0.5, 0.8, 0.5, 0.8))
+    expect_equal(tmp$standardizer, c("raw", "raw", "pretest_SD", "pretest_SD", "posttest_SD", "posttest_SD"))
+
+})
+
+

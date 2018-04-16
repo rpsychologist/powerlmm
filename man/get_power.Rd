@@ -48,7 +48,7 @@ To see a more detailed explanation of the calculations, type
 \bold{Degrees of freedom}
 
 Power is calculated using the \emph{t} distribution with non-centrality parameter \eqn{b/se},
-and DFs are either based on a the between-subjects or between-cluster \emph{dfs}, or using Satterthwaite's approximation.
+and \emph{dfs} are either based on a the between-subjects or between-cluster \emph{dfs}, or using Satterthwaite's approximation.
 For the "between" method, \eqn{N_3 - 2} is used for three-level models, and \eqn{N_2 - 2} for two-level models,
 where \eqn{N_3} and \eqn{N_2} is the total number of clusters and subjects in both arms.
 

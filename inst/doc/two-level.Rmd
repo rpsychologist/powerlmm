@@ -3,6 +3,7 @@ title: "Power Analysis for Two-level Longitudinal Models with Missing Data"
 author: "Kristoffer Magnusson"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
+bibliography: citations.bib
 vignette: >
   %\VignetteIndexEntry{Tutorial: Two-level Longitudinal Power Analysis}
   %\VignetteEngine{knitr::rmarkdown}
@@ -103,6 +104,23 @@ Standardized        | Calculation
 ------------------- | -----------
 `icc_pre_subjects`  | $\sigma_{u_0}^2/(\sigma_{u_0}^2 + \sigma^2)$  
 `var_ratio`         | $\sigma_{u_1}^2/\sigma^2$  
+
+### Effect sizes
+The argument `effect_size` either accepts the raw difference between the groups at posttest, or a standardized effect size by passing the `cohend(...)` function. Cohen's *d* can be calculated using either the pretest, posttest, or random slope SD as the standardizer (denominator). See `?cohend` for options.
+
+
+For standardized effect sizes that use either the pretest or posttest SD, the effect size refers to the standardized difference between the groups at posttest,
+$$\delta_{101} = \frac{\text{ES} \times \sigma}{T_{end}}.$$
+Where the standardizer $\sigma$ is one of the following standardizers (based either on the treatment or control groups variance components):
+
+- pretest SD,
+$$ \sigma_{pre} = \sqrt{\sigma_{u0}^2 + \sigma_{e}^2}.$$
+- posttest SD,
+$$ \sigma_{post} =  \sqrt{\sigma_{u0}^2 + 2T_{end}\sigma_{u01} + T_{end}^2\sigma_{u1}^2 + \sigma_{e}^2}.$$
+
+If the random slope SD (cf. @Raudenbush_Xiao-Feng_2001) is used as the standardizer, the ES now indicate the difference per unit of time, 
+$$\delta_{101} = \text{ES} \times \sigma_{u1}.$$
+
 
 ## Setting up the model using study_parameters()
 Here's an example of specifying the "same" model using standardized or unstandardized inputs.
@@ -224,3 +242,5 @@ plot(x)
 ```
 
 We see that the variance ratio influences power more than the amount of subjects. 
+
+# References

@@ -17,7 +17,8 @@ knitr::opts_chunk$set(eval = FALSE)
 #                        dropout = dropout_weibull(proportion = 0.3,
 #                                                  rate = 1/2),
 #                        partially_nested = TRUE,
-#                        cohend = -0.8)
+#                        effect_size = cohend(-0.8,
+#                                             standardizer = "pretest_SD"))
 #  
 #  p
 
@@ -40,7 +41,7 @@ knitr::opts_chunk$set(eval = FALSE)
 #  summary(res)
 
 ## ------------------------------------------------------------------------
-#  p <- update(p, cohend = 0)
+#  p <- update(p, effect_size = 0)
 #  
 #  f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)",
 #            "wrong" = "y ~ treatment * time + (1 + time | subject)")
@@ -69,7 +70,8 @@ knitr::opts_chunk$set(eval = FALSE)
 #                        dropout = dropout_weibull(proportion = 0.3,
 #                                                  rate = 1/2),
 #                        partially_nested = TRUE,
-#                        cohend = -c(0.5, 0.8))
+#                        effect_size = cohend(c(0.5, 0.8),
+#                                             standardizer = "pretest_SD"))
 #  
 #  
 #  f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
