@@ -1,5 +1,5 @@
 
-# Changes in version 0.2.0.9000
+# Changes in version 0.3.0
 
 ## New features
 * More flexible effect size specification. This version adds support for:
