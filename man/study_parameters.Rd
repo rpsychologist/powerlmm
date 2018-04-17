@@ -129,7 +129,7 @@ The default behavior if a parameters is not specified is that \code{cor_subject}
 
 The argument \code{effect_size} let's you specify the average difference in change
 between the treatment groups. You can either pass a \code{numeric} value to define
-the raw difference in means at posttest, or use an standardized effect size, see
+the raw difference in means at posttest, or use a standardized effect size, see
 \code{\link{cohend}} for more details on the standardized effects.
 
 The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
