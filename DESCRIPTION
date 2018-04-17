@@ -4,7 +4,7 @@ Title: Power Analysis for Longitudinal Multilevel Models
 Version: 0.2.0.9000
 Authors@R: person("Kristoffer", "Magnusson", email = "hello@kristoffer.email",
     role = c("aut", "cre"))
-Description: Calculate power for the time x treatment difference
+Description: Calculate power for the 'time x treatment' difference
     in two- and three-level multilevel longitudinal studies with missing data.
     Both the third-level factor (e.g. therapists, schools, or physicians),
     and the second-level factor (e.g. subjects), can be assigned random slopes.
