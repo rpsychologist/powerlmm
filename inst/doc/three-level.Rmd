@@ -81,7 +81,7 @@ $$
 and
 $$
 \begin{equation}
-R_{ijk} \sim\mathcal{N}(0, ~\sigma^2)
+R_{ijk} \sim\mathcal{N}(0, ~\sigma_e^2)
 \end{equation}
 $$
 
@@ -99,20 +99,20 @@ $\sigma_{u_{01}}$     | calculated from `cor_subject`
 $\sigma_{v_0}$   | `sigma_cluster_intercept`
 $\sigma_{v_1}$   | `sigma_cluster_slope`
 $\sigma_{v_{01}}$   | calculated from `cor_cluster`
-$\sigma$         | `sigma_error`
+$\sigma_e$         | `sigma_error`
 
 ## Standardized and unstandardized formulation
 
-If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on `n1`, `n2`, `n3`, the amount of baseline variance at the subject level (`icc_pre_subjects`) and the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`), and the amount of random slope variance at the third-level (`icc_slope`). Power is influenced by the ratio of the intercept variances to the residual variance (i.e., `icc_pre_subjects`), since the standardization of Cohen's *d* depends on those parameters. 
+If you are only interested in power of a model, then it is not necessary to define all parameters in the model. For a three-level model power depends on `n1`, `n2`, `n3`, the ratio of subject-level random slope variance to the within-subject error variance (`var_ratio`), and the amount of random slope variance at the third-level (`icc_slope`). Depending on how the effect size in standardized, other paramaters also influence power. If the pretest SD is used as the standardizer, power is influenced by the ratio of the intercept variances to the residual variance (i.e., `icc_pre_subjects`), since the standardization of Cohen's *d* depends on those parameters. 
 
 The relative standardized inputs are calculated in the following way.
 
 Standardized        | Calculation
 ------------------- | -----------
-`icc_pre_subjects`  | $(\sigma_{u_0}^2 + \sigma_{v_0}^2)/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
-`icc_pre_clusters`  | $\sigma_{v_0}^2/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma^2)$  
+`icc_pre_subjects`  | $(\sigma_{u_0}^2 + \sigma_{v_0}^2)/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma_e^2)$  
+`icc_pre_clusters`  | $\sigma_{v_0}^2/(\sigma_{u_0}^2 + \sigma_{v_0}^2 + \sigma_e^2)$  
 `icc_slope`         | $\sigma_{v_1}^2/(\sigma_{u_1}^2 + \sigma_{v_1}^2)$  
-`var_ratio`                | $(\sigma_{u_1}^2 + \sigma_{v_1}^2)/\sigma^2$  
+`var_ratio`                | $(\sigma_{u_1}^2 + \sigma_{v_1}^2)/\sigma_e^2$  
 
 Using the argument names in `study_parameters`, the standardized inputs are calculated in the following way. 
 

@@ -9,7 +9,7 @@
    e.g. `effect_size = cohend(0.5, "posttest_sd")`
 
 ## Other changes
-* Fix breaking changes in lmerTest 3.0.
+* Support for lmerTest 3.0.
 
 # Changes in version 0.2.0
 ## New features

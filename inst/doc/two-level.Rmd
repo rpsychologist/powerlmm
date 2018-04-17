@@ -26,15 +26,9 @@ Currently power can be calculated for the following designs
 * Two-level model (subjects with repeated measures)
 * Nested three-level models (subjects with repeated measures, nested within e.g. therapists)
 * Partially nested designs (only one treatment arm in the nested three-level models have clustering)
-
-## Random slopes
-It is possible to include random slopes at both the cluster and subject level. 
-
-## Unbalanced designs
-Unbalanced designs are supported; e.g. treatments can have different number of subjects and/or clusters. It is also possible to have unbalanced cluster sizes within a treatment. 
-
-## Missing data
-The power calculations can account for missing data, either by manually specifying the dropout per time point, or by using a Weibull survival function. 
+* **Random slopes**: It is possible to include random slopes at both the cluster and subject level. 
+* **Unbalanced designs**: Unbalanced designs are supported; e.g. treatments can have different number of subjects and/or clusters. It is also possible to have unbalanced cluster sizes within a treatment. 
+* **Missing data**: The power calculations can account for missing data, either by manually specifying the dropout per time point, or by using a Weibull survival function. 
 
 
 # Two-level longitudinal linear mixed-effects model with random slopes
@@ -74,7 +68,7 @@ $$
 and
 $$
 \begin{equation}
-R_{ij} \sim\mathcal{N}(0, ~\sigma^2)
+R_{ij} \sim\mathcal{N}(0, ~\sigma_e^2)
 \end{equation}
 $$
 
@@ -93,7 +87,7 @@ $\gamma_{11}$    | calculated from `effect_size`
 $\sigma_{u_0}$      | `sigma_subject_intercept`
 $\sigma_{u_1}$    | `sigma_subject_slope`
 $\sigma_{u_{01}}$      | calculated from `cor_subject`
-$\sigma$         | `sigma_error`
+$\sigma_e$         | `sigma_error`
 
 ## Standardized and unstandardized formulation
 
@@ -102,8 +96,8 @@ For a two-level model power depends on `n1`, `n2`, the amount of baseline varian
 
 Standardized        | Calculation
 ------------------- | -----------
-`icc_pre_subjects`  | $\sigma_{u_0}^2/(\sigma_{u_0}^2 + \sigma^2)$  
-`var_ratio`         | $\sigma_{u_1}^2/\sigma^2$  
+`icc_pre_subjects`  | $\sigma_{u_0}^2/(\sigma_{u_0}^2 + \sigma_e^2)$  
+`var_ratio`         | $\sigma_{u_1}^2/\sigma_e^2$  
 
 ### Effect sizes
 The argument `effect_size` either accepts the raw difference between the groups at posttest, or a standardized effect size by passing the `cohend(...)` function. Cohen's *d* can be calculated using either the pretest, posttest, or random slope SD as the standardizer (denominator). See `?cohend` for options.
@@ -241,6 +235,6 @@ x
 plot(x)
 ```
 
-We see that the variance ratio influences power more than the amount of subjects. 
+We see that the variance ratio influences power more than the number of subjects. 
 
 # References

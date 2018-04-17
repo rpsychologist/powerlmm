@@ -91,7 +91,7 @@
 #'
 #' The argument \code{effect_size} let's you specify the average difference in change
 #' between the treatment groups. You can either pass a \code{numeric} value to define
-#' the raw difference in means at posttest, or use an standardized effect size, see
+#' the raw difference in means at posttest, or use a standardized effect size, see
 #' \code{\link{cohend}} for more details on the standardized effects.
 #'
 #' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
@@ -710,7 +710,7 @@ get_slope_diff.plcp_multi <- function(object) {
 #'
 #' This function is used as input to the \code{effect_size} argument in \code{study_parameters},
 #' if standardized effect sizes should be used. The choice of the denominator differs between fields,
-#' and this function supports the common ones of using: pre- or posttest SD, or the random slope SD.
+#' and this function supports the common ones: pre- or posttest SD, or the random slope SD.
 #'
 #' @param ES \code{numeric}; value of the standardized effect size. Can be a vector.
 #' @param standardizer \code{character}; the standardizer (denominator) used to calculate
@@ -724,8 +724,8 @@ get_slope_diff.plcp_multi <- function(object) {
 #'
 #' \strong{Standardizing using the \code{pretest_SD} or \code{posttest_SD}}
 #'
-#' For these effect sizes, ES indicates the standardized differences between
-#' the treatment groups at the posttest (\code{T_end}), standardized by using
+#' For these effect sizes, ES indicates the standardized difference between
+#' the treatment groups at posttest (\code{T_end}), standardized by using
 #' either the implied standard deviation at pretest or posttest. Thus, the actual
 #' raw differences in average slopes between the treatments are,
 #'
@@ -735,13 +735,13 @@ get_slope_diff.plcp_multi <- function(object) {
 #'
 #' This standardization is quite different from using the pretest or posttest SD.
 #' Here the average slope difference is standardized using the total SD of the random slopes.
-#' This is done in by e.g. Raudenbush and Liu (2001). \strong{NB}, for this effect size
+#' This is done by e.g. Raudenbush and Liu (2001). \strong{NB}, for this effect size
 #' \code{ES} indicates the difference in change per unit time, and not at posttest. Thus, the raw
 #' difference in average slopes is,
 #'
 #' \code{slope_diff = ES * slope_SD}.
 #'
-#' For a 3-level model \code{slope_SD = sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2)}.
+#' For a 3-level model, \code{slope_SD = sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2)}.
 #'
 #' @seealso \code{\link{study_parameters}}
 #'

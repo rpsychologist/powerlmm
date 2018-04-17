@@ -27,7 +27,7 @@ The purpose of \pkg{powerlmm} is to help design longitudinal treatment studies,
 with or without higher-level clustering (e.g. by therapists, groups, or physicians),
 and missing data. The main features of the package are:
 \itemize{
-\item (Longitudinal) Two- and three-level (nested) linear mixed models,
+\item Longitudinal Two- and three-level (nested) linear mixed models,
 and partially nested designs
 \item Random slopes at the subject- and cluster-level.
 \item Account for missing data/dropout.
@@ -42,13 +42,6 @@ by using Satterthwaite's degrees of freedom approximation.
 \item Create power curves to guide power analysis and help with
 optimal design of sample sizes at each level.
 }
-}
-
-\section{Non-longitudinal models}{
-
-The focus of this package is on longitudinal models. However, it would also
-be possible to calculate power for studies with a similar structure, e.g. a
- three-level model with pupils in classes nested within schools.
 }
 
 \section{Tutorials}{
