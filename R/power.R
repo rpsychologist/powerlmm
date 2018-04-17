@@ -171,7 +171,7 @@ print.plcp_power_3lvl <- function(x, ...) {
    }
     if(partially_nested) {
         if(is.null(x$note)) {
-            x$note <- "Study is partially nested. Clustering only in treatment arm. Cohen's d is standardized using the control group's pretest SD."
+            x$note <- "Study is partially nested. Clustering only in treatment arm."
         } else {
             x$note <- paste(x$note, "Study is partially nested. Clustering only in treatment arm", sep = "\n      ")
         }
@@ -180,7 +180,7 @@ print.plcp_power_3lvl <- function(x, ...) {
     print(x, ...)
 
     if(partially_nested & !.p$satterth) {
-        message("N.B: Satterthwaite DFs are recommended for partially-nested models, or calculate power with 'simulate.plcp'")
+        message("N.B: Satterthwaite dfs are recommended for partially-nested models, or calculate power with 'simulate.plcp'")
     }
 }
 
