@@ -86,12 +86,22 @@ test_that("extract results", {
 
 test_that("simulation summary", {
 
+    p <- update(p, fixed_intercept = 4.4,
+                   fixed_slope = -0.22)
+
     set.seed(5446)
     formula <- list("correct" = "y ~ treatment * time + (1 + time | subject) +
                     (0 + time | cluster)")
     res <- simulate(p, nsim = 3, formula = formula, satterthwaite = FALSE,
                     progress = FALSE)
     tmp <- summary(res)
+
+    # params
+    x <- as.character(tmp$summary$correct$FE$parameter)
+    expect_equal(x, c("(Intercept)", "treatment", "time", "time:treatment"))
+
+    # theta
+    expect_equal(tmp$summary$correct$FE$theta, c(4.4, 0, -0.22, 0.1131371), tolerance = 0.00001)
 
     # Est
     est <- c(res$res$correct$FE[c(4,8,12), "estimate"])

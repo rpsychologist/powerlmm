@@ -1064,7 +1064,7 @@ summarize_FE <- function(res, theta, alpha) {
         pvals_bw <- get_p_val_df(t = estimate/se,
                                  df = df_bw,
                                  parameter = para)
-        theta_i <- theta[[i]]
+        theta_i <- theta[[para]]
         tmp[[i]] <- data.frame(
                     parameter = para,
                     M_est = mean(estimate),

@@ -1,4 +1,11 @@
 
+# Changes in version 0.3.9000
+
+
+## Bug fixes
+* `summary.plcp_sim()` now show fixed effect `theta`s in the correct order, thanks to
+GitHub user Johnzav888 (#10).
+
 # Changes in version 0.3.0
 
 ## New features
