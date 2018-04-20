@@ -38,3 +38,17 @@ list("label1" = sim_formula(formula  ="y ~ time + (1 | cluster)",
 
 # need seperate func to combine sim_formula
 # compare_sim_formulas(sim_formula, sim_formula)
+# can also add LRT argument to compare_sim_formula()
+#
+# compare_sim_formula(sim_formula(...), sim_formula(...), LRT = TRUE)
+#
+# also add alpha arg?
+
+
+# some stepwise sim function? conditional removal of cluster effects?
+# perhaps best to view it as a post processing function, if LRT result are
+# available?
+
+
+# TODO --------------------------------------------------------------------
+# * enable LRT comparison of elements of compare_sim_formula
