@@ -43,6 +43,33 @@ create_dropout_indicator <- function(paras) {
 
     ind
 }
+
+
+
+# sim formula -------------------------------------------------------------
+
+sim_formula <- function(formula, data_transform = NULL, satterth_test = "time:treatment") {
+    x <- list("formula" = formula,
+              "data_transform" = data_transform,
+              "satterth_test" = satterth_test)
+
+    class(x) <- append(class(x), "plcp_sim_formula")
+    x
+}
+compare_sim_formulas <- function(...) {
+    list(...)
+}
+
+
+# data transform helpers --------------------------------------------------
+transform_to_posttest <- function(data) {
+    tmp <- data[data$time == max(data$time), ]
+    tmp$pretest <- data[data$time == min(data$time), "y"]
+
+    tmp
+}
+
+
 add_NA_values_from_indicator <- function(d, missing) {
     d$miss <- missing
     d$y <- ifelse(d$miss == 1, NA, d$y)
@@ -519,8 +546,8 @@ simulate.plcp_data_frame <-
     }
 simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     prepped <- prepare_paras(paras)
-
     d <- simulate_data(prepped)
+
     #saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
     tot_n <- length(unique(d[d$time == 0,]$subject))
     fit <- analyze_data(formula, d)
@@ -538,12 +565,14 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
 
 # checks
 check_formula <- function(formula) {
-    if (is.character(formula))
+    if(inherits(formula, "plcp_sim_formula")) {
         formula <- list("correct" = formula)
+    } else if (is.character(formula))
+        formula <- list("correct" = sim_formula(formula))
     if (is.null(names(formula)))
         stop("Formula should be a named list (either 'correct' or 'wrong')")
-    if (!all(names(formula) %in% c("correct", "wrong")))
-        stop("Formula names must be either 'correct' or 'wrong'")
+    #if (!all(names(formula) %in% c("correct", "wrong")))
+    #    stop("Formula names must be either 'correct' or 'wrong'")
 
     if (length(names(formula)) > 1) {
         if (length(names(formula)) != length(unique(names(formula)))) {
@@ -553,15 +582,13 @@ check_formula <- function(formula) {
         }
     }
 
-
-
-    for (f in formula)
-        check_formula_terms(f)
+    #for (f in formula)
+    #    check_formula_terms(f)
 
     formula
 }
 check_formula_terms <- function(f) {
-    f <- as.formula(f)
+    f <- as.formula(f$formula)
 
     x <- all.vars(f)
     ind <- x %in% c("y", "y_c", "treatment", "time", "subject", "cluster")
@@ -598,12 +625,21 @@ check_formula_terms <- function(f) {
 
 analyze_data <- function(formula, d) {
     fit <-
-        lapply(formula, function(f)
-            tryCatch(
+        lapply(formula, function(f) {
+            if(inherits(f, "plcp_sim_formula")) {
+                if(is.function(f$data_transform))
+                    d <- f$data_transform(d)
+                lmmf <- f$formula
+            }
+
+           fit <- tryCatch(
                 #do.call(lme4::lmer, list(formula=f, data=d))
-                lme4::lmer(formula = as.formula(f), data = d)
+                lme4::lmer(formula = as.formula(lmmf), data = d)
                 )
-            )
+           list("fit" = fit,
+                "satterth_test" = f$satterth_test)
+        })
+
     fit
 }
 
@@ -634,15 +670,18 @@ extract_random_effects <- function(fit) {
 
 #' @importFrom utils packageVersion
 add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
+    satterth_test <- fit$satterth_test
+    fit <- fit$fit
     tmp <- tryCatch(summary(fit))
     tmp <- tmp$coefficients
 
     ff <- rownames(tmp)
     # satterth dfs only for time:treatment
-    satterth_term <- any(ff %in%  c("treatment:time", "time:treatment"))
+
+    satterth_term <- any(ff %in% satterth_test)
     ## satterthwaite
     if(satterthwaite & satterth_term) {
-        ind <- which(ff %in%  c("treatment:time", "time:treatment"))
+        ind <- which(ff %in% satterth_test)
 
         L <- rep(0, length(ff))
         L[ind] <- 1
@@ -692,13 +731,13 @@ fix_sath_NA_pval <- function(x, df) {
 
     x
 }
-extract_results_ <- function(fit, CI, satterthwaite, df_bw, tot_n) {
-    se <- sqrt(diag(vcov(fit)))
+extract_results_ <- function(fit, CI, satterthwaite, satterth_terms, df_bw, tot_n) {
+    se <- sqrt(diag(vcov(fit$fit)))
     tmp_p <- add_p_value(fit = fit,
                          satterthwaite = satterthwaite,
                          df_bw = df_bw)
     FE <- data.frame(
-        "estimate" = lme4::fixef(fit),
+        "estimate" = lme4::fixef(fit$fit),
         "se" = se,
         "pval" = tmp_p$p,
         "df" = tmp_p$df
@@ -716,10 +755,10 @@ extract_results_ <- function(fit, CI, satterthwaite, df_bw, tot_n) {
     FE[FE$parameter == "time:treatment", "df_bw"] <- df_bw
 
     if (CI) {
-        CI <- tryCatch(stats::confint(fit, parm = CI_parm),
+        CI <- tryCatch(stats::confint(fit$fit, parm = CI_parm),
                        error = function(e) NA)
         CI_wald <-
-            tryCatch(stats::confint(fit, method = "Wald", parm = CI_parm),
+            tryCatch(stats::confint(fit$fit, method = "Wald", parm = CI_parm),
                      error = function(e) NA)
         FE[FE$parameter == "time:treatment", "CI_lwr"] <- CI[1]
         FE[FE$parameter == "time:treatment", "CI_upr"] <- CI[2]
@@ -727,9 +766,9 @@ extract_results_ <- function(fit, CI, satterthwaite, df_bw, tot_n) {
         FE[FE$parameter == "time:treatment", "CI_wald_upr"] <- CI_wald[2]
 
     }
-    RE <- extract_random_effects(fit)
+    RE <- extract_random_effects(fit$fit)
 
-    conv <- is.null(fit@optinfo$conv$lme4$code)
+    conv <- is.null(fit$fit@optinfo$conv$lme4$code)
 
     list("RE" = RE,
          "FE" = FE,
@@ -1064,7 +1103,9 @@ summarize_FE <- function(res, theta, alpha) {
         pvals_bw <- get_p_val_df(t = estimate/se,
                                  df = df_bw,
                                  parameter = para)
-        theta_i <- theta[[para]]
+        theta_i <- if(para %in% names(theta)) {
+            theta[[para]]
+        } else NA
         tmp[[i]] <- data.frame(
                     parameter = para,
                     M_est = mean(estimate),
@@ -1151,7 +1192,8 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     if(all(is.na(res$FE$pval))) {
         Satt_NA <- 0
     } else {
-        Satt_NA <- FE[FE$parameter == "time:treatment", "Satt_NA"]
+        ind <- which(!is.na(FE$Power_satt))[1]
+        Satt_NA <- FE[ind, "Satt_NA"]
     }
 
     FE$Satt_NA <- NULL
