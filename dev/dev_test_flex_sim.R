@@ -6,12 +6,13 @@ transform_to_posttest(d)
 
 
 p <- study_parameters(n1 = 11,
-                      n2 = 10,
+                      n2 = 20,
                       n3 = 4,
                       icc_pre_subject = 0.5,
                       cor_subject = -0.5,
                       icc_slope = 0.05,
-                      var_ratio = 0.02)
+                      partially_nested = TRUE,
+                      var_ratio = 0.03)
 
 d <- simulate_data(p)
 
@@ -31,30 +32,49 @@ check_formula(f1)
 ## simulate
 
 f <- sim_formula("y ~ time*treatment + (1 + time | subject) + (0 + time | cluster)")
-f1 <- sim_formula("y ~ treatment + (1 | cluster)", data_transform = transform_to_posttest, satterth_test = "treatment")
+f <- sim_formula("y ~ time + treatment + time:treatment + (1 + time | subject) + (0 + treatment:time | cluster)", test = c("time:treatment"))
+f <- sim_formula("y ~ time + treatment + treatment:time + (1 + time | subject) + (0 + time | cluster)")
+f1 <- sim_formula("y ~ treatment + (0 + treatment | cluster)", data_transform = transform_to_posttest, test = "treatment")
 
-res <- simulate(p, formula = f, nsim = 500, satterthwaite = TRUE, cores = 10)
+res <- simulate(p, formula = f, nsim = 50, satterthwaite = TRUE, cores = 1, CI = FALSE)
+summary(res)
+
 res <- simulate(p, nsim = 50, satterthwaite = TRUE)
-res1 <- simulate(p, formula = f1, nsim = 10)
+res1 <- simulate(p, formula = f1, nsim = 10, CI = TRUE)
 
 res1
 summary(res1)
 
 ## compare
 f2 <- compare_sim_formulas("3-lvl" = f, "2-lvl" = f1)
-res2 <- simulate(p, formula = f2, nsim = 50, cores = 1, satterthwaite = TRUE)
+res2 <- simulate(p, formula = f2, nsim = 2000, cores = 15, satterthwaite = TRUE)
 summary(res2)
 
-## '2-lvl' should not give Power_bw = NA
-# renome 'satterth_test' to test? also use for CI
+## TODO: summary(res, para = "treatment")
 
 p <- update(p, effect_size = cohend(1))
 
 
-f1 <- sim_formula("y ~ treatment + pretest + (1 | cluster)", data_transform = transform_to_posttest, satterth_test = "treatment")
+f <- sim_formula("y ~ treatment + pretest + (1 | cluster)", data_transform = transform_to_posttest, satterth_test = "treatment")
 f2 <- compare_sim_formulas("3-lvl" = f, "2-lvl" = f1)
 res2 <- simulate(p, formula = f2, nsim = 500, cores = 10, satterthwaite = TRUE)
 summary(res2)
 
 ## TODO: fix so summary show all terms, e.g. 'pretest'
 
+
+
+
+res3 <- simulate(update(p, n2 = c(5,10)), formula = f2, nsim = 5, cores = 1, satterthwaite = TRUE, CI = TRUE)
+res3
+
+summary(res3, para = "treatment")
+
+
+f2 <- compare_sim_formulas("sim1" = f, "sim2" = f1, "sim3" = f1)
+res4 <- simulate(update(p, n2 = c(5,10)), formula = f2, nsim = 5, cores = 1, satterthwaite = TRUE)
+
+res4
+
+
+### TODO: test with lmerTest < 3.0.0
