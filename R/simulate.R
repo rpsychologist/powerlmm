@@ -551,6 +551,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     #saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
     tot_n <- length(unique(d[d$time == 0,]$subject))
     fit <- analyze_data(formula, d)
+
     res <- extract_results(fit = fit,
                            CI = CI,
                            satterthwaite = satterthwaite,
@@ -634,7 +635,7 @@ analyze_data <- function(formula, d) {
 
            fit <- tryCatch(
                 #do.call(lme4::lmer, list(formula=f, data=d))
-                lme4::lmer(formula = as.formula(lmmf), data = d)
+                   fit <- lme4::lmer(formula = as.formula(lmmf), data = d)
                 )
            list("fit" = fit,
                 "test" = f$test)
@@ -788,8 +789,14 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n) {
 
     conv <- is.null(fit$fit@optinfo$conv$lme4$code)
 
+    # save for postprocess LRT test
+    ll <- logLik(fit$fit)
+    df <- attr(ll, "df")
+
     list("RE" = RE,
          "FE" = FE,
+         "logLik" = as.numeric(ll),
+         "df" = df,
          "tot_n" = tot_n,
          "conv" = conv)
 }
@@ -842,11 +849,13 @@ rename_random_effects <- function(.x) {
                      new = "cor_cluster")
 
 }
-order_model_lists <- function(models, RE, FE, tot_n, convergence) {
+order_model_lists <- function(models, RE, FE, ll, df, tot_n, convergence) {
     x <- list()
     for (i in seq_along(models)) {
         x[[i]] <- list("RE" = RE[[i]],
                        "FE" = FE[[i]],
+                       "logLik" = ll[[i]],
+                       "df" = df[[i]],
                        "tot_n" = tot_n[[i]],
                        "convergence" = convergence[[i]])
     }
@@ -863,10 +872,14 @@ munge_results <- function(res) {
     convergence <- lapply(models, munge_results_, x, "conv")
     tot_n <- lapply(models, munge_results_, x, "tot_n")
     RE <- lapply(RE, rename_random_effects)
+    ll <- lapply(models, munge_results_, x, "logLik")
+    df <- lapply(models, munge_results_, x, "df")
 
     x <- order_model_lists(models,
                            RE = RE,
                            FE = FE,
+                           ll = ll,
+                           df = df,
                            tot_n = tot_n,
                            convergence = convergence)
 
@@ -1485,3 +1498,45 @@ get_p_val_df <- function(t, df, parameter, test = "time:treatmen") {
 
     p
 }
+
+
+
+# Stepwise ----------------------------------------------------------------
+# postprocessing functions
+# ll and df are saved each simulation
+
+backward_eliminate <- function(full, reduced, alpha = 0.1) {
+
+    # TODO: make it work with plcp_sim objects
+    # e.g. summary(object, step = TRUE)
+
+    # create a new object that include results from the chosen models.
+    # should good to add 'sim#' index to res$RE and res$FE to
+    # make it easier to pick estimates from winning model.
+
+    m0 <- logLik(full)
+    dev0 <- as.numeric(-2 * m0)
+    df0 <- attr(m0, "df")
+
+    m1 <- logLik(reduced)
+    dev1 <- as.numeric(-2 * m1)
+    df1 <- attr(m1, "df")
+
+    pval <- 1 - pchisq(dev1-dev0, df0-df1)
+    fit <- if(pval < alpha) fit0 else fit1
+
+    fit
+}
+step.plcp_sim <- function(models, alpha) {
+    full <- models[[1]]
+    res <- backward_eliminate(models[[1]], models[[2]])
+
+    if(length(models) > 2) {
+        for(i in seq_along(models)[-(1:2)]) {
+            res <- backward_eliminate(res, models[[i]])
+        }
+    }
+
+    res
+}
+

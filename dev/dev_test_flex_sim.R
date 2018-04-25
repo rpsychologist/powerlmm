@@ -78,3 +78,22 @@ res4
 
 
 ### TODO: test with lmerTest < 3.0.0
+
+
+## Stepwise
+
+f <- sim_formula("y ~ time*treatment + (1 + time | subject) + (0 + time | cluster)", step_rand = TRUE)
+res <- simulate(p, nsim = 10, formula = f, satterthwaite = TRUE)
+summary(res)
+
+
+f0 <- sim_formula("y ~ time*treatment + (1 + time | subject) + (0 + time | cluster)")
+f1 <- sim_formula("y ~ treatment + (1 + time | subject)")
+f <- compare_sim_formulas("3lvl" = f0, "2lvl" = f1)
+
+
+res <- simulate(p, formula = f, nsim = 5, satterthwaite = TRUE, cores = 1, CI = FALSE)
+summary(res)
+
+res <- simulate(p, nsim = 50, satterthwaite = TRUE)
+
