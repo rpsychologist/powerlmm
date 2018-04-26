@@ -1551,7 +1551,10 @@ step.plcp_sim <- function(object, alpha) {
 
     if(length(models) > 2) {
         for(i in seq_along(models)[-(1:2)]) {
-            winners <- forward_eliminate(models[[i-1]], models[[i]], alpha = alpha)
+            new_winners <- forward_eliminate(models[[i-1]], models[[i]], alpha = alpha)
+            # only want to keep models that were also selected in previous steps
+            winners <- new_winners[new_winners %in% winners]
+
             res0[winners] <- models[[i]]$label
         }
     }
