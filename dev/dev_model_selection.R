@@ -13,15 +13,47 @@ f2 <- sim_formula("y ~ time * treatment + (1 + time | subject) + (0 + time | clu
 f <- compare_sim_formulas("m0" = f0, "m1" = f1, "m2" = f2)
 
 
-res <- simulate(p, formula = f, nsim = 5, satterthwaite = TRUE, cores = 1, CI = FALSE)
+res <- simulate(p, formula = f, nsim = 1000, satterthwaite = TRUE, cores = 10, CI = FALSE)
 summary(res)
 
-winners <- step.plcp_sim(res)
+winners <- step.plcp_sim(res, alpha = 0.5)
 
 
 # TODO: write function to use 'winners' to pick parameters from winning models and summarise
-tmp <- lapply(winners, function(d) {
-    ...
-})
 
+nsim <- res$nsim
+x <- list("RE" = vector("list", nsim),
+          "FE" = vector("list", nsim),
+          "tot_n" = vector("numeric", nsim),
+          "convergence" = vector("numeric", nsim))
+
+get_sim_para <- function(i, effect, res, mod) {
+    x <- res$res[[mod]][[effect]]
+    x <- x[x$sim == i, ]
+    x$mod <- mod
+    x
+}
+
+for(i in seq_along(winners)) {
+    mod <- winners[i]
+    x$RE[[i]] <- get_sim_para(i, "RE", res, mod)
+    x$FE[[i]] <- get_sim_para(i, "FE", res, mod)
+    x$tot_n[i] <- res$res[[mod]][["tot_n"]][i]
+    x$convergence[i] <- res$res[[mod]][["convergence"]][i]
+}
+x$RE <- do.call(rbind, x$RE)
+x$FE <- do.call(rbind, x$FE)
+
+res2 <- res
+res2$res$test <- x
+summary(res2)
+
+## TODO: enable to summarise a parameter as a function of step.plcp_sum(alpha = x).
+## useful to plot e.g. type I errors for time:treatment as a function of LRT alpha level.
+
+res2$res$test$FE %>%
+    group_by(parameter) %>%
+    summarise(mean(estimate),
+              mean(se),
+              sd(estimate))
 

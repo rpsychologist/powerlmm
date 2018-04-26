@@ -556,7 +556,8 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
                            CI = CI,
                            satterthwaite = satterthwaite,
                            df_bw = get_balanced_df(prepped),
-                           tot_n = tot_n)
+                           tot_n = tot_n,
+                           sim = sim)
 
     res
 }
@@ -644,12 +645,13 @@ analyze_data <- function(formula, d) {
     fit
 }
 
-extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n) {
+extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n, sim) {
     lapply(fit, extract_results_,
            CI = CI,
            satterthwaite = satterthwaite,
            df_bw = df_bw,
-           tot_n = tot_n)
+           tot_n = tot_n,
+           sim = sim)
 }
 extract_random_effects <- function(fit) {
     x <- as.data.frame(lme4::VarCorr(fit))
@@ -737,7 +739,7 @@ fix_sath_NA_pval <- function(x, df) {
 
     x
 }
-extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n) {
+extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
     se <- sqrt(diag(vcov(fit$fit)))
     tmp_p <- add_p_value(fit = fit,
@@ -792,6 +794,9 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n) {
     # save for postprocess LRT test
     ll <- logLik(fit$fit)
     df <- attr(ll, "df")
+    RE$sim <- sim
+    FE$sim <- sim
+
 
     list("RE" = RE,
          "FE" = FE,
@@ -1541,13 +1546,13 @@ step.plcp_sim <- function(object, alpha) {
     m1 <- models[[2]]
 
     res0 <- rep(m0$label, length(m0$ll))
-    res0 <- forward_eliminate(m0, m1)
-    res0[res1] <- m1$label
+    winners <- forward_eliminate(m0, m1, alpha = alpha)
+    res0[winners] <- m1$label
 
     if(length(models) > 2) {
         for(i in seq_along(models)[-(1:2)]) {
-            res <- forward_eliminate(models[[i-1]], models[[i]])
-            res0[res] <- models[[i]]$label
+            winners <- forward_eliminate(models[[i-1]], models[[i]], alpha = alpha)
+            res0[winners] <- models[[i]]$label
         }
     }
     res0
