@@ -82,7 +82,7 @@ res4
 
 ## Stepwise
 
-f <- sim_formula("y ~ time*treatment + (1 + time | subject) + (0 + time | cluster)", step_rand = TRUE)
+f <- sim_formula("y ~ time*treatment + (1 + time | subject) + (0 + time | cluster)")
 res <- simulate(p, nsim = 10, formula = f, satterthwaite = TRUE)
 summary(res)
 
@@ -96,4 +96,5 @@ res <- simulate(p, formula = f, nsim = 5, satterthwaite = TRUE, cores = 1, CI = 
 summary(res)
 
 res <- simulate(p, nsim = 50, satterthwaite = TRUE)
+
 

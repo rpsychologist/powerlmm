@@ -52,3 +52,6 @@ list("label1" = sim_formula(formula  ="y ~ time + (1 | cluster)",
 
 # TODO --------------------------------------------------------------------
 # * enable LRT comparison of elements of compare_sim_formula
+# * compare models forward or backward
+#   - start with m0, if sig go to m1, etc. Stop if added RE is not sig. Mimick how people tend to to model selection.
+

@@ -1505,7 +1505,7 @@ get_p_val_df <- function(t, df, parameter, test = "time:treatmen") {
 # postprocessing functions
 # ll and df are saved each simulation
 
-backward_eliminate <- function(full, reduced, alpha = 0.1) {
+forward_eliminate <- function(m0, m1, alpha = 0.1) {
 
     # TODO: make it work with plcp_sim objects
     # e.g. summary(object, step = TRUE)
@@ -1514,29 +1514,42 @@ backward_eliminate <- function(full, reduced, alpha = 0.1) {
     # should good to add 'sim#' index to res$RE and res$FE to
     # make it easier to pick estimates from winning model.
 
-    m0 <- logLik(full)
-    dev0 <- as.numeric(-2 * m0)
-    df0 <- attr(m0, "df")
+    dev0 <- -2 * m0$ll
+    df0 <- m0$df
 
-    m1 <- logLik(reduced)
-    dev1 <- as.numeric(-2 * m1)
-    df1 <- attr(m1, "df")
+    dev1 <- -2 * m1$ll
+    df1 <- m1$df
 
-    pval <- 1 - pchisq(dev1-dev0, df0-df1)
-    fit <- if(pval < alpha) fit0 else fit1
+    pval <- 1 - pchisq(dev0-dev1, df1-df0)
+    x <- which(pval < alpha)
+    if(length(x) == 0) x <- NA
 
-    fit
+    x
 }
-step.plcp_sim <- function(models, alpha) {
-    full <- models[[1]]
-    res <- backward_eliminate(models[[1]], models[[2]])
+
+#' @return vector of picked models; character vector
+step.plcp_sim <- function(object, alpha) {
+
+    models <- lapply(seq_along(object$res), function(i) {
+        m <- object$res[i]
+        list("label" = names(m),
+             "ll" = m[[1]]$logLik,
+             "df" = m[[1]]$df)
+    })
+
+    m0 <- models[[1]]
+    m1 <- models[[2]]
+
+    res0 <- rep(m0$label, length(m0$ll))
+    res0 <- forward_eliminate(m0, m1)
+    res0[res1] <- m1$label
 
     if(length(models) > 2) {
         for(i in seq_along(models)[-(1:2)]) {
-            res <- backward_eliminate(res, models[[i]])
+            res <- forward_eliminate(models[[i-1]], models[[i]])
+            res0[res] <- models[[i]]$label
         }
     }
-
-    res
+    res0
 }
 
