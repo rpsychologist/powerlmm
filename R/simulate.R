@@ -49,7 +49,12 @@ create_dropout_indicator <- function(paras) {
 # sim formula -------------------------------------------------------------
 
 sim_formula <- function(formula, data_transform = NULL, test = "time:treatment") {
-    x <- list("formula" = formula,
+
+    formula <- gsub("treatment:time", "time:treatment", formula)
+    formula <- gsub("treatment .\\* time", "time*treatment", formula)
+    test <- gsub("treatment:time", "time:treatment", test)
+
+     x <- list("formula" = formula,
               "data_transform" = data_transform,
               "test" = test)
 
@@ -667,7 +672,6 @@ check_formula_terms <- function(f) {
 
 
 # analyze -----------------------------------------------------------------
-
 analyze_data <- function(formula, d) {
     fit <-
         lapply(formula, function(f) {
@@ -795,7 +799,12 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
         "df" = tmp_p$df
     )
     rnames <- rownames(FE)
+
+    # need to know in which order time and treatment was entered
+
+
     if(any(!fit$test %in% rnames)) stop("Some of the 'tests' do no match the model's parameters: ", paste(rnames, sep = ","), .call = FALSE)
+
 
     # TODO:
     # update so function is agnostic to if time:treatment or treatment:time
@@ -823,6 +832,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
                 FE)
 
     FE[FE$parameter %in% fit$test, "df_bw"] <- df_bw
+
 
     if (CI) {
         CI <- tryCatch(stats::confint(fit$fit, parm = fit$test),
@@ -1324,6 +1334,12 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
         "time" = paras$fixed_slope,
         "time:treatment" = get_slope_diff(paras) / paras$T_end
     )
+
+    # support both variants of time * treatment
+    #t_b_t <- res$FE$parameter
+    #t_b_t <- unique(t_b_t[t_b_t %in% c("time:treatment", "treatment:time")])
+    #names(theta)[4] <- t_b_t
+
     FE <- summarize_FE(res = res,
                        theta = theta,
                        alpha = alpha)
@@ -1341,8 +1357,11 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     ## TODO: update to make compatible with fit$test
     ##       update so function is agnostic to if time:treatment or treatment:time
     CI_NA <- 0
+
+
+
     if ("CI_lwr" %in% colnames(res$FE)) {
-        CI_cov <- summarize_CI(res, theta[["time:treatment"]])
+        CI_cov <- summarize_CI(res, theta)
         FE$CI_Cover <- CI_cov$CI_cover
         CI_NA <- CI_cov[CI_cov$parameter == "time:treatment", "CI_NA"]
         FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
