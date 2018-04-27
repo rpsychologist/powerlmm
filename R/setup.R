@@ -1015,12 +1015,14 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         }
     }
 
+    ES <- get_effect_size(object)
     out_dense <- out
+    out_dense$effect_size <- ES$ES
+    out_dense$ES_sd <- paste(ES$standardizer, ES$treatment, sep = "_")
     out$icc_pre_cluster <- round(object$icc_pre_cluster, digits)
     out$icc_pre_subject <- round(object$icc_pre_subject, digits)
     out$icc_slope <- round(object$icc_slope, digits)
     out$var_ratio <- round(object$var_ratio, digits)
-    ES <- get_effect_size(object)
     out$effect_size <- ES$ES
     for(i in 1:ncol(out)) {
         out[,i] <- replace_repeating(out[,i], empty = empty)
@@ -1517,3 +1519,39 @@ get_tot_n_ <- function(paras) {
 
     }
 }
+
+# as.data.frame.plcp_multi <- function(object, ...) {
+#
+#     prep <- prepare_multi_setup(object)
+#     out <- prep$out_dense
+#     out <- as.data.frame.data.frame(out)
+#     per_treatment <- all(colnames(out) != "n2")
+#     if(per_treatment) {
+#         out$n2_tx <- truncate_n2(out$n2_tx)
+#         out$n2_cc <- truncate_n2(out$n2_cc)
+#     } else {
+#         out$n2 <- truncate_n2(out$n2)
+#     }
+#     per_treatment_n3 <- all(colnames(out) != "n3")
+#     if(per_treatment_n3) {
+#         out$n3_tx <- out$n3_tx
+#         out$n3_cc <- out$n3_cc
+#     } else {
+#         out$n3 <- out$n3
+#     }
+#
+#     ES <- lapply(x$effect_size, function(x) x$get())
+#     ES <- do.call(rbind, ES)
+#     ES <- as.data.frame(ES)
+#     ES$standardizer <- paste(ES$standardizer, ES$treatment, sep = "_")
+#     ES$treatment <- NULL
+#
+#     out <- cbind(out, ES)
+#
+#
+#     class(out) <- "data.frame"
+#
+#
+#     out
+# }
+

@@ -14,14 +14,14 @@ paras <- study_parameters(n1 = 3,
                           dropout = dropout_weibull(0.3, 2),
                           cohend = -0.8)
 
-formula <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)",
-                "wrong" = "y ~ treatment * time + (1 + time | subject)")
+formula <- compare_sim_formulas("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)",
+                                "wrong" = "y ~ treatment * time + (1 + time | subject)")
 
 res <- simulate(paras, nsim = 2, formula = formula, satterthwaite = FALSE, progress = FALSE, batch_progress = FALSE)
 
 
 test_that("multi_sim", {
-    tmp <- summary(res)
+    tmp <- summary(res)$out
     expect_identical(nrow(tmp), 2L)
 
     ## correct class for paras
@@ -47,7 +47,7 @@ test_that("multi_sim", {
     ## Random effect
 
     # set 1
-    tmp <- summary(res, type = "random", para = "subject_slope")
+    tmp <- summary(res, type = "random", para = "subject_slope")$out
     expect_identical(nrow(tmp), 2L)
 
     x <- c(res[[1]]$res$correct$RE[2, "vcov"],
@@ -84,7 +84,7 @@ test_that("multi_sim", {
 test_that("multi_sim summary validation", {
     # expect error
     expect_error(summary(res, type = "see"), "'type' should be either 'fixed' or 'random'")
-    expect_error(summary(res, para = "sdf"), "Para should be one of:")
+    expect_error(summary(res, para = "sdf"), "'sdf' is not a valid parameter")
     expect_error(summary(res, type = "random"), "No random effect named: 'time:treatment'")
     expect_error(summary(res, type = "random", para = "test", "No random effect named: 'time:treatment'"))
 })

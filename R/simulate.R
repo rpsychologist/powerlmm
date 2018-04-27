@@ -57,9 +57,49 @@ sim_formula <- function(formula, data_transform = NULL, test = "time:treatment")
     x
 }
 compare_sim_formulas <- function(...) {
-    list(...)
-}
+    x <- list(...)
+    if(any(is.null(names(x)))) stop("formula(s) must have a name.", call. = FALSE)
+    for(i in seq_along(x)) {
+        f <- x[[i]]
+        if(is.character(f)) x[[i]] <- sim_formula(f)
+    }
 
+    class(x) <- append(class(x), "plcp_compare_sim_formula")
+    x
+}
+print.plcp_sim_formula <- function(x, ...) {
+    cat("# Simulation formula\n")
+    f <- x$formula
+    data_transform <- x$data_transform
+    test <- x$test
+    if(!is.null(data_transform))
+        data_transform <- paste("'\n           data_transform: '", data_transform, "'")
+    cat(paste("#    'formula': '", f,
+              "'\n          test: '", test, "'",
+              data_transform,
+              sep = ""), sep = "\n")
+    cat("\n")
+
+}
+print.plcp_compare_sim_formula <- function(x, ...) {
+
+    cat("# Simulation formulas\n")
+    lapply(seq_along(x), .print_plcp_sim_formula, x = x)
+
+}
+.print_plcp_sim_formula <- function(i, x) {
+    lab <- names(x)[i]
+    f <- x[[i]]$formula
+    data_transform <- x[[i]]$data_transform
+    test <- x[[i]]$test
+    if(!is.null(data_transform))
+        data_transform <- paste("'\n           data_transform: '", data_transform, "'")
+    cat(paste("#", i, "    '", lab,"': '", f,
+              "'\n            test: '", test, "'",
+              data_transform,
+              sep = ""), sep = "\n")
+    cat("\n")
+}
 
 # data transform helpers --------------------------------------------------
 transform_to_posttest <- function(data) {
@@ -332,7 +372,7 @@ simulate.plcp <- function(object,
                           batch_progress = TRUE,
                           ...) {
 
-    if(is.null(formula)) formula <- create_lmer_formula(object)
+    if(is.null(formula)) formula <- sim_formula(create_lmer_formula(object))
     formula <- check_formula(formula)
     if(satterthwaite) check_installed("lmerTest")
 
@@ -473,8 +513,12 @@ simulate.plcp_list <-
                 formula = formula
             )
         out <- munge_results(out)
-        class(out) <- append(class(out), "plcp_sim")
-
+        if(inherits(formula, "plcp_compare_sim_formula")) {
+            class(out) <- append(class(out), "plcp_sim_compare_formula")
+        }
+         else {
+            class(out) <- append(class(out), "plcp_sim")
+        }
         out
     }
 simulate.plcp_data_frame <-
@@ -542,6 +586,7 @@ simulate.plcp_data_frame <-
         })
         if(save) saveRDS(object, file.path(output_dir, "paras.rds"))
         class(res) <- append(class(res), "plcp_multi_sim")
+        attr(res, "paras") <- object
         res
     }
 simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
@@ -567,19 +612,17 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
 
 # checks
 check_formula <- function(formula) {
-    if(inherits(formula, "plcp_sim_formula")) {
-        formula <- list("correct" = formula)
-    } else if (is.character(formula))
-        formula <- list("correct" = sim_formula(formula))
-    if (is.null(names(formula)))
-        stop("Formula should be a named list (either 'correct' or 'wrong')")
+    if(!inherits(formula, "plcp_sim_formula") & !inherits(formula, "plcp_compare_sim_formula")) {
+        stop("`formula` should be created using `sim_formula` or `compare_sim_formulas`", .call = FALSE)
+    }
     #if (!all(names(formula) %in% c("correct", "wrong")))
     #    stop("Formula names must be either 'correct' or 'wrong'")
 
-    if (length(names(formula)) > 1) {
+    if(inherits(formula, "plcp_sim_formula")) formula <- list("default" = formula)
+    if (inherits(formula, "plcp_compare_sim_formula") & length(names(formula)) > 1) {
         if (length(names(formula)) != length(unique(names(formula)))) {
             stop(
-                "Both formulas can't have the same name. Allowed names are 'correct' or 'wrong'"
+                "Formulas should have unique names."
             )
         }
     }
@@ -751,21 +794,28 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
         "pval" = tmp_p$p,
         "df" = tmp_p$df
     )
-
     rnames <- rownames(FE)
-    if(any(fit$test %in% c("time:treatment", "treatment:time"))) {
+    if(any(!fit$test %in% rnames)) stop("Some of the 'tests' do no match the model's parameters: ", paste(rnames, sep = ","), .call = FALSE)
 
-        more_tests <- fit$test[!fit$test %in%
-                                            c("time:treatment", "treatment:time")]
+    # TODO:
+    # update so function is agnostic to if time:treatment or treatment:time
+    #
 
-        parm_id <- which(c("time:treatment", "treatment:time") %in% rnames)
-        CI_parm <- c("time:treatment", "treatment:time")[parm_id]
-        CI_parm <- c(CI_parm, more_tests)
-        rnames <- gsub("treatment:time", "time:treatment", rnames)
 
-    } else {
-        CI_parm <- fit$test
-    }
+    # if(any(fit$test %in% c("time:treatment", "treatment:time"))) {
+    #
+    #     more_tests <- fit$test[!fit$test %in%
+    #                                         c("time:treatment", "treatment:time")]
+    #
+    #     parm_id <- which(c("time:treatment", "treatment:time") %in% rnames)
+    #     CI_parm <- c("time:treatment", "treatment:time")[parm_id]
+    #     CI_parm <- c(CI_parm, more_tests)
+    #     rnames <- gsub("treatment:time", "time:treatment", rnames)
+    #     rnames <- gsub("treatment:time", "time:treatment", rnames)
+    #
+    # } else {
+    #     CI_parm <- fit$test
+    # }
 
     rownames(FE) <- NULL
     FE <- cbind(data.frame(parameter = rnames,
@@ -775,10 +825,10 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     FE[FE$parameter %in% fit$test, "df_bw"] <- df_bw
 
     if (CI) {
-        CI <- tryCatch(stats::confint(fit$fit, parm = CI_parm),
+        CI <- tryCatch(stats::confint(fit$fit, parm = fit$test),
                        error = function(e) NA)
         CI_wald <-
-            tryCatch(stats::confint(fit$fit, method = "Wald", parm = CI_parm),
+            tryCatch(stats::confint(fit$fit, method = "Wald", parm = fit$test),
                      error = function(e) NA)
         CIs <- rownames(CI)
         FE[FE$parameter %in% CIs, "CI_lwr"] <- CI[CIs, 1]
@@ -1000,6 +1050,10 @@ print.plcp_sim_summary <- function(x, digits = 2, ...) {
     cat(n2_lab, n2)
     cat("\nTotal number of subjects: ", tot_n, "\n")
     lapply(seq_along(x), print_test_NA, x = x)
+    if("model_selected" %in% names(res)) {
+        message("Results based on LRT model comparisons, using direction: ", res$model_direction, " (alpha = ", res$LRT_alpha, ")")
+        print(res$model_selected)
+    }
     if(any(x$correct$RE$is_NA > 0)) warning("Some estimated random effects were removed due to being NA.", call. = FALSE)
 }
 
@@ -1014,8 +1068,7 @@ print.plcp_multi_sim <- function(x, ...) {
     nmulti <- length(x)
     cat("# ", nmulti, " x ", nsim, "grid of simulations")
     cat("\n")
-    cat("# lmer formula(s) used: \n")
-    cat_formulas(x[[1]]$formula)
+    print(x[[1]]$formula)
     cat("# Object size:", format(object.size(x), units = "auto"))
     cat("\n")
 }
@@ -1038,13 +1091,30 @@ print.plcp_sim <- function(x, ...) {
         "Use summary() to view results."
     )
     cat("\n")
-    cat("# lmer formula(s) used: \n")
-    cat_formulas(x$formula)
+    print(x$formula[[1]])
     cat("# Object size:", format(object.size(x), units = "auto"))
     cat("\n")
     invisible(x)
 }
 
+#' Print method for \code{simulate.plcp}-objects
+#' @param x An object created with \code{\link{simulate.plcp}}
+#' @param ... Optional arguments.
+#' @method print plcp_sim
+#' @export
+print.plcp_sim_compare_formula <- function(x, ...) {
+    cat(
+        "# A 'plcp_sim'-object containing",
+        x$nsim,
+        "simulations.",
+        "Use summary() to view results."
+    )
+    cat("\n")
+    print(x$formula)
+    cat("# Object size:", format(object.size(x), units = "auto"))
+    cat("\n")
+    invisible(x)
+}
 
 # #' @export
 # p_sim <- function(res) {
@@ -1089,9 +1159,36 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
               paras = res$paras,
               tot_n = x[[1]]$tot_n,
               alpha = alpha)
+    if("model_selected" %in% names(res)) {
+        x$model_selected <- res$model_selected
+        x$model_direction <- res$model_direction
+        x$LRT_alpha <- res$LRT_alpha
+    }
     class(x) <- append("plcp_sim_summary", class(x))
     x
 }
+#' @method summary plcp_sim_compare_formula
+#' @export
+summary.plcp_sim_compare_formula <- function(object, mod = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...) {
+
+    if(is.null(model_selection)) {
+        if(is.null(mod)) {
+            summary.plcp_sim(object)
+        } else {
+            object$res <- object$res[mod]
+            summary.plcp_sim(object)
+        }
+    } else if(model_selection %in% c("FW", "BW")) {
+        x <- do_model_selection(object,
+                                direction = model_selection,
+                                alpha = LRT_alpha)
+        summary.plcp_sim(x)
+
+    }
+
+}
+
+
 summarize_RE <- function(res, theta) {
     d <- res$RE
     parms <- unique(d$parameter)
@@ -1143,9 +1240,9 @@ summarize_FE <- function(res, theta, alpha) {
                                  df = df_bw,
                                  parameter = para,
                                  test = unique(d[!is.na(d$df_bw), "parameter"]))
-        theta_i <- if(para %in% names(theta)) {
-            theta[[para]]
-        } else NA
+        if(para %in% names(theta)) {
+            theta_i <- theta[[para]]
+        } else theta_i <- NA
         tmp[[i]] <- data.frame(
                     parameter = para,
                     M_est = mean(estimate),
@@ -1165,6 +1262,7 @@ summarize_FE <- function(res, theta, alpha) {
     FE
 }
 summarize_CI <- function(res, theta = NULL) {
+    ## TODO: fix so theta matches fit$tests
     d <- res$FE
     parms <- unique(res$FE$parameter)
     tmp <- vector("list", length(parms))
@@ -1240,6 +1338,8 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     FE$Satt_NA <- NULL
 
 
+    ## TODO: update to make compatible with fit$test
+    ##       update so function is agnostic to if time:treatment or treatment:time
     CI_NA <- 0
     if ("CI_lwr" %in% colnames(res$FE)) {
         CI_cov <- summarize_CI(res, theta[["time:treatment"]])
@@ -1325,18 +1425,41 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
 summary.plcp_multi_sim <- function(object,
                                    para = "time:treatment",
                                    type = "fixed",
-                                   model = "correct",
+                                   model = 1,
                                    alpha = 0.05,
+                                   model_selection = NULL,
+                                   LRT_alpha = 0.1,
                                    ...) {
     res <- object
-    if (!model %in% (names(res[[1]][[1]])))
-        stop("No model named: ", model, call. = FALSE)
+    mod_names <- names(res[[1]][[1]])
+    if (is.null(model_selection)) {
+        if(is.character(model) & !model %in% mod_names) {
+            stop("Incorrect 'model', no model named: ", model, call. = FALSE)
+        }
+
+        if(is.numeric(model)) {
+            if(model > length(mod_names)) stop("Argument 'model' is too large.", call. = FALSE)
+            model <- mod_names[model]
+        }
+
+    }
+
     if (!type %in% c("fixed", "random"))
         stop("'type' should be either 'fixed' or 'random'", call. = FALSE)
     # if (type == "fixed" &
     #     !para %in% c("intercept", "time", "treatment", "time:treatment")) {
     #     stop("Para should be one of: 'intercept' 'time', 'treatment', 'time:treatment'")
     # }
+
+    if(!is.null(model_selection)) {
+        for(i in seq_along(res)) {
+            res[[i]] <- do_model_selection(res[[i]],
+                                           direction = model_selection,
+                                           alpha = LRT_alpha)
+            model <- "model_selection"
+        }
+    }
+
     if (type == "fixed") {
         out <- lapply(res, summary_fixed.plcp_multi_sim, para, model, alpha = alpha)
     } else {
@@ -1344,6 +1467,12 @@ summary.plcp_multi_sim <- function(object,
     }
 
     out <- do.call(rbind, out)
+    paras <- attr(object, "paras")
+
+    paras <- prepare_multi_setup(paras)$out_dense
+    paras <- as.data.frame(paras)
+    out <- list("ret" = cbind(paras, as.data.frame(out)),
+                "out" = out)
 
     class(out) <- append("plcp_multi_sim_summary", class(out))
     attr(out, "type") <- type
@@ -1352,6 +1481,17 @@ summary.plcp_multi_sim <- function(object,
     out
 }
 
+#' Convert a multi-sim summary object to a tidy data.frame
+#'
+#' @param x Object with class \code{plcp_multi_sim_summary}.
+#' @param ... Not used
+#'
+#' @return a \code{data.frame} with one row for each simulation.
+#' Columns include the simulation study parameters and the results.
+#' @export
+as.data.frame.plcp_multi_sim_summary <- function(x, ...) {
+    x$ret
+}
 
 #' Print method for \code{summary.plcp_multi_sim}-objects
 #' @param x An object of class \code{plcp_multi_sim_summary}
@@ -1360,6 +1500,8 @@ summary.plcp_multi_sim <- function(object,
 #' @method print plcp_multi_sim_summary
 #' @export
 print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
+    ret <- x$ret
+    x <- x$out
     model <- attr(x, "model")
     type <- attr(x, "type")
     nsim <- attr(x, "nsim")
@@ -1372,7 +1514,7 @@ print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
     cat("---\n")
     cat("nsim: ", nsim, "\n")
     if(any(x$is_NA > 0)) warning("Some simulations had NA estimates that was removed.", call. = FALSE)
-    invisible(x)
+    invisible(ret)
 }
 
 ## random effect
@@ -1506,58 +1648,4 @@ get_p_val_df <- function(t, df, parameter, test = "time:treatmen") {
 
 
 
-# Stepwise ----------------------------------------------------------------
-# postprocessing functions
-# ll and df are saved each simulation
-
-forward_eliminate <- function(m0, m1, alpha = 0.1) {
-
-    # TODO: make it work with plcp_sim objects
-    # e.g. summary(object, step = TRUE)
-
-    # create a new object that include results from the chosen models.
-    # should good to add 'sim#' index to res$RE and res$FE to
-    # make it easier to pick estimates from winning model.
-
-    dev0 <- -2 * m0$ll
-    df0 <- m0$df
-
-    dev1 <- -2 * m1$ll
-    df1 <- m1$df
-
-    pval <- 1 - pchisq(dev0-dev1, df1-df0)
-    x <- which(pval < alpha)
-    if(length(x) == 0) x <- NA
-
-    x
-}
-
-#' @return vector of picked models; character vector
-step.plcp_sim <- function(object, alpha) {
-
-    models <- lapply(seq_along(object$res), function(i) {
-        m <- object$res[i]
-        list("label" = names(m),
-             "ll" = m[[1]]$logLik,
-             "df" = m[[1]]$df)
-    })
-
-    m0 <- models[[1]]
-    m1 <- models[[2]]
-
-    res0 <- rep(m0$label, length(m0$ll))
-    winners <- forward_eliminate(m0, m1, alpha = alpha)
-    res0[winners] <- m1$label
-
-    if(length(models) > 2) {
-        for(i in seq_along(models)[-(1:2)]) {
-            new_winners <- forward_eliminate(models[[i-1]], models[[i]], alpha = alpha)
-            # only want to keep models that were also selected in previous steps
-            winners <- new_winners[new_winners %in% winners]
-
-            res0[winners] <- models[[i]]$label
-        }
-    }
-    res0
-}
 
