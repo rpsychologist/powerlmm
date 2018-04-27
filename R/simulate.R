@@ -50,12 +50,9 @@ create_dropout_indicator <- function(paras) {
 
 sim_formula <- function(formula, data_transform = NULL, test = "time:treatment") {
 
-    formula <- gsub("treatment:time", "time:treatment", formula)
-    formula <- gsub("treatment .\\* time", "time*treatment", formula)
-    test <- gsub("treatment:time", "time:treatment", test)
-
      x <- list("formula" = formula,
               "data_transform" = data_transform,
+              "data_transform_lab" = substitute(data_transform),
               "test" = test)
 
     class(x) <- append(class(x), "plcp_sim_formula")
@@ -75,12 +72,12 @@ compare_sim_formulas <- function(...) {
 print.plcp_sim_formula <- function(x, ...) {
     cat("# Simulation formula\n")
     f <- x$formula
-    data_transform <- x$data_transform
-    test <- x$test
+    data_transform <- x$data_transform_lab
+    test <- paste(x$test, collapse = "', '")
     if(!is.null(data_transform))
-        data_transform <- paste("'\n           data_transform: '", data_transform, "'")
-    cat(paste("#    'formula': '", f,
-              "'\n          test: '", test, "'",
+        data_transform <- paste0("\n  data_transform: '", data_transform, "'")
+    cat(paste("         formula: '", f,
+              "'\n            test: '", test, "'",
               data_transform,
               sep = ""), sep = "\n")
     cat("\n")
@@ -95,12 +92,12 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 .print_plcp_sim_formula <- function(i, x) {
     lab <- names(x)[i]
     f <- x[[i]]$formula
-    data_transform <- x[[i]]$data_transform
-    test <- x[[i]]$test
+    data_transform <- x[[i]]$data_transform_lab
+    test <- paste(x[[i]]$test, collapse = "', '")
     if(!is.null(data_transform))
-        data_transform <- paste("'\n           data_transform: '", data_transform, "'")
+        data_transform <- paste0("\n             data_transform: '", data_transform, "'")
     cat(paste("#", i, "    '", lab,"': '", f,
-              "'\n            test: '", test, "'",
+              "'\n             test: '", test, "'",
               data_transform,
               sep = ""), sep = "\n")
     cat("\n")
@@ -788,23 +785,29 @@ fix_sath_NA_pval <- function(x, df) {
 }
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
+    # need to know in which order time and treatment was entered
+    # then adjust 'fit$test' to match
+    ff <- lme4::fixef(fit$fit)
+    rnames <- names(ff)
+    TbT <- c("time:treatment", "treatment:time")
+    ind <- TbT %in% rnames
+    if(any(ind) & any(fit$test %in% TbT)) {
+        TbT_model <- TbT[TbT %in% rnames]
+        fit$test[fit$test %in% TbT] <- TbT_model
+    }
+
+    if(any(!fit$test %in% rnames)) stop("At least of the values in 'test' do no match the model's parameters: ", paste(rnames, collapse = ", "), call. = FALSE)
+
     se <- sqrt(diag(vcov(fit$fit)))
     tmp_p <- add_p_value(fit = fit,
                          satterthwaite = satterthwaite,
                          df_bw = df_bw)
     FE <- data.frame(
-        "estimate" = lme4::fixef(fit$fit),
+        "estimate" = ff,
         "se" = se,
         "pval" = tmp_p$p,
         "df" = tmp_p$df
     )
-    rnames <- rownames(FE)
-
-    # need to know in which order time and treatment was entered
-
-
-    if(any(!fit$test %in% rnames)) stop("Some of the 'tests' do no match the model's parameters: ", paste(rnames, sep = ","), .call = FALSE)
-
 
     # TODO:
     # update so function is agnostic to if time:treatment or treatment:time
@@ -840,12 +843,21 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
         CI_wald <-
             tryCatch(stats::confint(fit$fit, method = "Wald", parm = fit$test),
                      error = function(e) NA)
-        CIs <- rownames(CI)
-        FE[FE$parameter %in% CIs, "CI_lwr"] <- CI[CIs, 1]
-        FE[FE$parameter %in% CIs, "CI_upr"] <- CI[CIs, 2]
-        FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- CI_wald[CIs, 1]
-        FE[FE$parameter %in% CIs, "CI_wald_upr"] <- CI_wald[CIs, 2]
-
+        CIs <- fit$test
+        if(all(is.na(CI))) {
+            FE[FE$parameter %in% CIs, "CI_lwr"] <- NA
+            FE[FE$parameter %in% CIs, "CI_upr"] <- NA
+        } else {
+            FE[FE$parameter %in% CIs, "CI_lwr"] <- CI[CIs, 1]
+            FE[FE$parameter %in% CIs, "CI_upr"] <- CI[CIs, 2]
+        }
+        if(all(is.na(CI_wald))) {
+            FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- NA
+            FE[FE$parameter %in% CIs, "CI_wald_upr"] <- NA
+        } else {
+            FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- CI_wald[CIs, 1]
+            FE[FE$parameter %in% CIs, "CI_wald_upr"] <- CI_wald[CIs, 2]
+        }
     }
     RE <- extract_random_effects(fit$fit)
 
@@ -970,15 +982,16 @@ print_model <- function(i, x, digits) {
     models <- names(x)
     cat("Model: ", models[i], "\n")
     cat("  Random effects\n\n")
+    RE <- format(x[[i]]$RE, digits = digits)
     print.data.frame(x[[i]]$RE,
                      row.names = FALSE,
                      digits = digits,
                      quote = FALSE)
     cat("\n  Fixed effects\n\n")
-    FE <- x[[i]]$FE
+    FE <- format(x[[i]]$FE, digits = digits)
     FE[t(do.call(rbind, lapply(FE, is.nan)))] <- "."
     FE[t(do.call(rbind, lapply(FE, is.na)))] <- "."
-    print.data.frame(FE, row.names = FALSE, digits = digits)
+    print.data.frame(FE, row.names = FALSE)
     cat("---\n")
 
 }
@@ -1276,10 +1289,15 @@ summarize_CI <- function(res, theta = NULL) {
     d <- res$FE
     parms <- unique(res$FE$parameter)
     tmp <- vector("list", length(parms))
+    thetas <- theta
     for(i in seq_along(parms)) {
         para <- parms[[i]]
         ind <- d$parameter == para
-        if(is.null(theta)) theta <- mean(d[ind, "estimate"])
+        if(is.null(thetas)) {
+            theta <- mean(d[ind, "estimate"])
+        }  else if(length(thetas) > 1) {
+            theta <- thetas[[para]]
+        } else theta <- thetas
         CI_lwr <- d[ind, "CI_lwr"]
         CI_upr <- d[ind, "CI_upr"]
         CI_wald_lwr <- d[ind, "CI_wald_lwr"]
@@ -1336,9 +1354,9 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     )
 
     # support both variants of time * treatment
-    #t_b_t <- res$FE$parameter
-    #t_b_t <- unique(t_b_t[t_b_t %in% c("time:treatment", "treatment:time")])
-    #names(theta)[4] <- t_b_t
+    t_b_t <- res$FE$parameter
+    t_b_t <- unique(t_b_t[t_b_t %in% c("time:treatment", "treatment:time")])
+    names(theta)[4] <- t_b_t
 
     FE <- summarize_FE(res = res,
                        theta = theta,
@@ -1363,7 +1381,7 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     if ("CI_lwr" %in% colnames(res$FE)) {
         CI_cov <- summarize_CI(res, theta)
         FE$CI_Cover <- CI_cov$CI_cover
-        CI_NA <- CI_cov[CI_cov$parameter == "time:treatment", "CI_NA"]
+        CI_NA <- CI_cov[4, "CI_NA"]
         FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
     }
 
@@ -1520,10 +1538,10 @@ as.data.frame.plcp_multi_sim_summary <- function(x, ...) {
 #' @export
 print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
     ret <- x$ret
-    x <- x$out
     model <- attr(x, "model")
     type <- attr(x, "type")
     nsim <- attr(x, "nsim")
+    x <- x$out
     x <- as.data.frame(x)
     x[t(do.call(rbind, lapply(x, is.nan)))] <- "."
     x[t(do.call(rbind, lapply(x, is.na)))] <- "."
@@ -1539,17 +1557,28 @@ print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
 ## random effect
 summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
 
+    out <- res$res[[model]]$FE
+
+    # for convenience catch reversed interaction
+    mod_paras <- unique(out$parameter)
+    TbT <- c("time:treatment", "treatment:time")
+    ind <- TbT %in% mod_paras
+    if(any(ind) & para %in% TbT) {
+        TbT_model <- TbT[TbT %in% mod_paras]
+        para <- TbT_model
+    }
+
     theta <- switch(
         para,
         "intercept" = res$paras$fixed_intercept,
         "treatment" = 0,
         "time" = res$paras$fixed_slope,
         "time:treatment" = get_slope_diff(res$paras) / res$paras$T_end,
+        "treatment:time" = get_slope_diff(res$paras) / res$paras$T_end,
         NA
     )
 
-    out <- res$res[[model]]$FE
-    if(all(out$parameter != para)) stop("'", para, "' is not a valid parameter.", call. = FALSE)
+    if(all(out$parameter != para)) stop("Argument 'para': ", "'", para, "' is not a valid parameter.", call. = FALSE)
     out <- out[out$parameter == para,]
 
 
@@ -1590,8 +1619,8 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
         CI_cov <- summarize_CI(res$res[[model]], theta)
         CI_cov <- CI_cov[CI_cov$parameter == para, ]
         ret$CI_Cover <- CI_cov$CI_cover
-        #CI_NA <- CI_cov[CI_cov$parameter == "time:treatment", "CI_NA"]
         ret$CI_Wald_cover <- CI_cov$CI_Wald_cover
+        ret$CI_NA <- CI_cov$CI_NA
     }
 
     ret
