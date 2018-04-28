@@ -14,7 +14,7 @@ paras <- study_parameters(n1 = 3,
                           dropout = dropout_weibull(0.3, 2),
                           cohend = -0.8)
 
-formula <- compare_sim_formulas("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)",
+formula <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)",
                                 "wrong" = "y ~ treatment * time + (1 + time | subject)")
 
 res <- simulate(paras, nsim = 2, formula = formula, satterthwaite = FALSE, progress = FALSE, batch_progress = FALSE)

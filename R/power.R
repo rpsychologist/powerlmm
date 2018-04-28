@@ -725,7 +725,7 @@ prepare_multi_power_out <- function(object, x, R, alpha, df) {
     out_dense$power_list <- x$power_list
     out_dense$tot_n <- x$tot_n
     out_dense$se <- unlist(x$se)
-    out_dense <- cbind(out_dense, ES)
+    #out_dense <- cbind(out_dense, ES)
     out_dense$n2_list <- x$n2_list
 
     class(out_dense) <- append("plcp_multi_power", class(out_dense))

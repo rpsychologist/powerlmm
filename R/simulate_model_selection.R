@@ -2,7 +2,14 @@
 # postprocessing functions
 # ll and df are saved each simulation
 
-LRT_test <- function(m0, m1, alpha = 0.1) {
+LRT_test <- function(m0, m1, alpha) {
+    pvals <- comp_LRT(m0, m1)
+    x <- which(pvals < alpha)
+    if(length(x) == 0) x <- NA
+
+    x
+}
+comp_LRT <- function(m0, m1) {
 
     dev0 <- -2 * m0$ll
     df0 <- m0$df
@@ -11,10 +18,8 @@ LRT_test <- function(m0, m1, alpha = 0.1) {
     df1 <- m1$df
 
     pval <- 1 - pchisq(dev0-dev1, df1-df0)
-    x <- which(pval < alpha)
-    if(length(x) == 0) x <- NA
 
-    x
+    pval
 }
 
 prepare_LRT_models <- function(object) {
@@ -28,7 +33,7 @@ prepare_LRT_models <- function(object) {
     models
 }
 
-#' @return vector of picked models; character vector
+# @return vector of picked models; character vector
 step_fw.plcp_sim <- function(models, alpha = 0.1) {
 
     m0 <- models[[1]]
@@ -49,7 +54,7 @@ step_fw.plcp_sim <- function(models, alpha = 0.1) {
     }
     res0
 }
-#' @return vector of picked models; character vector
+# @return vector of picked models; character vector
 step_bw.plcp_sim <- function(models, alpha = 0.1) {
 
     K <- length(models)
@@ -80,8 +85,8 @@ step_bw.plcp_sim <- function(models, alpha = 0.1) {
 # Update object -----------------------------------------------------------
 
 
-#' helper that returns the relevant estimates from each sim
-#' from the model picked by LRT test
+# helper that returns the relevant estimates from each sim
+# from the model picked by LRT test
 get_sim_para <- function(i, effect, object, mod) {
     x <- object$res[[mod]][[effect]]
     x <- x[x$sim == i, ]

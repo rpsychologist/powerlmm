@@ -15,7 +15,7 @@ p <- study_parameters(n1 = 10,
 test_that("munge_results", {
     set.seed(5)
 
-    formula <- compare_sim_formulas("correct" = sim_formula("y ~ treatment * time + (1 + time | subject) +
+    formula <- sim_formula_compare("correct" = sim_formula("y ~ treatment * time + (1 + time | subject) +
                     (0 + time | cluster)"))
     res <- lapply(1:3, simulate_,
                   paras = p,

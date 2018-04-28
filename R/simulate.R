@@ -48,6 +48,19 @@ create_dropout_indicator <- function(paras) {
 
 # sim formula -------------------------------------------------------------
 
+#' Create simulation formula
+#'
+#' @param formula A \code{character} containing a lme4 formula.
+#' @param data_transform Optional; a \code{function} that applies a transformation
+#' to the data during each simulation.
+#' @param test A \code{character} vector indicating wich parameters should be tested.
+#' Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
 sim_formula <- function(formula, data_transform = NULL, test = "time:treatment") {
 
      x <- list("formula" = formula,
@@ -58,7 +71,29 @@ sim_formula <- function(formula, data_transform = NULL, test = "time:treatment")
     class(x) <- append(class(x), "plcp_sim_formula")
     x
 }
-compare_sim_formulas <- function(...) {
+#' Compare multiple simulation formulas
+#'
+#' This functions allows comparing multiple models fit to the same data set
+#' during simulation.
+#'
+#' @param ... Named formulas that should be compared, see \emph{Examples}.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#'
+#' # Formulas can be a named character
+#' # uses the defaults 'sim_formula()'
+#' f <- sim_formula_compare("m0" = "y ~ time * treatment + (1 | subject)",
+#'                          "m1" = "y ~ time * treatment + (1 + time | subject)")
+#'
+#' # Can also use sim_formula()
+#' f0 <- sim_formula("y ~ time * treatment + (1 | subject)")
+#' f1 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
+#' f <- sim_formula_compare("m0" = f0, "m1" = f1)
+#'
+sim_formula_compare <- function(...) {
     x <- list(...)
     if(any(is.null(names(x)))) stop("formula(s) must have a name.", call. = FALSE)
     for(i in seq_along(x)) {
@@ -516,7 +551,7 @@ simulate.plcp_list <-
             )
         out <- munge_results(out)
         if(inherits(formula, "plcp_compare_sim_formula")) {
-            class(out) <- append(class(out), "plcp_sim_compare_formula")
+            class(out) <- append(class(out), "plcp_sim_formula_compare")
         }
          else {
             class(out) <- append(class(out), "plcp_sim")
@@ -615,7 +650,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
 # checks
 check_formula <- function(formula) {
     if(!inherits(formula, "plcp_sim_formula") & !inherits(formula, "plcp_compare_sim_formula")) {
-        stop("`formula` should be created using `sim_formula` or `compare_sim_formulas`", .call = FALSE)
+        stop("`formula` should be created using `sim_formula` or `sim_formula_compare`", call. = FALSE)
     }
     #if (!all(names(formula) %in% c("correct", "wrong")))
     #    stop("Formula names must be either 'correct' or 'wrong'")
@@ -988,7 +1023,8 @@ print_model <- function(i, x, digits) {
                      digits = digits,
                      quote = FALSE)
     cat("\n  Fixed effects\n\n")
-    FE <- format(x[[i]]$FE, digits = digits)
+    FE <- x[[i]]$FE
+    FE <- signif(x[[i]]$FE[-1], digits)
     FE[t(do.call(rbind, lapply(FE, is.nan)))] <- "."
     FE[t(do.call(rbind, lapply(FE, is.na)))] <- "."
     print.data.frame(FE, row.names = FALSE)
@@ -1125,7 +1161,7 @@ print.plcp_sim <- function(x, ...) {
 #' @param ... Optional arguments.
 #' @method print plcp_sim
 #' @export
-print.plcp_sim_compare_formula <- function(x, ...) {
+print.plcp_sim_formula_compare <- function(x, ...) {
     cat(
         "# A 'plcp_sim'-object containing",
         x$nsim,
@@ -1190,15 +1226,15 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
     class(x) <- append("plcp_sim_summary", class(x))
     x
 }
-#' @method summary plcp_sim_compare_formula
+#' @method summary plcp_sim_formula_compare
 #' @export
-summary.plcp_sim_compare_formula <- function(object, mod = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...) {
+summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...) {
 
     if(is.null(model_selection)) {
-        if(is.null(mod)) {
+        if(is.null(model)) {
             summary.plcp_sim(object)
         } else {
-            object$res <- object$res[mod]
+            object$res <- object$res[model]
             summary.plcp_sim(object)
         }
     } else if(model_selection %in% c("FW", "BW")) {
