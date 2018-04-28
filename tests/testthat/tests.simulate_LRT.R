@@ -92,6 +92,29 @@ test_that("sim LRT", {
     expect_equal(x$model_direction, "FW")
 })
 
+test_that("sim LRT multi", {
+    ## sim
+    p <- study_parameters(n1 = 5,
+                          n2 = 5:6,
+                          icc_pre_subject = 0.5,
+                          cor_subject = -0.5,
+                          var_ratio = 0.03)
+
+    f0 <- sim_formula("y ~ time * treatment + (1 | subject)")
+    f1 <- sim_formula("y ~ time * treatment + (1 + time || subject)")
+    f2 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
+    f <- sim_formula_compare("m0" = f0, "m1" = f1, "m2" = f2)
+
+
+    res <- simulate(p, formula = f, nsim = 4, satterthwaite = FALSE, cores = 1, CI = FALSE)
+
+    x <-  summary(res)
+    expect_output(print(x), "^Model:  m0 | Type: fixed$")
+
+    x <- summary(res, model_selection = "FW")
+    expect_output(print(x), "^Model:  model_selection | Type: fixed$")
+})
+
 test_that("LRT calcs", {
     p <- study_parameters(n1 = 5,
                           n2 = 5,

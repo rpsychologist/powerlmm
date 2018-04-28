@@ -1,32 +1,3 @@
-f <- sim_formula("y ~ time + (1 | subject)")
-
-
-
-transform_to_posttest(d)
-
-
-p <- study_parameters(n1 = 11,
-                      n2 = 20,
-                      n3 = 4,
-                      icc_pre_subject = 0.5,
-                      cor_subject = -0.5,
-                      icc_slope = 0.05,
-                      partially_nested = TRUE,
-                      var_ratio = 0.03)
-
-d <- simulate_data(p)
-
-##
-check_formula(f)
-
-
-f1 <- compare_sim_formulas("sim1" = f, "sim2" = sim_formula("y ~ time55 + (1 | subject)"))
-
-str(f1)
-
-names(f1)
-
-check_formula(f1)
 
 
 ## simulate

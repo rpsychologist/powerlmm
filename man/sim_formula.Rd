@@ -15,9 +15,15 @@ to the data during each simulation.}
 \item{test}{A \code{character} vector indicating wich parameters should be tested.
 Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.}
 }
+\value{
+Object with class \code{plcp_sim_formula}
+}
 \description{
 Create simulation formula
 }
 \examples{
 f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
+}
+\seealso{
+\code{\link{sim_formula_compare}}
 }

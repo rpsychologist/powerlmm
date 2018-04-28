@@ -135,5 +135,52 @@ summary(res, para = "cluster_slope", type = "random", model = "correct")
 ```
 
 
+# Investigate model selection
+```{r}
+p <- study_parameters(n1 = 11,
+                      n2 = 40,
+                      n3 = 3,
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.5,
+                      icc_slope = 0.05,
+                      var_ratio = 0.03)
+
+f0 <- sim_formula("y ~ time * treatment + (1 | subject)")
+f1 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
+f2 <- sim_formula("y ~ time * treatment + (1 + time | subject) + (0 + time | cluster)")
+f3 <- sim_formula("y ~ time * treatment + (1 + time | subject) + (1 + time | cluster)")
+f <- sim_formula_compare("subject-intercept" = f0, 
+                         "subject-slope" = f1, 
+                         "cluster-slope" = f2,
+                         "cluster-intercept" = f3)
+
+res <- simulate(p, formula = f, nsim = 500, satterthwaite = TRUE, cores = 10, CI = FALSE)
+
+# type 1 error increased
+summary(res, model_selection = "FW")
+
+# but better then always ignoring
+summary(res, model = "subject-slope")
+
+# more liberal selection,
+# type 1 error now 0.07
+summary(res, model_selection = "FW", LRT_alpha = 0.25)
+
+# compare with the correct model
+summary(res, model = "m2")
+
+# unecessary 3-level random slope
+# conservative, and convergence warnings.
+# leads overestiamed cluster-level random slope
+summary(res, model = "m3")
+
+
+# See if power is impacted
+p1 <- update(p, effect_size = cohend(0.8))
+res_power <- simulate(p1, formula = f, nsim = 500, satterthwaite = TRUE, cores = 10, CI = FALSE)
+
+
+```
+
 
 

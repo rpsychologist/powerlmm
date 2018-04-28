@@ -56,7 +56,8 @@ create_dropout_indicator <- function(paras) {
 #' @param test A \code{character} vector indicating wich parameters should be tested.
 #' Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.
 #'
-#' @return
+#' @return Object with class \code{plcp_sim_formula}
+#' @seealso \code{\link{sim_formula_compare}}
 #' @export
 #'
 #' @examples
@@ -78,7 +79,8 @@ sim_formula <- function(formula, data_transform = NULL, test = "time:treatment")
 #'
 #' @param ... Named formulas that should be compared, see \emph{Examples}.
 #'
-#' @return
+#' @return Object with class \code{plcp_compare_sim_formula}
+#' @seealso \code{\link{sim_formula}}
 #' @export
 #'
 #' @examples
@@ -246,6 +248,8 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' @details
 #'
+#' See also \code{vignette("simulations", package = "powerlmm")} for a tutorial.
+#'
 #' \strong{Model formula}
 #'
 #' The available model terms are:
@@ -292,7 +296,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'  will be created if it does not exist in your working directory.
 #' }
 #'
-#' @seealso \code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
+#' @seealso \code{\link{sim_formula}}, \code{\link{sim_formula_compare}}, \code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
 #'
 #' @examples
 #' \dontrun{
@@ -304,7 +308,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_error = 1.44,
 #'                       effect_size = cohend(0.5))
 #'
-#' f <- "y ~ treatment * time + (1 + time | subject)"
+#' f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
 #'
 #'
 #' res <- simulate(object = p,
@@ -330,8 +334,8 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       effect_size = cohend(0.5))
 #'
 #' ## compare correct and miss-specified model
-#' f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-#'           "wrong" = "y ~ treatment * time + (1 + time | subject)")
+#' f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
+#'                          "wrong" = "y ~ treatment * time + (1 + time | subject)")
 #'
 #' res <- simulate(object = p,
 #'                 nsim = 1000,
@@ -357,7 +361,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       partially_nested = TRUE,
 #'                       effect_size = cohend(-0.5))
 #'
-#' f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
+#' f <- sim_formula("y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)")
 #'
 #' res <- simulate(object = p,
 #'                 nsim = 1000,
@@ -380,8 +384,8 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_error = 1.44,
 #'                       effect_size = cohend(0.5))
 #'
-#' f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-#'           "wrong" = "y ~ treatment * time + (1 + time | subject)")
+#' f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
+#'                          "wrong" = "y ~ treatment * time + (1 + time | subject)")
 #'
 #' res <- simulate(object = p,
 #'                 nsim = 1000,
@@ -818,6 +822,7 @@ fix_sath_NA_pval <- function(x, df) {
 
     x
 }
+
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
     # need to know in which order time and treatment was entered
@@ -899,7 +904,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     conv <- is.null(fit$fit@optinfo$conv$lme4$code)
 
     # save for postprocess LRT test
-    ll <- logLik(fit$fit)
+    ll <- stats::logLik(fit$fit)
     df <- attr(ll, "df")
     RE$sim <- sim
     FE$sim <- sim
@@ -1024,7 +1029,8 @@ print_model <- function(i, x, digits) {
                      quote = FALSE)
     cat("\n  Fixed effects\n\n")
     FE <- x[[i]]$FE
-    FE <- signif(x[[i]]$FE[-1], digits)
+    FE <- signif(FE[-1], digits)
+    FE <- cbind(x[[i]]$FE[,1, drop = FALSE], FE)
     FE[t(do.call(rbind, lapply(FE, is.nan)))] <- "."
     FE[t(do.call(rbind, lapply(FE, is.na)))] <- "."
     print.data.frame(FE, row.names = FALSE)
@@ -1156,10 +1162,8 @@ print.plcp_sim <- function(x, ...) {
     invisible(x)
 }
 
-#' Print method for \code{simulate.plcp}-objects
-#' @param x An object created with \code{\link{simulate.plcp}}
-#' @param ... Optional arguments.
-#' @method print plcp_sim
+#' @rdname print.plcp_sim
+#' @method print plcp_sim_formula_compare
 #' @export
 print.plcp_sim_formula_compare <- function(x, ...) {
     cat(
@@ -1187,6 +1191,29 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #' @param alpha Indicates the significance level. Default is 0.05 (two-tailed),
 #' one-tailed tests are not yet implemented.
 #' @param ... Currently not used
+#'
+#' @details
+#'
+#' \strong{Model selection}
+#'
+#' It is possible to summarise the performance of a data driven model selection strategy
+#' based on the formulas used in the simulation (see \code{\link{sim_formula_compare}}).
+#' The two model selection strategies are:
+#' \itemize{
+#'   \item \code{FW}: Forward selection of the models. Starts with the first model formula and
+#'   compares it with the next formula. Continues untill the test of M_i vs M_{i + 1} is non-significant,
+#'   and then picks M_i. Thus if three models are compared, and the comparison of M_1 vs M_2 is non-significant, M_3
+#'   will not be tested and M_1 is the winning model.
+#'  \item \code{BW}: Backward selection of the models. Starts with the last model formula and
+#'   compares it with the previous formula. Continues untill the test of M_i vs M_{i - 1} is significant or untill
+#'   all adjecent formulas have been compared. Thus if three models are compared, and the comparison of M_3 vs M_2 is non-significant,
+#'   M2 vs M1 will be tested and M2 will be picked if significant, and M1 if not.
+#' }
+#'
+#' The model comparison is performed using a likelihood ratio test based the REML criterion. Hence, it assumed you are comparing models
+#' with the same fixed effects, and that of the models is a reduced veresion of the other (nested models). The LRT test is done as a
+#' post-processing step, so \code{model_selection} option will not rerun the simulation. This also means that different alpha levels
+#' for the LRTs can be investigated without rerunning the simulation.
 #'
 #' @return Object with class \code{plcp_sim_summary}. It contains
 #' the following output:
@@ -1226,6 +1253,11 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
     class(x) <- append("plcp_sim_summary", class(x))
     x
 }
+
+#' @rdname summary.plcp_sim
+#' @param model NULL
+#' @param model_selection NULL
+#' @param LRT_alpha NULL
 #' @method summary plcp_sim_formula_compare
 #' @export
 summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...) {
@@ -1391,8 +1423,12 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
 
     # support both variants of time * treatment
     t_b_t <- res$FE$parameter
-    t_b_t <- unique(t_b_t[t_b_t %in% c("time:treatment", "treatment:time")])
-    names(theta)[4] <- t_b_t
+    check_tbt <- t_b_t %in% c("time:treatment", "treatment:time")
+    if(any(check_tbt)) {
+        t_b_t <- unique(t_b_t[check_tbt])
+        names(theta)[4] <- t_b_t
+    }
+
 
     FE <- summarize_FE(res = res,
                        theta = theta,
@@ -1417,7 +1453,8 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
     if ("CI_lwr" %in% colnames(res$FE)) {
         CI_cov <- summarize_CI(res, theta)
         FE$CI_Cover <- CI_cov$CI_cover
-        CI_NA <- CI_cov[4, "CI_NA"]
+        i <- which.min(CI_cov$CI_Wald_cover >= 0)
+        CI_NA <- CI_cov[i, "CI_NA"]
         FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
     }
 
@@ -1464,10 +1501,15 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
 #' @param para The name of the fixed or random effect that should be summarized.
 #' @param type Specifies what type of effect \code{para} is; can be either
 #' "random" or "fixed".
-#' @param model Specifies which model should be summarized. Used when models are
-#' simulated from formulas named "correct" and "wrong".
+#' @param model Specifies which model that should be summarized. Accepts either
+#' a \code{character} with the name used in \code{\link{sim_formula_compare}}, or
+#' an \code{integer} value.
 #' @param alpha Indicates the significance level. Default is 0.05 (two-tailed),
 #' one-tailed tests are not yet implemented.
+#' @param model_selection Indicates if model selection should be performed. If \code{NULL} (default),
+#' all models are returned, if \code{FW} or \code{BW} model selection is performed using LRT, and the result
+#' is based on the selected model from each simulation.
+#' @param LRT_alpha Indicates the alpha level used when comparing models during model selection.
 #' @param ... Optional arguments.
 #'
 #' @method summary plcp_multi_sim

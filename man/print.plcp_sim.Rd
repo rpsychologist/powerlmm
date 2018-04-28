@@ -2,9 +2,12 @@
 % Please edit documentation in R/simulate.R
 \name{print.plcp_sim}
 \alias{print.plcp_sim}
+\alias{print.plcp_sim_formula_compare}
 \title{Print method for \code{simulate.plcp}-objects}
 \usage{
 \method{print}{plcp_sim}(x, ...)
+
+\method{print}{plcp_sim_formula_compare}(x, ...)
 }
 \arguments{
 \item{x}{An object created with \code{\link{simulate.plcp}}}

@@ -53,6 +53,8 @@ simulations with multiple setups.}
 Perform a simulation study using a \code{study_parameters}-object
 }
 \details{
+See also \code{vignette("simulations", package = "powerlmm")} for a tutorial.
+
 \strong{Model formula}
 
 The available model terms are:
@@ -109,7 +111,7 @@ p <- study_parameters(n1 = 11,
                       sigma_error = 1.44,
                       effect_size = cohend(0.5))
 
-f <- "y ~ treatment * time + (1 + time | subject)"
+f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
 
 
 res <- simulate(object = p,
@@ -135,8 +137,8 @@ p <- study_parameters(n1 = 10,
                       effect_size = cohend(0.5))
 
 ## compare correct and miss-specified model
-f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
+                         "wrong" = "y ~ treatment * time + (1 + time | subject)")
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -162,7 +164,7 @@ p <- study_parameters(n1 = 11,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.5))
 
-f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
+f <- sim_formula("y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)")
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -185,8 +187,8 @@ p <- study_parameters(n1 = 10,
                       sigma_error = 1.44,
                       effect_size = cohend(0.5))
 
-f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
+                         "wrong" = "y ~ treatment * time + (1 + time | subject)")
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -204,5 +206,5 @@ summary(res, para = "cluster_slope", type = "random", model = "correct")
 }
 }
 \seealso{
-\code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
+\code{\link{sim_formula}}, \code{\link{sim_formula_compare}}, \code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
 }

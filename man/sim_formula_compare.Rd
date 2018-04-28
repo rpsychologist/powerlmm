@@ -9,6 +9,9 @@ sim_formula_compare(...)
 \arguments{
 \item{...}{Named formulas that should be compared, see \emph{Examples}.}
 }
+\value{
+Object with class \code{plcp_compare_sim_formula}
+}
 \description{
 This functions allows comparing multiple models fit to the same data set
 during simulation.
@@ -25,4 +28,7 @@ f0 <- sim_formula("y ~ time * treatment + (1 | subject)")
 f1 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
 f <- sim_formula_compare("m0" = f0, "m1" = f1)
 
+}
+\seealso{
+\code{\link{sim_formula}}
 }

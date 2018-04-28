@@ -17,7 +17,7 @@ comp_LRT <- function(m0, m1) {
     dev1 <- -2 * m1$ll
     df1 <- m1$df
 
-    pval <- 1 - pchisq(dev0-dev1, df1-df0)
+    pval <- 1 - stats::pchisq(dev0-dev1, df1-df0)
 
     pval
 }

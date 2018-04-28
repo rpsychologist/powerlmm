@@ -336,7 +336,33 @@ test_that("Simulation runs, dropout", {
 })
 
 
+test_that("sim data_transform", {
+    p <- study_parameters(n1 = 3,
+                          n2 = 10,
+                          n3 = 2,
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          cohend = 0.5)
 
+    f <- sim_formula("y ~ treatment + (1 | cluster)", data_transform = transform_to_posttest, test = "treatment")
+    res <- simulate(p, nsim = 2, formula = f)
+
+    x <- summary(res)
+    expect_is(x, "plcp_sim_summary")
+    expect_output(print(x), "^Model:  default")
+
+    ## satterth and CI
+    res <- simulate(p, nsim = 2, formula = f, CI = TRUE, satterthwaite = TRUE)
+
+    x <- summary(res)
+    expect_is(x, "plcp_sim_summary")
+    expect_output(print(x), "^Model:  default")
+
+
+})
 
 
 

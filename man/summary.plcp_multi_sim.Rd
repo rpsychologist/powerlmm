@@ -17,11 +17,18 @@
 \item{type}{Specifies what type of effect \code{para} is; can be either
 "random" or "fixed".}
 
-\item{model}{Specifies which model should be summarized. Used when models are
-simulated from formulas named "correct" and "wrong".}
+\item{model}{Specifies which model that should be summarized. Accepts either
+a \code{character} with the name used in \code{\link{sim_formula_compare}}, or
+an \code{integer} value.}
 
 \item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
 one-tailed tests are not yet implemented.}
+
+\item{model_selection}{Indicates if model selection should be performed. If \code{NULL} (default),
+all models are returned, if \code{FW} or \code{BW} model selection is performed using LRT, and the result
+is based on the selected model from each simulation.}
+
+\item{LRT_alpha}{Indicates the alpha level used when comparing models during model selection.}
 
 \item{...}{Optional arguments.}
 }

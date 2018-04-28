@@ -21,7 +21,12 @@ res <- simulate(paras, nsim = 2, formula = formula, satterthwaite = FALSE, progr
 
 
 test_that("multi_sim", {
-    tmp <- summary(res)$out
+
+    sr <- summary(res)
+    expect_is(sr, "plcp_multi_sim_summary")
+    expect_output(print(sr), "^Model:  correct \\| Type: fixed")
+
+    tmp <- sr$out
     expect_identical(nrow(tmp), 2L)
 
     ## correct class for paras
@@ -90,5 +95,29 @@ test_that("multi_sim summary validation", {
 })
 
 
+test_that("sim data_transform multi", {
+    p <- study_parameters(n1 = 3,
+                          n2 = 5:6,
+                          n3 = 2,
+                          sigma_subject_intercept = 1.44,
+                          icc_pre_cluster = 0,
+                          sigma_subject_slope = 0.2,
+                          icc_slope = 0.05,
+                          sigma_error = 1.44,
+                          cohend = 0.5)
 
+    f <- sim_formula("y ~ treatment + (1 | cluster)", data_transform = transform_to_posttest, test = "treatment")
+    res <- simulate(p, nsim = 2, formula = f)
+
+    x <- summary(res, para = "treatment")
+    expect_is(x, "plcp_multi_sim_summary")
+    expect_output(print(x), "^Model:  default | Type: fixed$")
+
+    ## satterth and CI
+    res <- simulate(p, nsim = 2, formula = f, CI = TRUE, satterthwaite = TRUE)
+
+    x <- summary(res, para = "treatment")
+    expect_is(x, "plcp_multi_sim_summary")
+    expect_output(print(x), "^Model:  default | Type: fixed$")
+})
 
