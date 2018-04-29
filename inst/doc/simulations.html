@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-04-17" />
+<meta name="date" content="2018-04-29" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,9 +70,24 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-04-17</em></h4>
+<h4 class="date"><em>2018-04-29</em></h4>
 
 
+<div id="TOC">
+<ul>
+<li><a href="#setup">Setup</a></li>
+<li><a href="#partially-nested-three-level-model">Partially nested three-level model</a></li>
+<li><a href="#how-many-simulations-to-run">How many simulations to run?</a><ul>
+<li><a href="#automatic-formula-creation">Automatic formula creation</a></li>
+</ul></li>
+<li><a href="#investigate-model-misspecification">Investigate model misspecification</a></li>
+<li><a href="#compare-multiple-combinations-of-parameter-values">Compare multiple combinations of parameter values</a></li>
+<li><a href="#investigate-model-selection">Investigate model selection</a></li>
+<li><a href="#compare-longitudinal-and-posttest-only-modeldata-transformations">Compare longitudinal and posttest only model—data transformations</a><ul>
+<li><a href="#compare-consequences-of-ignoring-clustering-in-longitudinal-versus-posttest-only-model">Compare consequences of ignoring clustering in longitudinal versus posttest only model</a></li>
+</ul></li>
+</ul>
+</div>
 
 <p>This vignette shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the model, e.g. estimates of cluster-level random effects with only a few clusters.</p>
 <div id="setup" class="section level2">
@@ -98,7 +113,6 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
                       <span class="dt">partially_nested =</span> <span class="ot">TRUE</span>,
                       <span class="dt">effect_size =</span> <span class="kw">cohend</span>(<span class="op">-</span><span class="fl">0.8</span>, 
                                            <span class="dt">standardizer =</span> <span class="st">&quot;pretest_SD&quot;</span>))
-
 p</code></pre></div>
 </div>
 <div id="how-many-simulations-to-run" class="section level2">
@@ -110,7 +124,7 @@ p</code></pre></div>
 <p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computations will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and the simulation is run non-interactively in a terminal then forking is used.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
 
-cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="co"># use all cores</span>
+cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>(<span class="dt">logical =</span> <span class="ot">FALSE</span>) <span class="co"># use all physical CPU cores</span>
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
                 <span class="dt">nsim =</span> <span class="dv">5000</span>,
@@ -130,8 +144,11 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 <p>Let’s compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a <code>correct</code> and <code>wrong</code> formula. By setting <code>effect_size</code> to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">effect_size =</span> <span class="dv">0</span>)
 
-f &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">&quot;correct&quot;</span> =<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>,
-          <span class="st">&quot;wrong&quot;</span> =<span class="st"> &quot;y ~ treatment * time + (1 + time | subject)&quot;</span>)
+f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<span class="st">&quot;correct&quot;</span> =<span class="st"> &quot;y ~ treatment * time + </span>
+<span class="st">                                      (1 + time | subject) + </span>
+<span class="st">                                      (0 + treatment:time | cluster)&quot;</span>,
+                         <span class="st">&quot;wrong&quot;</span> =<span class="st"> &quot;y ~ treatment * time + </span>
+<span class="st">                                    (1 + time | subject)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
                 <span class="dt">nsim =</span> <span class="dv">5000</span>,
@@ -164,7 +181,8 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
                                            <span class="dt">standardizer =</span> <span class="st">&quot;pretest_SD&quot;</span>))
 
 
-f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
+f &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ treatment * time + (1 + time | subject) + </span>
+<span class="st">                 (0 + treatment:time | cluster)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
                 <span class="dt">nsim =</span> <span class="dv">5000</span>,
@@ -178,6 +196,118 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="
 
 <span class="co"># Summarize the cluster-level random slope </span>
 <span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;cluster_slope&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;correct&quot;</span>)</code></pre></div>
+</div>
+<div id="investigate-model-selection" class="section level1">
+<h1>Investigate model selection</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>(<span class="dt">logical =</span> <span class="ot">FALSE</span>)
+
+p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">11</span>,
+                      <span class="dt">n2 =</span> <span class="dv">40</span>,
+                      <span class="dt">n3 =</span> <span class="dv">3</span>,
+                      <span class="dt">icc_pre_subject =</span> <span class="fl">0.5</span>,
+                      <span class="dt">cor_subject =</span> <span class="op">-</span><span class="fl">0.5</span>,
+                      <span class="dt">icc_slope =</span> <span class="fl">0.05</span>,
+                      <span class="dt">var_ratio =</span> <span class="fl">0.03</span>)
+
+f0 &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ time * treatment + (1 | subject)&quot;</span>)
+f1 &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ time * treatment + (1 + time | subject)&quot;</span>)
+f2 &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ time * treatment + (1 + time | subject) + (0 + time | cluster)&quot;</span>)
+f3 &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ time * treatment + (1 + time | subject) + (1 + time | cluster)&quot;</span>)
+f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<span class="st">&quot;subject-intercept&quot;</span> =<span class="st"> </span>f0, 
+                         <span class="st">&quot;subject-slope&quot;</span> =<span class="st"> </span>f1, 
+                         <span class="st">&quot;cluster-slope&quot;</span> =<span class="st"> </span>f2,
+                         <span class="st">&quot;cluster-intercept&quot;</span> =<span class="st"> </span>f3)
+
+res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p, <span class="dt">formula =</span> f, 
+                <span class="dt">nsim =</span> <span class="dv">5000</span>, 
+                <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>, 
+                <span class="dt">cores =</span> cores,
+                <span class="dt">CI =</span> <span class="ot">FALSE</span>)
+
+<span class="co"># type 1 error increased</span>
+<span class="kw">summary</span>(res, <span class="dt">model_selection =</span> <span class="st">&quot;FW&quot;</span>)
+
+<span class="co"># but better then always ignoring</span>
+<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;subject-slope&quot;</span>)
+
+<span class="co"># more liberal selection,</span>
+<span class="co"># type 1 error now 0.07</span>
+<span class="kw">summary</span>(res, <span class="dt">model_selection =</span> <span class="st">&quot;FW&quot;</span>, <span class="dt">LRT_alpha =</span> <span class="fl">0.25</span>)
+
+<span class="co"># compare with the correct model</span>
+<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;m2&quot;</span>)
+
+<span class="co"># unecessary 3-level random slope</span>
+<span class="co"># conservative, and convergence warnings.</span>
+<span class="co"># leads overestiamed cluster-level random slope</span>
+<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;m3&quot;</span>)
+
+
+<span class="co"># See if power is impacted</span>
+p1 &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">effect_size =</span> <span class="kw">cohend</span>(<span class="fl">0.8</span>))
+res_power &lt;-<span class="st"> </span><span class="kw">simulate</span>(p1, 
+                      <span class="dt">formula =</span> f, 
+                      <span class="dt">nsim =</span> <span class="dv">500</span>, 
+                      <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
+                      <span class="dt">cores =</span> cores, 
+                      <span class="dt">CI =</span> <span class="ot">FALSE</span>)</code></pre></div>
+</div>
+<div id="compare-longitudinal-and-posttest-only-modeldata-transformations" class="section level1">
+<h1>Compare longitudinal and posttest only model—data transformations</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span class="dt">n1 =</span> <span class="dv">11</span>,
+                      <span class="dt">n2 =</span> <span class="dv">20</span>,
+                      <span class="dt">n3 =</span> <span class="dv">3</span>,
+                      <span class="dt">icc_pre_subject =</span> <span class="fl">0.5</span>,
+                      <span class="dt">icc_pre_cluster =</span> <span class="fl">0.1</span>,
+                      <span class="dt">icc_slope =</span> <span class="fl">0.05</span>,
+                      <span class="dt">var_ratio =</span> <span class="fl">0.03</span>)
+
+<span class="co"># simulation formulas</span>
+<span class="co"># analyze as a posttest only 2-level model</span>
+f_pt &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ treatment + (1 | cluster)&quot;</span>,
+                 <span class="dt">test =</span> <span class="st">&quot;treatment&quot;</span>,
+                 <span class="dt">data_transform =</span> transform_to_posttest)
+
+<span class="co"># analyze as 3-level longitudinal</span>
+f_lt &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ time*treatment +</span>
+<span class="st">                         (1 + time | subject) +</span>
+<span class="st">                         (1 + time | cluster)&quot;</span>)
+
+f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<span class="st">&quot;posttest&quot;</span> =<span class="st"> </span>f_pt, <span class="st">&quot;longitudinal&quot;</span> =<span class="st"> </span>f_lt)
+## Not run: 
+res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p,
+                <span class="dt">formula =</span> f,
+                <span class="dt">nsim =</span> <span class="dv">2000</span>,
+                <span class="dt">cores =</span> cores,
+                <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>)
+<span class="kw">summary</span>(res)</code></pre></div>
+<div id="compare-consequences-of-ignoring-clustering-in-longitudinal-versus-posttest-only-model" class="section level2">
+<h2>Compare consequences of ignoring clustering in longitudinal versus posttest only model</h2>
+<p>We already investigate the consequences of ignoring the cluster-level. We can also investigate the consequences of ignoring clustering in a posttest only analysis, by using the <code>data_transform</code> argument in <code>sim_formula</code>. Same parameters, different models. Shows that LM models can also be used with model selection.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># simulation formulas</span>
+<span class="co"># analyze as a posttest only 2-level model</span>
+f0 &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ treatment&quot;</span>,
+                 <span class="dt">test =</span> <span class="st">&quot;treatment&quot;</span>,
+                 <span class="dt">data_transform =</span> transform_to_posttest)
+
+f1 &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ treatment + (1 | cluster)&quot;</span>,
+                 <span class="dt">test =</span> <span class="st">&quot;treatment&quot;</span>,
+                 <span class="dt">data_transform =</span> transform_to_posttest)
+
+f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<span class="st">&quot;post_ignore&quot;</span> =<span class="st"> </span>f0, <span class="st">&quot;post_2lvl&quot;</span> =<span class="st"> </span>f1)
+## Not run: 
+res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p,
+                <span class="dt">formula =</span> f,
+                <span class="dt">nsim =</span> <span class="dv">2000</span>,
+                <span class="dt">cores =</span> cores,
+                <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>)
+
+<span class="co"># type I OLS model</span>
+<span class="kw">sumamry</span>(res, <span class="dt">model =</span> <span class="st">&quot;post_ignore&quot;</span>)
+
+<span class="co"># model selection</span>
+<span class="kw">summary</span>(res, <span class="dt">model_selection =</span> <span class="st">&quot;FW&quot;</span>)</code></pre></div>
+</div>
 </div>
 
 

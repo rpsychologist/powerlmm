@@ -21,6 +21,10 @@ Object with class \code{plcp_sim_formula}
 \description{
 Create a simulation formula
 }
+\details{
+It is possible to fit model without any random effects. If no random effects is specified
+the model is fit using \code{lm()}.
+}
 \examples{
 f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
 }

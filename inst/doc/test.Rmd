@@ -1,0 +1,29 @@
+---
+title: "A test"
+author: "Kristoffer Magnusson"
+date: "`r Sys.Date()`"
+output:
+   rmarkdown::html_vignette:
+      toc: yes
+vignette: >
+  %\VignetteIndexEntry{Tutorial: test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r, include = FALSE}
+library(powerlmm)
+NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+knitr::opts_chunk$set(
+    eval = NOT_CRAN
+    )
+```
+
+```{r}
+Sys.getenv("NOT_CRAN")
+```
+
+
+```{r}
+if(NOT_CRAN) stop("NOT_CRAN") else stop("IS_CRAN")
+```
+
