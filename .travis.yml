@@ -4,6 +4,5 @@ language: R
 warnings_are_errors: true
 sudo: false
 cache: packages
-env:
-  global:
-    - NOT_CRAN="false""
+r_build_args: '--no-build-vignettes'
+r_check_args: '--ignore-vignettes'
