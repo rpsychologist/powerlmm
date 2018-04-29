@@ -714,13 +714,22 @@ analyze_data <- function(formula, d) {
             if(inherits(f, "plcp_sim_formula")) {
                 if(is.function(f$data_transform))
                     d <- f$data_transform(d)
-                lmmf <- f$formula
+                lmmf <- as.formula(f$formula)
             }
 
-           fit <- tryCatch(
-                #do.call(lme4::lmer, list(formula=f, data=d))
-                   fit <- lme4::lmer(formula = as.formula(lmmf), data = d)
-                )
+           # LMM or OLS
+           if(is.null(lme4::findbars(lmmf))) {
+               fit <- tryCatch(
+                   #do.call(lme4::lmer, list(formula=f, data=d))
+                   fit <- stats::lm(formula = lmmf, data = d)
+               )
+           } else {
+               fit <- tryCatch(
+                   #do.call(lme4::lmer, list(formula=f, data=d))
+                   fit <- lme4::lmer(formula = lmmf, data = d)
+               )
+           }
+
            list("fit" = fit,
                 "test" = f$test)
         })
@@ -737,6 +746,15 @@ extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n
            sim = sim)
 }
 extract_random_effects <- function(fit) {
+    UseMethod("extract_random_effects")
+}
+extract_random_effects.lm <- function(fit) {
+    data.frame(grp = "Residual",
+               vcov = stats::sigma(fit)^2,
+               parameter = "Residual_NA",
+               stringsAsFactors = FALSE)
+}
+extract_random_effects.lmerMod <- function(fit) {
     x <- as.data.frame(lme4::VarCorr(fit))
     vcovs <- x[is.na(x$var2),]
     vcovs$parameter <- paste(vcovs$grp, vcovs$var1, sep = "_")
@@ -754,55 +772,59 @@ extract_random_effects <- function(fit) {
     rbind(vcovs, correlations)
 }
 
+
+add_p_value <- function(fit, test, ...) {
+    UseMethod("add_p_value")
+}
 #' @importFrom utils packageVersion
-add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
-    test <- fit$test
-    fit <- fit$fit
-    tmp <- tryCatch(summary(fit))
-    tmp <- tmp$coefficients
+add_p_value.lmerMod <- function(fit, test, satterthwaite, df_bw = NULL, ...) {
+    if(satterthwaite) {
+        tmp <- tryCatch(summary(fit))
+        tmp <- tmp$coefficients
 
-    ff <- rownames(tmp)
-    # satterth dfs only for time:treatment
+        ff <- rownames(tmp)
+        # satterth dfs only for time:treatment
 
-    satterth_term <- any(ff %in% test)
-    ## satterthwaite
-    if(satterthwaite & satterth_term) {
-        ind <- which(ff %in% test)
+        satterth_term <- any(ff %in% test)
+        ## satterthwaite
+        if(satterth_term) {
+            ind <- which(ff %in% test)
 
-        L <- rep(0, length(ff))
-        L <- rep(list(L), length(ind))
+            L <- rep(0, length(ff))
+            L <- rep(list(L), length(ind))
 
-        for(i in seq_along(L)) {
-            L[[i]][ind[i]] <- 1
+            for(i in seq_along(L)) {
+                L[[i]][ind[i]] <- 1
+            }
+
+            # calcSatterth will be deprecated
+            if(packageVersion("lmerTest") >= "3.0.0") {
+                satt <- suppressMessages(tryCatch(lmerTest::contest(fit, L),
+                                                  error = function(e) { NA }))
+            } else {
+                satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
+                                                  error = function(e) { NA }))
+            }
+
+            df <- rep(NA, length(ff))
+            p <- rep(NA, length(ff))
+
+            if(inherits(satt, "list")) {
+                df[ind] <- satt$denom
+                p[ind] <- satt$pvalue
+            } else if(inherits(satt, "data.frame")) {
+                df[ind] <- satt$DenDF
+                p[ind] <- satt$`Pr(>F)`
+            }
+            if(any(is.na(p[ind]))) {
+                ind <- which(is.na(p[ind]))
+                tval <- tmp[ind, "t value"]
+                p[ind] <- 2*(1 - pt(abs(tval), df = df_bw))
+            }
+
+            res <- list("df" = df,
+                        "p" = p)
         }
-
-        # calcSatterth will be deprecated
-        if(packageVersion("lmerTest") >= "3.0.0") {
-            satt <- suppressMessages(tryCatch(lmerTest::contest(fit, L),
-                                              error = function(e) { NA }))
-        } else {
-            satt <- suppressMessages(tryCatch(lmerTest::calcSatterth(fit, L),
-                                              error = function(e) { NA }))
-        }
-
-        df <- rep(NA, length(ff))
-        p <- rep(NA, length(ff))
-
-        if(inherits(satt, "list")) {
-            df[ind] <- satt$denom
-            p[ind] <- satt$pvalue
-        } else if(inherits(satt, "data.frame")) {
-            df[ind] <- satt$DenDF
-            p[ind] <- satt$`Pr(>F)`
-        }
-        if(any(is.na(p[ind]))) {
-            ind <- which(is.na(p[ind]))
-            tval <- tmp[ind, "t value"]
-            p[ind] <- 2*(1 - pt(abs(tval), df = df_bw))
-        }
-
-        res <- list("df" = df,
-                    "p" = p)
     } else {
         res <- list("df" = NA,
                     "p" = NA)
@@ -810,7 +832,10 @@ add_p_value <- function(fit, satterthwaite, df_bw = NULL) {
 
 
     res
-
+}
+add_p_value.lm <- function(fit, ...) {
+    list("df" = NA,
+         "p" = NA)
 }
 fix_sath_NA_pval <- function(x, df) {
     ind <- is.na(x$pval)
@@ -823,11 +848,30 @@ fix_sath_NA_pval <- function(x, df) {
     x
 }
 
+get_fixef <- function(fit) {
+    UseMethod("get_fixef")
+}
+get_fixef.lmerMod <- function(fit) {
+    lme4::fixef(fit)
+}
+get_fixef.lm <- function(fit) {
+    stats::coef(fit)
+}
+get_converged_bool <- function(fit) {
+    UseMethod("get_converged_bool")
+}
+get_converged_bool.lmerMod <- function(fit) {
+    is.null(fit@optinfo$conv$lme4$code)
+}
+get_converged_bool.lm <- function(fit) {
+    TRUE
+}
+
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
     # need to know in which order time and treatment was entered
     # then adjust 'fit$test' to match
-    ff <- lme4::fixef(fit$fit)
+    ff <- get_fixef(fit$fit)
     rnames <- names(ff)
     TbT <- c("time:treatment", "treatment:time")
     ind <- TbT %in% rnames
@@ -839,7 +883,8 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     if(any(!fit$test %in% rnames)) stop("At least of the values in 'test' do no match the model's parameters: ", paste(rnames, collapse = ", "), call. = FALSE)
 
     se <- sqrt(diag(vcov(fit$fit)))
-    tmp_p <- add_p_value(fit = fit,
+    tmp_p <- add_p_value(fit = fit$fit,
+                         test = fit$test,
                          satterthwaite = satterthwaite,
                          df_bw = df_bw)
     FE <- data.frame(
@@ -848,26 +893,6 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
         "pval" = tmp_p$p,
         "df" = tmp_p$df
     )
-
-    # TODO:
-    # update so function is agnostic to if time:treatment or treatment:time
-    #
-
-
-    # if(any(fit$test %in% c("time:treatment", "treatment:time"))) {
-    #
-    #     more_tests <- fit$test[!fit$test %in%
-    #                                         c("time:treatment", "treatment:time")]
-    #
-    #     parm_id <- which(c("time:treatment", "treatment:time") %in% rnames)
-    #     CI_parm <- c("time:treatment", "treatment:time")[parm_id]
-    #     CI_parm <- c(CI_parm, more_tests)
-    #     rnames <- gsub("treatment:time", "time:treatment", rnames)
-    #     rnames <- gsub("treatment:time", "time:treatment", rnames)
-    #
-    # } else {
-    #     CI_parm <- fit$test
-    # }
 
     rownames(FE) <- NULL
     FE <- cbind(data.frame(parameter = rnames,
@@ -901,10 +926,10 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     }
     RE <- extract_random_effects(fit$fit)
 
-    conv <- is.null(fit$fit@optinfo$conv$lme4$code)
+    conv <- get_converged_bool(fit$fit)
 
     # save for postprocess LRT test
-    ll <- stats::logLik(fit$fit)
+    ll <- stats::logLik(fit$fit, REML = TRUE)
     df <- attr(ll, "df")
     RE$sim <- sim
     FE$sim <- sim
