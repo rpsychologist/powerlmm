@@ -36,7 +36,7 @@ knitr::opts_chunk$set(
 #  cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
 #  
 #  res <- simulate(object = p,
-#                  nsim = 5000,
+#                  nsim = 1000,
 #                  formula = f,
 #                  satterthwaite = TRUE,
 #                  cores = cores,
@@ -54,7 +54,7 @@ knitr::opts_chunk$set(
 #                                      (1 + time | subject)")
 #  
 #  res <- simulate(object = p,
-#                  nsim = 5000,
+#                  nsim = 1000,
 #                  formula = f,
 #                  satterthwaite = TRUE,
 #                  cores = cores,
@@ -85,7 +85,7 @@ knitr::opts_chunk$set(
 #                   (0 + treatment:time | cluster)")
 #  
 #  res <- simulate(object = p,
-#                  nsim = 5000,
+#                  nsim = 1000,
 #                  formula = f,
 #                  satterthwaite = TRUE,
 #                  cores = cores,
@@ -120,7 +120,7 @@ knitr::opts_chunk$set(
 #                           "cluster-intercept" = f3)
 #  
 #  res <- simulate(p, formula = f,
-#                  nsim = 5000,
+#                  nsim = 1000,
 #                  satterthwaite = TRUE,
 #                  cores = cores,
 #                  CI = FALSE)
@@ -148,7 +148,7 @@ knitr::opts_chunk$set(
 #  p1 <- update(p, effect_size = cohend(0.8))
 #  res_power <- simulate(p1,
 #                        formula = f,
-#                        nsim = 500,
+#                        nsim = 1000,
 #                        satterthwaite = TRUE,
 #                        cores = cores,
 #                        CI = FALSE)
@@ -179,7 +179,7 @@ knitr::opts_chunk$set(
 #  ## Not run:
 #  res <- simulate(p,
 #                  formula = f,
-#                  nsim = 2000,
+#                  nsim = 1000,
 #                  cores = cores,
 #                  satterthwaite = TRUE)
 #  summary(res)
@@ -199,7 +199,7 @@ knitr::opts_chunk$set(
 #  ## Not run:
 #  res <- simulate(p,
 #                  formula = f,
-#                  nsim = 2000,
+#                  nsim = 1000,
 #                  cores = cores,
 #                  satterthwaite = TRUE)
 #  

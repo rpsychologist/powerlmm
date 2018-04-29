@@ -74,8 +74,16 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(powerlmm)
+NOT_CRAN &lt;-<span class="st"> </span><span class="kw">identical</span>(<span class="kw">tolower</span>(<span class="kw">Sys.getenv</span>(<span class="st">&quot;NOT_CRAN&quot;</span>)), <span class="st">&quot;true&quot;</span>)
+knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(
+    <span class="dt">eval =</span> NOT_CRAN
+    )
+
+NOT_CRAN</code></pre></div>
+<pre><code>## [1] FALSE</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">Sys.getenv</span>(<span class="st">&quot;NOT_CRAN&quot;</span>)</code></pre></div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span>(NOT_CRAN) <span class="kw">stop</span>(<span class="st">&quot;NOT_CRAN&quot;</span>) <span class="cf">else</span> <span class="kw">stop</span>(<span class="st">&quot;IS_CRAN&quot;</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span>(NOT_CRAN) <span class="ot">TRUE</span> <span class="cf">else</span> <span class="kw">stop</span>(<span class="st">&quot;print IS_CRAN&quot;</span>)</code></pre></div>
 
 
 

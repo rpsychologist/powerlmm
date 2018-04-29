@@ -127,7 +127,7 @@ p</code></pre></div>
 cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>(<span class="dt">logical =</span> <span class="ot">FALSE</span>) <span class="co"># use all physical CPU cores</span>
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
-                <span class="dt">nsim =</span> <span class="dv">5000</span>,
+                <span class="dt">nsim =</span> <span class="dv">1000</span>,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                 <span class="dt">cores =</span> cores,
@@ -151,7 +151,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
 <span class="st">                                    (1 + time | subject)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
-                <span class="dt">nsim =</span> <span class="dv">5000</span>,
+                <span class="dt">nsim =</span> <span class="dv">1000</span>,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                 <span class="dt">cores =</span> cores,
@@ -185,7 +185,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class=
 <span class="st">                 (0 + treatment:time | cluster)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
-                <span class="dt">nsim =</span> <span class="dv">5000</span>,
+                <span class="dt">nsim =</span> <span class="dv">1000</span>,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                 <span class="dt">cores =</span> cores,
@@ -219,7 +219,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
                          <span class="st">&quot;cluster-intercept&quot;</span> =<span class="st"> </span>f3)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p, <span class="dt">formula =</span> f, 
-                <span class="dt">nsim =</span> <span class="dv">5000</span>, 
+                <span class="dt">nsim =</span> <span class="dv">1000</span>, 
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>, 
                 <span class="dt">cores =</span> cores,
                 <span class="dt">CI =</span> <span class="ot">FALSE</span>)
@@ -247,7 +247,7 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p, <span clas
 p1 &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">effect_size =</span> <span class="kw">cohend</span>(<span class="fl">0.8</span>))
 res_power &lt;-<span class="st"> </span><span class="kw">simulate</span>(p1, 
                       <span class="dt">formula =</span> f, 
-                      <span class="dt">nsim =</span> <span class="dv">500</span>, 
+                      <span class="dt">nsim =</span> <span class="dv">1000</span>, 
                       <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                       <span class="dt">cores =</span> cores, 
                       <span class="dt">CI =</span> <span class="ot">FALSE</span>)</code></pre></div>
@@ -277,7 +277,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
 ## Not run: 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p,
                 <span class="dt">formula =</span> f,
-                <span class="dt">nsim =</span> <span class="dv">2000</span>,
+                <span class="dt">nsim =</span> <span class="dv">1000</span>,
                 <span class="dt">cores =</span> cores,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>)
 <span class="kw">summary</span>(res)</code></pre></div>
@@ -298,7 +298,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
 ## Not run: 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p,
                 <span class="dt">formula =</span> f,
-                <span class="dt">nsim =</span> <span class="dv">2000</span>,
+                <span class="dt">nsim =</span> <span class="dv">1000</span>,
                 <span class="dt">cores =</span> cores,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>)
 

@@ -62,7 +62,7 @@ f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluste
 cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
 
 res <- simulate(object = p,
-                nsim = 5000,
+                nsim = 1000,
                 formula = f,
                 satterthwaite = TRUE,
                 cores = cores,
@@ -87,7 +87,7 @@ f <- sim_formula_compare("correct" = "y ~ treatment * time +
                                     (1 + time | subject)")
 
 res <- simulate(object = p,
-                nsim = 5000,
+                nsim = 1000,
                 formula = f,
                 satterthwaite = TRUE,
                 cores = cores,
@@ -125,7 +125,7 @@ f <- sim_formula("y ~ treatment * time + (1 + time | subject) +
                  (0 + treatment:time | cluster)")
 
 res <- simulate(object = p,
-                nsim = 5000,
+                nsim = 1000,
                 formula = f,
                 satterthwaite = TRUE,
                 cores = cores,
@@ -166,7 +166,7 @@ f <- sim_formula_compare("subject-intercept" = f0,
                          "cluster-intercept" = f3)
 
 res <- simulate(p, formula = f, 
-                nsim = 5000, 
+                nsim = 1000, 
                 satterthwaite = TRUE, 
                 cores = cores,
                 CI = FALSE)
@@ -194,7 +194,7 @@ summary(res, model = "m3")
 p1 <- update(p, effect_size = cohend(0.8))
 res_power <- simulate(p1, 
                       formula = f, 
-                      nsim = 500, 
+                      nsim = 1000, 
                       satterthwaite = TRUE,
                       cores = cores, 
                       CI = FALSE)
@@ -227,7 +227,7 @@ f <- sim_formula_compare("posttest" = f_pt, "longitudinal" = f_lt)
 ## Not run: 
 res <- simulate(p,
                 formula = f,
-                nsim = 2000,
+                nsim = 1000,
                 cores = cores,
                 satterthwaite = TRUE)
 summary(res)
@@ -252,7 +252,7 @@ f <- sim_formula_compare("post_ignore" = f0, "post_2lvl" = f1)
 ## Not run: 
 res <- simulate(p,
                 formula = f,
-                nsim = 2000,
+                nsim = 1000,
                 cores = cores,
                 satterthwaite = TRUE)
 
