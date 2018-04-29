@@ -2,13 +2,63 @@
 % Please edit documentation in R/simulate.R
 \name{transform_to_posttest}
 \alias{transform_to_posttest}
-\title{Helper to transform to posttest}
+\title{Helper to transform the simulated longitudinal \code{data.frame}}
 \usage{
 transform_to_posttest(data)
 }
 \arguments{
-\item{data}{}
+\item{data}{a \code{data.frame} created using \code{\link{simulate_data}}}
+}
+\value{
+a \code{data.frame}. Includes two new columns:
+\itemize{
+   \item \code{pre} subject-level pretest scores.
+   \item \code{pre_cluster} cluster-level pretest scores.
+}
 }
 \description{
-Helper to transform to posttest
+This is en example of a data transformation applied during simulation.
+It takes the longitudinal data and transforms it into a pretest-posttest
+model in wide format. Usefull if when you want to compare the longitudinal and
+the cross-sectional model.
+}
+\examples{
+
+# Compare longitudinal 3-level model to 2-level model
+# fit to just the posttest data
+#
+# Both models are fit to the same dataset during simulation.
+p <- study_parameters(n1 = 11,
+                      n2 = 20,
+                      n3 = 3,
+                      icc_pre_subject = 0.5,
+                      icc_pre_cluster = 0.1,
+                      icc_slope = 0.05,
+                      var_ratio = 0.03)
+
+# simulation formulas
+# analyze as a posttest only 2-level model
+f_pt <- sim_formula("y ~ treatment + (1 | cluster)",
+                 test = "treatment",
+                 data_transform = transform_to_posttest)
+
+# analyze as 3-level longitudinal
+f_lt <- sim_formula("y ~ time*treatment +
+                         (1 + time | subject) +
+                         (1 + time | cluster)")
+
+f <- sim_formula_compare("posttest" = f_pt,
+                         "longitudinal" = f_lt)
+\dontrun{
+res <- simulate(p,
+                formula = f,
+                nsim = 2000,
+                cores = parallel::detectCores(),
+                satterthwaite = TRUE)
+summary(res)
+}
+
+}
+\seealso{
+\code{\link{simulate.plcp}}, \code{\link{study_parameters}}
 }

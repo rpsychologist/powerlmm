@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate.R
 \name{sim_formula}
 \alias{sim_formula}
-\title{Create simulation formula}
+\title{Create a simulation formula}
 \usage{
 sim_formula(formula, data_transform = NULL, test = "time:treatment")
 }
@@ -19,11 +19,11 @@ Only applies to tests using Satterthwaite dfs, or when calculating confidence in
 Object with class \code{plcp_sim_formula}
 }
 \description{
-Create simulation formula
+Create a simulation formula
 }
 \examples{
 f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
 }
 \seealso{
-\code{\link{sim_formula_compare}}
+\code{\link{sim_formula_compare}}, \code{\link{transform_to_posttest}}
 }

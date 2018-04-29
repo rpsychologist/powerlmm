@@ -48,7 +48,7 @@ create_dropout_indicator <- function(paras) {
 
 # sim formula -------------------------------------------------------------
 
-#' Create simulation formula
+#' Create a simulation formula
 #'
 #' @param formula A \code{character} containing a lme4 formula.
 #' @param data_transform Optional; a \code{function} that applies a transformation
@@ -56,8 +56,13 @@ create_dropout_indicator <- function(paras) {
 #' @param test A \code{character} vector indicating wich parameters should be tested.
 #' Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.
 #'
+#' @details
+#'
+#' It is possible to fit model without any random effects. If no random effects is specified
+#' the model is fit using \code{lm()}.
+#'
 #' @return Object with class \code{plcp_sim_formula}
-#' @seealso \code{\link{sim_formula_compare}}
+#' @seealso \code{\link{sim_formula_compare}}, \code{\link{transform_to_posttest}}
 #' @export
 #'
 #' @examples
@@ -143,14 +148,60 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 # data transform helpers --------------------------------------------------
 
 
-#' Helper to transform to posttest
+#' Helper to transform the simulated longitudinal \code{data.frame}
 #'
-#' @param data
+#' This is en example of a data transformation applied during simulation.
+#' It takes the longitudinal data and transforms it into a pretest-posttest
+#' model in wide format. Usefull if when you want to compare the longitudinal and
+#' the cross-sectional model.
 #'
-#' @return
+#' @param data a \code{data.frame} created using \code{\link{simulate_data}}
+#'
+#' @return a \code{data.frame}. Includes two new columns:
+#' \itemize{
+#'    \item \code{pre} subject-level pretest scores.
+#'    \item \code{pre_cluster} cluster-level pretest scores.
+#' }
 #' @export
 #'
+#' @seealso \code{\link{simulate.plcp}}, \code{\link{study_parameters}}
+#'
 #' @examples
+#'
+#' # Compare longitudinal 3-level model to 2-level model
+#' # fit to just the posttest data
+#' #
+#' # Both models are fit to the same dataset during simulation.
+#' p <- study_parameters(n1 = 11,
+#'                       n2 = 20,
+#'                       n3 = 3,
+#'                       icc_pre_subject = 0.5,
+#'                       icc_pre_cluster = 0.1,
+#'                       icc_slope = 0.05,
+#'                       var_ratio = 0.03)
+#'
+#' # simulation formulas
+#' # analyze as a posttest only 2-level model
+#' f_pt <- sim_formula("y ~ treatment + (1 | cluster)",
+#'                  test = "treatment",
+#'                  data_transform = transform_to_posttest)
+#'
+#' # analyze as 3-level longitudinal
+#' f_lt <- sim_formula("y ~ time*treatment +
+#'                          (1 + time | subject) +
+#'                          (1 + time | cluster)")
+#'
+#' f <- sim_formula_compare("posttest" = f_pt,
+#'                          "longitudinal" = f_lt)
+#' \dontrun{
+#' res <- simulate(p,
+#'                 formula = f,
+#'                 nsim = 2000,
+#'                 cores = parallel::detectCores(),
+#'                 satterthwaite = TRUE)
+#' summary(res)
+#'}
+#'
 transform_to_posttest <- function(data) {
     tmp <- data[data$time == max(data$time), ]
     tmp$pretest <- data[data$time == min(data$time), "y"]
@@ -1180,6 +1231,8 @@ print.plcp_sim_summary <- function(x, digits = 2, ...) {
         print(res$model_selected)
     }
     if(any(x$correct$RE$is_NA > 0)) warning("Some estimated random effects were removed due to being NA.", call. = FALSE)
+    data_bool <- vapply(res$formula, function(x) is.function(x$data_transform), logical(1))
+    if(any(data_bool)) message("At least one of the models applied a data transformation during simulation, summaries that depend on the true parameter values will no longer be correct, see 'help(summary.plcp_sim)'")
 }
 
 #' Print method for \code{simulate.plcp_multi}-objects
@@ -1275,6 +1328,14 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #' post-processing step, so \code{model_selection} option will not rerun the simulation. This also means that different alpha levels
 #' for the LRTs can be investigated without rerunning the simulation.
 #'
+#' \strong{Data transformation}
+#'
+#' If the data has been transformed \code{sim_formula(data_transform = ...)}, then
+#' true parameter values (\code{theta}s shown in the summary will most likely no longer
+#' apply. Hence, relative bias and CI coverage will be in relation to the original model.
+#' However, the empirical estimates will be summarised correctly, enabling investigation of
+#' power and Type I errors using arbitrary transformation.
+#'
 #' @return Object with class \code{plcp_sim_summary}. It contains
 #' the following output:
 #' \itemize{
@@ -1305,7 +1366,8 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
               nsim = res$nsim,
               paras = res$paras,
               tot_n = x[[1]]$tot_n,
-              alpha = alpha)
+              alpha = alpha,
+              formula = res$formula)
     if("model_selected" %in% names(res)) {
         x$model_selected <- res$model_selected
         x$model_direction <- res$model_direction

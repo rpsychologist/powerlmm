@@ -66,4 +66,12 @@ The model comparison is performed using a likelihood ratio test based the REML c
 with the same fixed effects, and that of the models is a reduced veresion of the other (nested models). The LRT test is done as a
 post-processing step, so \code{model_selection} option will not rerun the simulation. This also means that different alpha levels
 for the LRTs can be investigated without rerunning the simulation.
+
+\strong{Data transformation}
+
+If the data has been transformed \code{sim_formula(data_transform = ...)}, then
+true parameter values (\code{theta}s shown in the summary will most likely no longer
+apply. Hence, relative bias and CI coverage will be in relation to the original model.
+However, the empirical estimates will be summarised correctly, enabling investigation of
+power and Type I errors using arbitrary transformation.
 }

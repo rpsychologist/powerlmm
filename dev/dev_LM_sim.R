@@ -1,25 +1,10 @@
-library(lme4)
 
 p <- study_parameters(n1 = 11,
                       n2 = 20,
                       n3 = 4,
                       icc_pre_cluster = 0.1,
-                      icc_pre_subject = 0.5,
+                      icc_pre_subject = 0.5
                       )
-
-d <- simulate_data(p)
-d <- transform_to_posttest(d)
-
-fit0 <- lm(y ~ treatment, d)
-fit1 <- lme4::lmer(y ~ treatment + (1 | cluster), data = d)
-
-anova(fit1, fit0, refit = FALSE)
-ranova(fit1)
-
-logLik(fit0, REML = TRUE)
-logLik(fit1, REML = TRUE)
-
-##
 
 
 f0 <- sim_formula("y ~ treatment",
@@ -35,9 +20,6 @@ res <- simulate(p, nsim = 50, formula = sim_formula_compare("m0" = f0, "m1" = f1
                 satterthwaite = TRUE)
 
 summary(res)
-summary(res, model_selection = "FW")
-
-summary(res, df_bw = list("treatment" = 4))
 summary(res, model_selection = "FW")
 
 
