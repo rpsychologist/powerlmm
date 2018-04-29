@@ -5,5 +5,5 @@ warnings_are_errors: true
 sudo: false
 cache: packages
 env:
-    global:
-        - NOT_CRAN="false"
+  global:
+    - NOT_CRAN=false
