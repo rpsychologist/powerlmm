@@ -32,7 +32,7 @@ simulation setups.}
 approximation will be used when computing \emph{p}-values. This is implemented using
 the \code{lmerTest}-package. See \emph{Details}.}
 
-\item{CI}{Logical; if \code{TRUE} coverage rates for confidence intervals
+\item{CI}{Logical; if \code{TRUE} coverage rates for 95 \% confidence intervals
 will be calculated. See \emph{Details}.}
 
 \item{cores}{Number of CPU cores to use. If called from a GUI environment (e.g. RStudio) or
@@ -80,11 +80,12 @@ can be created automatically using \code{\link{create_lmer_formula}}.
 
 \strong{Satterthwaite's approximation, and CI coverage}
 
-To decrease the simulation time Satterthwaite's \emph{dfs} and the CIs' coverage rates
-will only be calculated for the test of 'time:treatment'-interaction.
+To decrease the simulation time the default is to only calculate Satterthwaite's \emph{dfs}
+and the CIs' coverage rates for the test of 'time:treatment'-interaction. This can be
+changed using the argument \code{test} in \code{\link{sim_formula}}.
 
 Confidence intervals are both calculated using profile likelihood and by
-the Wald approximation.
+the Wald approximation, using a 95 \% confidence level.
 
 \strong{Saving intermediate results for multi-sims}
 
@@ -125,7 +126,7 @@ res <- simulate(object = p,
 summary(res)
 
 
-# Three-level (nested) ---------------------------------------------------------
+# Three-level (nested) ------------------------------------------------------
 p <- study_parameters(n1 = 10,
                       n2 = 20,
                       n3 = 4,
@@ -137,8 +138,10 @@ p <- study_parameters(n1 = 10,
                       effect_size = cohend(0.5))
 
 ## compare correct and miss-specified model
-f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-                         "wrong" = "y ~ treatment * time + (1 + time | subject)")
+f0 <- "y ~ treatment * time + (1 + time | subject)"
+f1 <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+f <- sim_formula_compare("correct" = f1,
+                         "wrong" = f0)
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -151,7 +154,7 @@ res <- simulate(object = p,
 summary(res)
 
 
-# Partially nested design ------------------------------------------------
+# Partially nested design ---------------------------------------------------
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 4,
@@ -164,7 +167,8 @@ p <- study_parameters(n1 = 11,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.5))
 
-f <- sim_formula("y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)")
+f <- sim_formula("y ~ treatment * time + (1 + time | subject) +
+                  (0 + treatment:time | cluster)")
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -176,7 +180,7 @@ res <- simulate(object = p,
 
 summary(res)
 
-# Run multiple designs  --------------------------------------------------------
+# Run multiple designs  -----------------------------------------------------
 p <- study_parameters(n1 = 10,
                       n2 = 20,
                       n3 = c(2, 4, 6),
@@ -187,8 +191,10 @@ p <- study_parameters(n1 = 10,
                       sigma_error = 1.44,
                       effect_size = cohend(0.5))
 
-f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-                         "wrong" = "y ~ treatment * time + (1 + time | subject)")
+f0 <- "y ~ treatment * time + (1 + time | subject)"
+f1 <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+f <- sim_formula_compare("correct" = f1,
+                         "wrong" = f0)
 
 res <- simulate(object = p,
                 nsim = 1000,

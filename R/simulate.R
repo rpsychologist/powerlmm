@@ -141,6 +141,16 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 }
 
 # data transform helpers --------------------------------------------------
+
+
+#' Helper to transform to posttest
+#'
+#' @param data
+#'
+#' @return
+#' @export
+#'
+#' @examples
 transform_to_posttest <- function(data) {
     tmp <- data[data$time == max(data$time), ]
     tmp$pretest <- data[data$time == min(data$time), "y"]
@@ -231,7 +241,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @param satterthwaite Logical; if \code{TRUE} Satterthwaite's degrees of freedom
 #' approximation will be used when computing \emph{p}-values. This is implemented using
 #' the \code{lmerTest}-package. See \emph{Details}.
-#' @param CI Logical; if \code{TRUE} coverage rates for confidence intervals
+#' @param CI Logical; if \code{TRUE} coverage rates for 95 \% confidence intervals
 #' will be calculated. See \emph{Details}.
 #' @param cores Number of CPU cores to use. If called from a GUI environment (e.g. RStudio) or
 #' a computer running Microsoft Windows, PSOCK clusters will be used. If called from a
@@ -245,7 +255,6 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @param ... Optional arguments, see \emph{Saving} in \emph{Details} section.
 #'
 #' @importFrom stats simulate as.formula confint pnorm pt qnorm qt rmultinom sd time vcov reshape
-#'
 #' @details
 #'
 #' See also \code{vignette("simulations", package = "powerlmm")} for a tutorial.
@@ -275,11 +284,12 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' \strong{Satterthwaite's approximation, and CI coverage}
 #'
-#' To decrease the simulation time Satterthwaite's \emph{dfs} and the CIs' coverage rates
-#' will only be calculated for the test of 'time:treatment'-interaction.
+#' To decrease the simulation time the default is to only calculate Satterthwaite's \emph{dfs}
+#' and the CIs' coverage rates for the test of 'time:treatment'-interaction. This can be
+#' changed using the argument \code{test} in \code{\link{sim_formula}}.
 #'
 #' Confidence intervals are both calculated using profile likelihood and by
-#' the Wald approximation.
+#' the Wald approximation, using a 95 \% confidence level.
 #'
 #' \strong{Saving intermediate results for multi-sims}
 #'
@@ -322,7 +332,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' summary(res)
 #'
 #'
-#' # Three-level (nested) ---------------------------------------------------------
+#' # Three-level (nested) ------------------------------------------------------
 #' p <- study_parameters(n1 = 10,
 #'                       n2 = 20,
 #'                       n3 = 4,
@@ -334,8 +344,10 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       effect_size = cohend(0.5))
 #'
 #' ## compare correct and miss-specified model
-#' f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-#'                          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+#' f0 <- "y ~ treatment * time + (1 + time | subject)"
+#' f1 <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+#' f <- sim_formula_compare("correct" = f1,
+#'                          "wrong" = f0)
 #'
 #' res <- simulate(object = p,
 #'                 nsim = 1000,
@@ -348,7 +360,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' summary(res)
 #'
 #'
-#' # Partially nested design ------------------------------------------------
+#' # Partially nested design ---------------------------------------------------
 #' p <- study_parameters(n1 = 11,
 #'                       n2 = 10,
 #'                       n3 = 4,
@@ -361,7 +373,8 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       partially_nested = TRUE,
 #'                       effect_size = cohend(-0.5))
 #'
-#' f <- sim_formula("y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)")
+#' f <- sim_formula("y ~ treatment * time + (1 + time | subject) +
+#'                   (0 + treatment:time | cluster)")
 #'
 #' res <- simulate(object = p,
 #'                 nsim = 1000,
@@ -373,7 +386,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' summary(res)
 #'
-#' # Run multiple designs  --------------------------------------------------------
+#' # Run multiple designs  -----------------------------------------------------
 #' p <- study_parameters(n1 = 10,
 #'                       n2 = 20,
 #'                       n3 = c(2, 4, 6),
@@ -384,8 +397,10 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_error = 1.44,
 #'                       effect_size = cohend(0.5))
 #'
-#' f <- sim_formula_compare("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-#'                          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+#' f0 <- "y ~ treatment * time + (1 + time | subject)"
+#' f1 <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+#' f <- sim_formula_compare("correct" = f1,
+#'                          "wrong" = f0)
 #'
 #' res <- simulate(object = p,
 #'                 nsim = 1000,
@@ -750,6 +765,8 @@ extract_random_effects <- function(fit) {
 }
 extract_random_effects.lm <- function(fit) {
     data.frame(grp = "Residual",
+               var1 = NA,
+               var2 = NA,
                vcov = stats::sigma(fit)^2,
                parameter = "Residual_NA",
                stringsAsFactors = FALSE)
@@ -833,9 +850,27 @@ add_p_value.lmerMod <- function(fit, test, satterthwaite, df_bw = NULL, ...) {
 
     res
 }
-add_p_value.lm <- function(fit, ...) {
-    list("df" = NA,
-         "p" = NA)
+add_p_value.lm <- function(fit, test, ...) {
+
+    tmp <- summary(fit)
+    tmp <- as.data.frame(tmp$coefficients)
+    ff <- rownames(tmp)
+    ind <- which(ff %in% test)
+    # satterth dfs only for time:treatment
+
+    if(any(ff %in% test)) {
+        df <- rep(NA, length(ff))
+        p <- rep(NA, length(ff))
+        df[ind] <- fit$df.residual
+        p[ind] <- tmp$`Pr(>|t|)`[ind]
+
+        list("df" = df,
+             "p" = p)
+    } else {
+        list("df" = NA,
+             "p" = NA)
+    }
+
 }
 fix_sath_NA_pval <- function(x, df) {
     ind <- is.na(x$pval)
@@ -903,10 +938,10 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
 
     if (CI) {
-        CI <- tryCatch(stats::confint(fit$fit, parm = fit$test),
+        CI <- tryCatch(confint(fit$fit, parm = fit$test),
                        error = function(e) NA)
         CI_wald <-
-            tryCatch(stats::confint(fit$fit, method = "Wald", parm = fit$test),
+            tryCatch(confint(fit$fit, method = "Wald", parm = fit$test),
                      error = function(e) NA)
         CIs <- fit$test
         if(all(is.na(CI))) {
@@ -1090,7 +1125,7 @@ print_test_NA <- function(i, x) {
     non_convergence <- 1 - x[[i]]$convergence
 
     mess <- NULL
-    if(Satt_NA > 0) {
+    if(!is.na(Satt_NA) && Satt_NA > 0) {
         message("[Model: ", mod_name, "] ", round(Satt_NA, 4) * 100, "% of the Satterthwaite calculations failed")
     }
     if(CI_NA > 0) {
@@ -1264,7 +1299,8 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
     res <- object
     x <- lapply(res$res, summary_.plcp_sim,
                 paras = res$paras,
-                alpha = alpha)
+                alpha = alpha,
+                ...)
     x <- list(summary = x,
               nsim = res$nsim,
               paras = res$paras,
@@ -1289,16 +1325,16 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
 
     if(is.null(model_selection)) {
         if(is.null(model)) {
-            summary.plcp_sim(object)
+            summary.plcp_sim(object, alpha = alpha, ...)
         } else {
             object$res <- object$res[model]
-            summary.plcp_sim(object)
+            summary.plcp_sim(object, alpha = alpha, ...)
         }
     } else if(model_selection %in% c("FW", "BW")) {
         x <- do_model_selection(object,
                                 direction = model_selection,
                                 alpha = LRT_alpha)
-        summary.plcp_sim(x)
+        summary.plcp_sim(x, alpha = alpha, ...)
 
     }
 
@@ -1333,7 +1369,7 @@ summarize_RE <- function(res, theta) {
 
     RE
 }
-summarize_FE <- function(res, theta, alpha) {
+summarize_FE <- function(res, theta, alpha, df_bw = NULL) {
     d <- res$FE
     parms <- unique(d$parameter)
     tmp <- vector("list", length(parms))
@@ -1344,7 +1380,12 @@ summarize_FE <- function(res, theta, alpha) {
         estimate <- d[ind, "estimate"]
         pval <- d[ind, "pval"]
         df <- d[ind, "df"]
-        df_bw <- d[ind, "df_bw"]
+        if(is.null(df_bw)) {
+            tmp_df_bw <- unique(d[ind, "df_bw"])
+        } else if(is.list(df_bw)) {
+            tmp_df_bw <- df_bw[[para]]
+        }
+
 
         if(any(!is.na(pval))) {
             Satt_NA <- mean(is.na(df))
@@ -1353,7 +1394,7 @@ summarize_FE <- function(res, theta, alpha) {
        # para <- i
         #theta_i <- theta[[i]]
         pvals_bw <- get_p_val_df(t = estimate/se,
-                                 df = df_bw,
+                                 df = tmp_df_bw,
                                  parameter = para,
                                  test = unique(d[!is.na(d$df_bw), "parameter"]))
         if(para %in% names(theta)) {
@@ -1367,7 +1408,7 @@ summarize_FE <- function(res, theta, alpha) {
                     SD_est = sd(estimate),
                     Power = mean(get_cover(estimate, se, alpha = alpha)),
                     Power_bw = mean(pvals_bw < alpha),
-                    Power_satt = mean(pval < alpha),
+                    Power_satt = mean(pval < alpha, na.rm=TRUE),
                     Satt_NA = Satt_NA
                 )
 
@@ -1408,7 +1449,7 @@ summarize_CI <- function(res, theta = NULL) {
 
     CI_cov
 }
-summary_.plcp_sim  <- function(res, paras, alpha) {
+summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
     RE_params <-
         data.frame(
             parameter = c(
@@ -1457,7 +1498,8 @@ summary_.plcp_sim  <- function(res, paras, alpha) {
 
     FE <- summarize_FE(res = res,
                        theta = theta,
-                       alpha = alpha)
+                       alpha = alpha,
+                       df_bw = df_bw)
 
     if(all(is.na(res$FE$pval))) {
         Satt_NA <- 0
@@ -1673,7 +1715,7 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
 
     theta <- switch(
         para,
-        "intercept" = res$paras$fixed_intercept,
+        "(Intercept)" = res$paras$fixed_intercept,
         "treatment" = 0,
         "time" = res$paras$fixed_slope,
         "time:treatment" = get_slope_diff(res$paras) / res$paras$T_end,
@@ -1694,7 +1736,8 @@ summary_fixed.plcp_multi_sim <- function(res, para, model, alpha) {
                             alpha = alpha))
     power_bw <- get_p_val_df(t = out$estimate/out$se,
                              df = out$df_bw,
-                             parameter = para)
+                             parameter = para,
+                             test = para)
     Satt_NA <-  mean(is.na(out$df))
 
     ret <- with(
