@@ -5,17 +5,16 @@ date: "`r Sys.Date()`"
 output:
    rmarkdown::html_vignette:
       toc: yes
-params:
-   EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")        
 vignette: >
   %\VignetteIndexEntry{Tutorial: Evaluate the Models Using Monte Carlo Simulations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, include = FALSE}
 library(powerlmm)
+NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 knitr::opts_chunk$set(
-    eval = FALSE
+    eval = NOT_CRAN
     )
 ```
 
@@ -57,9 +56,12 @@ We would need about 5000 simulation if we want our empirical power to be +/- 1% 
 Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computations will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and the simulation is run non-interactively in a terminal then forking is used. 
 
 ```{r}
-f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
+f <- sim_formula("y ~ treatment * time + 
+                 (1 + time | subject) + 
+                 (0 + treatment:time | cluster)")
 
 cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
+nsim <- 4
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -87,7 +89,7 @@ f <- sim_formula_compare("correct" = "y ~ treatment * time +
                                     (1 + time | subject)")
 
 res <- simulate(object = p,
-                nsim = 1000,
+                nsim = nsim,
                 formula = f,
                 satterthwaite = TRUE,
                 cores = cores,
@@ -125,21 +127,21 @@ f <- sim_formula("y ~ treatment * time + (1 + time | subject) +
                  (0 + treatment:time | cluster)")
 
 res <- simulate(object = p,
-                nsim = 1000,
+                nsim = nsim,
                 formula = f,
                 satterthwaite = TRUE,
                 cores = cores,
-                save = FALSE)
+                batch_progress = FALSE)
 ```
 
 The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups `nsim` number of simulations will be performed. With multiple designs `summary` works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.
 
 ```{r}
 # Summarize the 'time:treatment' results 
-summary(res, para = "time:treatment", type = "fixed", model = "correct")
+summary(res, para = "time:treatment", type = "fixed")
 
 # Summarize the cluster-level random slope 
-summary(res, para = "cluster_slope", type = "random", model = "correct")
+summary(res, para = "cluster_slope", type = "random")
 
 ```
 
@@ -166,7 +168,7 @@ f <- sim_formula_compare("subject-intercept" = f0,
                          "cluster-intercept" = f3)
 
 res <- simulate(p, formula = f, 
-                nsim = 1000, 
+                nsim = nsim, 
                 satterthwaite = TRUE, 
                 cores = cores,
                 CI = FALSE)
@@ -182,23 +184,25 @@ summary(res, model = "subject-slope")
 summary(res, model_selection = "FW", LRT_alpha = 0.25)
 
 # compare with the correct model
-summary(res, model = "m2")
+summary(res, model = "cluster-slope")
 
 # unecessary 3-level random slope
 # conservative, and convergence warnings.
 # leads overestiamed cluster-level random slope
-summary(res, model = "m3")
+summary(res, model = "cluster-intercept")
 
 
 # See if power is impacted
 p1 <- update(p, effect_size = cohend(0.8))
 res_power <- simulate(p1, 
                       formula = f, 
-                      nsim = 1000, 
+                      nsim = nsim, 
                       satterthwaite = TRUE,
                       cores = cores, 
                       CI = FALSE)
 
+# we can also summary a fixed effect for convenience
+summary(res_power, para = "time:treatment")
 
 ```
 
@@ -227,7 +231,7 @@ f <- sim_formula_compare("posttest" = f_pt, "longitudinal" = f_lt)
 ## Not run: 
 res <- simulate(p,
                 formula = f,
-                nsim = 1000,
+                nsim = nsim,
                 cores = cores,
                 satterthwaite = TRUE)
 summary(res)
@@ -252,12 +256,12 @@ f <- sim_formula_compare("post_ignore" = f0, "post_2lvl" = f1)
 ## Not run: 
 res <- simulate(p,
                 formula = f,
-                nsim = 1000,
+                nsim = nsim,
                 cores = cores,
                 satterthwaite = TRUE)
 
 # type I OLS model
-sumamry(res, model = "post_ignore")
+summary(res, model = "post_ignore")
 
 # model selection
 summary(res, model_selection = "FW")

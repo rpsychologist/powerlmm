@@ -81,9 +81,11 @@ knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="k
     )
 
 NOT_CRAN</code></pre></div>
-<pre><code>## [1] FALSE</code></pre>
+<pre><code>## [1] TRUE</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">Sys.getenv</span>(<span class="st">&quot;NOT_CRAN&quot;</span>)</code></pre></div>
+<pre><code>## [1] &quot;true&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span>(NOT_CRAN) <span class="ot">TRUE</span> <span class="cf">else</span> <span class="kw">stop</span>(<span class="st">&quot;print IS_CRAN&quot;</span>)</code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
 
 
 

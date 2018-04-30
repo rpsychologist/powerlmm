@@ -1132,19 +1132,31 @@ munge_results_ <- function(model, res, effect) {
 print_model <- function(i, x, digits) {
     models <- names(x)
     cat("Model: ", models[i], "\n")
-    cat("  Random effects\n\n")
-    RE <- format(x[[i]]$RE, digits = digits)
-    print.data.frame(x[[i]]$RE,
-                     row.names = FALSE,
-                     digits = digits,
-                     quote = FALSE)
-    cat("\n  Fixed effects\n\n")
+    RE <- x[[i]]$RE
+    if(!is.na(RE)) {
+        RE <- format(RE, digits = digits)
+        cat("  Random effects\n\n")
+        print.data.frame(x[[i]]$RE,
+                         row.names = FALSE,
+                         digits = digits,
+                         quote = FALSE)
+    }
+
     FE <- x[[i]]$FE
-    FE <- signif(FE[-1], digits)
-    FE <- cbind(x[[i]]$FE[,1, drop = FALSE], FE)
-    FE[t(do.call(rbind, lapply(FE, is.nan)))] <- "."
-    FE[t(do.call(rbind, lapply(FE, is.na)))] <- "."
-    print.data.frame(FE, row.names = FALSE)
+    if(nrow(FE) > 1) {
+        if(c("model" %in% colnames(FE))) {
+            fix_eff <- as.character(unique(FE$parameter))
+            cat("\n  Fixed effect: '", fix_eff, "'\n\n", sep = "")
+        } else cat("\n  Fixed effects \n\n")
+
+        tmp <- FE[ , colnames(FE) %in% c("model"), drop = FALSE]
+        FE <- FE[, !colnames(FE) %in% c("parameter", "model"), drop = FALSE]
+        FE <- signif(FE, digits)
+        FE <- cbind(tmp, FE)
+        FE[t(do.call(rbind, lapply(FE, is.nan)))] <- "."
+        FE[t(do.call(rbind, lapply(FE, is.na)))] <- "."
+        print.data.frame(FE, row.names = FALSE)
+    }
     cat("---\n")
 
 }
@@ -1179,10 +1191,10 @@ print_test_NA <- function(i, x) {
     if(!is.na(Satt_NA) && Satt_NA > 0) {
         message("[Model: ", mod_name, "] ", round(Satt_NA, 4) * 100, "% of the Satterthwaite calculations failed")
     }
-    if(CI_NA > 0) {
+    if(!is.na(CI_NA) && CI_NA > 0) {
         message("[Model: ", mod_name, "] ", round(CI_NA, 4) * 100, "% of the profile likelihood CIs failed")
     }
-    if(non_convergence > 0) {
+    if(!is.na(non_convergence) && non_convergence > 0) {
         message("[Model: ", mod_name, "] ", round(non_convergence, 4) * 100, "% of the models threw convergence warnings")
     }
 }
@@ -1356,7 +1368,7 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #'
 #' @method summary plcp_sim
 #' @export
-summary.plcp_sim <- function(object, alpha = 0.05, ...) {
+summary.plcp_sim <- function(object, alpha = 0.05, para = NULL, ...) {
     res <- object
     x <- lapply(res$res, summary_.plcp_sim,
                 paras = res$paras,
@@ -1368,6 +1380,30 @@ summary.plcp_sim <- function(object, alpha = 0.05, ...) {
               tot_n = x[[1]]$tot_n,
               alpha = alpha,
               formula = res$formula)
+
+    if(!is.null(para)) {
+        check_para <- vapply(x$summary, function(x) para %in% x$FE$parameter, logical(1))
+        if(!all(check_para)) stop("The parameter: '", para, "' does not exist in all models.", call. = FALSE)
+        nr <- length(x$summary)
+        FE <- vector("list", nr)
+        for(i in 1:nr) {
+            tmp <- x$summary[[i]]
+            FE[[i]] <- tmp$FE[tmp$FE$parameter == para, ]
+            FE[[i]]$model <- names(x$summary)[i]
+        }
+
+        FE <-  do.call(rbind, FE)
+
+        x$summary <- list("summary" =
+                              list("RE" = NA,
+                                   "FE" = FE,
+                                   "tot_n" = NA,
+                                   "convergence" = NA,
+                                   "Satt_NA" = NA,
+                                   "CI_NA" = NA)
+                          )
+    }
+
     if("model_selected" %in% names(res)) {
         x$model_selected <- res$model_selected
         x$model_direction <- res$model_direction
@@ -1389,6 +1425,7 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
         if(is.null(model)) {
             summary.plcp_sim(object, alpha = alpha, ...)
         } else {
+            if(!model %in% names(object$res)) stop("No 'model' named: ", model, call. = FALSE)
             object$res <- object$res[model]
             summary.plcp_sim(object, alpha = alpha, ...)
         }
@@ -1750,9 +1787,11 @@ print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
     nsim <- attr(x, "nsim")
     x <- x$out
     x <- as.data.frame(x)
+    para <- as.character(unique(x$parameter))
+    x <- x[, !colnames(x) %in% "parameter", ]
     x[t(do.call(rbind, lapply(x, is.nan)))] <- "."
     x[t(do.call(rbind, lapply(x, is.na)))] <- "."
-    cat("Model: ", model, "| Type:", type, "\n")
+    cat("Model: '", model, "' | Type: '", type, "' | Parameter: '", para, "'\n", sep = "")
     cat("---\n")
     print(x, digits = digits)
     cat("---\n")

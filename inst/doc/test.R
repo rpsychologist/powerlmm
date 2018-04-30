@@ -8,8 +8,8 @@ knitr::opts_chunk$set(
 NOT_CRAN
 
 ## ------------------------------------------------------------------------
-#  Sys.getenv("NOT_CRAN")
+Sys.getenv("NOT_CRAN")
 
 ## ------------------------------------------------------------------------
-#  if(NOT_CRAN) TRUE else stop("print IS_CRAN")
+if(NOT_CRAN) TRUE else stop("print IS_CRAN")
 

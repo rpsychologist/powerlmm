@@ -5,15 +5,14 @@ date: "`r Sys.Date()`"
 output:
    rmarkdown::html_vignette:
       toc: yes
-params:
-   EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")        
 vignette: >
   %\VignetteIndexEntry{Tutorial: Evaluate the Models Using Monte Carlo Simulations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, include = FALSE}
 library(powerlmm)
+NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 knitr::opts_chunk$set(
     eval = FALSE
     )
