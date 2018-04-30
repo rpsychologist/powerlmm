@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-04-29" />
+<meta name="date" content="2018-04-30" />
 
 <title>A Tutorial on Using the Simulation Functions Included in powerlmm</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">A Tutorial on Using the Simulation Functions Included in powerlmm</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-04-29</em></h4>
+<h4 class="date"><em>2018-04-30</em></h4>
 
 
 <div id="TOC">
@@ -93,6 +93,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="setup" class="section level2">
 <h2>Setup</h2>
 <p>The simulation-function accepts the same study setup-object that we’ve used in the two- and three-level power vignettes. The simulation-function supports all models that are available in <strong>powerlmm</strong>. As an example we’ll investigate the partially nested three-level model.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>(<span class="dt">logical =</span> <span class="ot">FALSE</span>) <span class="co"># use all physical CPU cores</span>
+nsim &lt;-<span class="st"> </span><span class="dv">3</span></code></pre></div>
 </div>
 <div id="partially-nested-three-level-model" class="section level2">
 <h2>Partially nested three-level model</h2>
@@ -122,9 +124,9 @@ p</code></pre></div>
 <span class="kw">get_monte_carlo_se</span>(x, <span class="dt">nsim =</span> <span class="kw">c</span>(<span class="dv">1000</span>, <span class="dv">2000</span>, <span class="dv">5000</span>))</code></pre></div>
 <p>We would need about 5000 simulation if we want our empirical power to be +/- 1% from the analytical power.</p>
 <p>Now, let’s run the simulation. First we need to write the <strong>lme4</strong>-formula, since the simulated data sets are analyzed using <code>lme4::lmer</code>. Then we pass the <code>study_parameters</code>-object to the <code>simulate</code> function, and when the simulation is finished we use <code>summary</code> to view the results. You can run the simulation in parallel by settings <code>cores</code> &gt; 1. The parallel computations will be done using the <strong>parallel</strong> package. If performed on a Windows machine <em>or</em> inside a GUI, then PSOCK clusters are used, if on Unix/macOS and the simulation is run non-interactively in a terminal then forking is used.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> &quot;y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)&quot;</span>
-
-cores &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>(<span class="dt">logical =</span> <span class="ot">FALSE</span>) <span class="co"># use all physical CPU cores</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class="st">&quot;y ~ treatment * time + </span>
+<span class="st">                 (1 + time | subject) + </span>
+<span class="st">                 (0 + treatment:time | cluster)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
                 <span class="dt">nsim =</span> <span class="dv">1000</span>,
@@ -151,7 +153,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
 <span class="st">                                    (1 + time | subject)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
-                <span class="dt">nsim =</span> <span class="dv">1000</span>,
+                <span class="dt">nsim =</span> nsim,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                 <span class="dt">cores =</span> cores,
@@ -185,17 +187,17 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula</span>(<span class=
 <span class="st">                 (0 + treatment:time | cluster)&quot;</span>)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(<span class="dt">object =</span> p,
-                <span class="dt">nsim =</span> <span class="dv">1000</span>,
+                <span class="dt">nsim =</span> nsim,
                 <span class="dt">formula =</span> f,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                 <span class="dt">cores =</span> cores,
-                <span class="dt">save =</span> <span class="ot">FALSE</span>)</code></pre></div>
+                <span class="dt">batch_progress =</span> <span class="ot">FALSE</span>)</code></pre></div>
 <p>The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups <code>nsim</code> number of simulations will be performed. With multiple designs <code>summary</code> works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Summarize the 'time:treatment' results </span>
-<span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;time:treatment&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;fixed&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;correct&quot;</span>)
+<span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;time:treatment&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;fixed&quot;</span>)
 
 <span class="co"># Summarize the cluster-level random slope </span>
-<span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;cluster_slope&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;random&quot;</span>, <span class="dt">model =</span> <span class="st">&quot;correct&quot;</span>)</code></pre></div>
+<span class="kw">summary</span>(res, <span class="dt">para =</span> <span class="st">&quot;cluster_slope&quot;</span>, <span class="dt">type =</span> <span class="st">&quot;random&quot;</span>)</code></pre></div>
 </div>
 <div id="investigate-model-selection" class="section level1">
 <h1>Investigate model selection</h1>
@@ -219,7 +221,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
                          <span class="st">&quot;cluster-intercept&quot;</span> =<span class="st"> </span>f3)
 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p, <span class="dt">formula =</span> f, 
-                <span class="dt">nsim =</span> <span class="dv">1000</span>, 
+                <span class="dt">nsim =</span> nsim, 
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>, 
                 <span class="dt">cores =</span> cores,
                 <span class="dt">CI =</span> <span class="ot">FALSE</span>)
@@ -235,22 +237,25 @@ res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p, <span clas
 <span class="kw">summary</span>(res, <span class="dt">model_selection =</span> <span class="st">&quot;FW&quot;</span>, <span class="dt">LRT_alpha =</span> <span class="fl">0.25</span>)
 
 <span class="co"># compare with the correct model</span>
-<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;m2&quot;</span>)
+<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;cluster-slope&quot;</span>)
 
 <span class="co"># unecessary 3-level random slope</span>
 <span class="co"># conservative, and convergence warnings.</span>
 <span class="co"># leads overestiamed cluster-level random slope</span>
-<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;m3&quot;</span>)
+<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;cluster-intercept&quot;</span>)
 
 
 <span class="co"># See if power is impacted</span>
 p1 &lt;-<span class="st"> </span><span class="kw">update</span>(p, <span class="dt">effect_size =</span> <span class="kw">cohend</span>(<span class="fl">0.8</span>))
 res_power &lt;-<span class="st"> </span><span class="kw">simulate</span>(p1, 
                       <span class="dt">formula =</span> f, 
-                      <span class="dt">nsim =</span> <span class="dv">1000</span>, 
+                      <span class="dt">nsim =</span> nsim, 
                       <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>,
                       <span class="dt">cores =</span> cores, 
-                      <span class="dt">CI =</span> <span class="ot">FALSE</span>)</code></pre></div>
+                      <span class="dt">CI =</span> <span class="ot">FALSE</span>)
+
+<span class="co"># we can also summary a fixed effect for convenience</span>
+<span class="kw">summary</span>(res_power, <span class="dt">para =</span> <span class="st">&quot;time:treatment&quot;</span>)</code></pre></div>
 </div>
 <div id="compare-longitudinal-and-posttest-only-modeldata-transformations" class="section level1">
 <h1>Compare longitudinal and posttest only model—data transformations</h1>
@@ -277,7 +282,7 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
 ## Not run: 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p,
                 <span class="dt">formula =</span> f,
-                <span class="dt">nsim =</span> <span class="dv">1000</span>,
+                <span class="dt">nsim =</span> nsim,
                 <span class="dt">cores =</span> cores,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>)
 <span class="kw">summary</span>(res)</code></pre></div>
@@ -298,12 +303,12 @@ f &lt;-<span class="st"> </span><span class="kw">sim_formula_compare</span>(<spa
 ## Not run: 
 res &lt;-<span class="st"> </span><span class="kw">simulate</span>(p,
                 <span class="dt">formula =</span> f,
-                <span class="dt">nsim =</span> <span class="dv">1000</span>,
+                <span class="dt">nsim =</span> nsim,
                 <span class="dt">cores =</span> cores,
                 <span class="dt">satterthwaite =</span> <span class="ot">TRUE</span>)
 
 <span class="co"># type I OLS model</span>
-<span class="kw">sumamry</span>(res, <span class="dt">model =</span> <span class="st">&quot;post_ignore&quot;</span>)
+<span class="kw">summary</span>(res, <span class="dt">model =</span> <span class="st">&quot;post_ignore&quot;</span>)
 
 <span class="co"># model selection</span>
 <span class="kw">summary</span>(res, <span class="dt">model_selection =</span> <span class="st">&quot;FW&quot;</span>)</code></pre></div>

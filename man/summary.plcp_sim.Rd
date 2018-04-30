@@ -5,7 +5,7 @@
 \alias{summary.plcp_sim_formula_compare}
 \title{Summarize the results from a simulation of a single study design-object}
 \usage{
-\method{summary}{plcp_sim}(object, alpha = 0.05, ...)
+\method{summary}{plcp_sim}(object, alpha = 0.05, para = NULL, ...)
 
 \method{summary}{plcp_sim_formula_compare}(object, model = NULL,
   alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...)

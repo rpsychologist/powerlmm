@@ -1133,7 +1133,7 @@ print_model <- function(i, x, digits) {
     models <- names(x)
     cat("Model: ", models[i], "\n")
     RE <- x[[i]]$RE
-    if(!is.na(RE)) {
+    if(!all(is.na(RE))) {
         RE <- format(RE, digits = digits)
         cat("  Random effects\n\n")
         print.data.frame(x[[i]]$RE,
@@ -1143,13 +1143,17 @@ print_model <- function(i, x, digits) {
     }
 
     FE <- x[[i]]$FE
-    if(nrow(FE) > 1) {
+    if(nrow(FE) >= 1) {
         if(c("model" %in% colnames(FE))) {
-            fix_eff <- as.character(unique(FE$parameter))
+            fix_eff <- paste(as.character(unique(FE$parameter)), collapse = "', '")
+            tmp <- FE[ , colnames(FE) %in% c("model"), drop = FALSE]
             cat("\n  Fixed effect: '", fix_eff, "'\n\n", sep = "")
-        } else cat("\n  Fixed effects \n\n")
+        } else {
+            cat("\n  Fixed effects \n\n")
+            tmp <- FE[ , colnames(FE) %in% c("parameter", "model"), drop = FALSE]
+        }
 
-        tmp <- FE[ , colnames(FE) %in% c("model"), drop = FALSE]
+
         FE <- FE[, !colnames(FE) %in% c("parameter", "model"), drop = FALSE]
         FE <- signif(FE, digits)
         FE <- cbind(tmp, FE)
@@ -1205,7 +1209,7 @@ print_test_NA <- function(i, x) {
 #' @param ... Optional arguments.
 #' @method print plcp_sim_summary
 #' @export
-print.plcp_sim_summary <- function(x, digits = 2, ...) {
+print.plcp_sim_summary <- function(x, verbose = TRUE, digits = 2, ...) {
     res <- x
     #print
     x <- res$summary
@@ -1233,18 +1237,23 @@ print.plcp_sim_summary <- function(x, digits = 2, ...) {
                                   n2 = TRUE)
     }
     lapply(seq_along(x), print_model, x, digits = digits)
-    cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
-    cat("\nTime points (n1): ", res$paras$n1)
-    cat(n2_lab, n2)
-    cat("\nTotal number of subjects: ", tot_n, "\n")
-    lapply(seq_along(x), print_test_NA, x = x)
-    if("model_selected" %in% names(res)) {
-        message("Results based on LRT model comparisons, using direction: ", res$model_direction, " (alpha = ", res$LRT_alpha, ")")
-        print(res$model_selected)
+    if(verbose) {
+        cat("Number of simulations:", res$nsim, " | alpha: ", res$alpha)
+        cat("\nTime points (n1): ", res$paras$n1)
+        cat(n2_lab, n2)
+        cat("\nTotal number of subjects: ", tot_n, "\n")
+        lapply(seq_along(x), print_test_NA, x = x)
+        if("model_selected" %in% names(res)) {
+            cat("---\nResults based on LRT model comparisons, using direction: ",
+                res$model_direction, " (alpha = ", res$LRT_alpha, ")\n", sep = "")
+            print(res$model_selected)
+        }
+        data_bool <- vapply(res$formula, function(x) is.function(x$data_transform), logical(1))
+        if(any(data_bool)) cat("---\nAt least one of the models applied a data transformation during simulation,\n",
+                               "summaries that depend on the true parameter values will no longer be correct,\n",
+                               "see 'help(summary.plcp_sim)'", sep = "")
     }
     if(any(x$correct$RE$is_NA > 0)) warning("Some estimated random effects were removed due to being NA.", call. = FALSE)
-    data_bool <- vapply(res$formula, function(x) is.function(x$data_transform), logical(1))
-    if(any(data_bool)) message("At least one of the models applied a data transformation during simulation, summaries that depend on the true parameter values will no longer be correct, see 'help(summary.plcp_sim)'")
 }
 
 #' Print method for \code{simulate.plcp_multi}-objects
@@ -1258,7 +1267,7 @@ print.plcp_multi_sim <- function(x, ...) {
     nmulti <- length(x)
     cat("# ", nmulti, " x ", nsim, "grid of simulations")
     cat("\n")
-    print(x[[1]]$formula)
+    print(x[[1]]$formula[[1]])
     cat("# Object size:", format(object.size(x), units = "auto"))
     cat("\n")
 }
@@ -1382,13 +1391,15 @@ summary.plcp_sim <- function(object, alpha = 0.05, para = NULL, ...) {
               formula = res$formula)
 
     if(!is.null(para)) {
-        check_para <- vapply(x$summary, function(x) para %in% x$FE$parameter, logical(1))
-        if(!all(check_para)) stop("The parameter: '", para, "' does not exist in all models.", call. = FALSE)
+        #check_para <- vapply(x$summary, function(x) para %in% x$FE$parameter, logical(1))
+        #if(!all(check_para)) stop("The parameter: '", para, "' does not exist in all models.", call. = FALSE)
         nr <- length(x$summary)
         FE <- vector("list", nr)
         for(i in 1:nr) {
+            mod <- names(x$summary)[i]
             tmp <- x$summary[[i]]
-            FE[[i]] <- tmp$FE[tmp$FE$parameter == para, ]
+            if(is.list(para)) pp <- para[[mod]] else pp <- para
+            FE[[i]] <- tmp$FE[tmp$FE$parameter == pp, ]
             FE[[i]]$model <- names(x$summary)[i]
         }
 
@@ -1419,21 +1430,30 @@ summary.plcp_sim <- function(object, alpha = 0.05, para = NULL, ...) {
 #' @param LRT_alpha NULL
 #' @method summary plcp_sim_formula_compare
 #' @export
-summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...) {
+summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, para = NULL, ...) {
 
     if(is.null(model_selection)) {
         if(is.null(model)) {
-            summary.plcp_sim(object, alpha = alpha, ...)
+            summary.plcp_sim(object,
+                             alpha = alpha,
+                             para = para,
+                             ...)
         } else {
             if(!model %in% names(object$res)) stop("No 'model' named: ", model, call. = FALSE)
+            if(!is.null(para) & !is.null(model)) warning("'para' is ignored when 'model' is used.", call. = FALSE)
             object$res <- object$res[model]
-            summary.plcp_sim(object, alpha = alpha, ...)
+            summary.plcp_sim(object,
+                             alpha = alpha,
+                             ...)
         }
     } else if(model_selection %in% c("FW", "BW")) {
         x <- do_model_selection(object,
                                 direction = model_selection,
                                 alpha = LRT_alpha)
-        summary.plcp_sim(x, alpha = alpha, ...)
+        summary.plcp_sim(x,
+                         alpha = alpha,
+                         para = para,
+                         ...)
 
     }
 
@@ -1780,8 +1800,20 @@ as.data.frame.plcp_multi_sim_summary <- function(x, ...) {
 #' @param ... Optional arguments.
 #' @method print plcp_multi_sim_summary
 #' @export
-print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
+print.plcp_multi_sim_summary <- function(x,
+                                         add_cols = NULL,
+                                         bias = TRUE,
+                                         power = TRUE,
+                                         estimates = TRUE,
+                                         digits = 2, ...) {
     ret <- x$ret
+    if(!is.null(add_cols) & !all(add_cols %in% colnames(ret))) {
+        not_found <- which(!add_cols %in% colnames(ret))
+        stop("No column called: '",
+             paste(add_cols[not_found], sep = "','"),
+             "'",
+             call. = FALSE)
+    }
     model <- attr(x, "model")
     type <- attr(x, "type")
     nsim <- attr(x, "nsim")
@@ -1789,6 +1821,18 @@ print.plcp_multi_sim_summary <- function(x, digits = 2, ...) {
     x <- as.data.frame(x)
     para <- as.character(unique(x$parameter))
     x <- x[, !colnames(x) %in% "parameter", ]
+    if(!bias) {
+        x <- x[, !colnames(x) %in% c("est_rel_bias", "se_rel_bias")]
+    }
+    if(!estimates) {
+        x <- x[, !colnames(x) %in% c("M_est", "theta", "M_se", "SD_est")]
+    }
+    if(!power) {
+        x <- x[, !colnames(x) %in% c("Power", "Power_bw", "Power_satt", "Satt_NA")]
+    }
+
+    x <- cbind(ret[ , add_cols, drop = FALSE], x)
+
     x[t(do.call(rbind, lapply(x, is.nan)))] <- "."
     x[t(do.call(rbind, lapply(x, is.na)))] <- "."
     cat("Model: '", model, "' | Type: '", type, "' | Parameter: '", para, "'\n", sep = "")
