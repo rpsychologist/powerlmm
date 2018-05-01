@@ -1395,18 +1395,22 @@ summary.plcp_sim <- function(object, alpha = 0.05, para = NULL, ...) {
         #if(!all(check_para)) stop("The parameter: '", para, "' does not exist in all models.", call. = FALSE)
         nr <- length(x$summary)
         FE <- vector("list", nr)
+        RE <- vector("list", nr)
         for(i in 1:nr) {
             mod <- names(x$summary)[i]
             tmp <- x$summary[[i]]
             if(is.list(para)) pp <- para[[mod]] else pp <- para
             FE[[i]] <- tmp$FE[tmp$FE$parameter == pp, ]
-            FE[[i]]$model <- names(x$summary)[i]
+            RE[[i]] <- tmp$RE[tmp$RE$parameter == pp, ]
+            if(nrow(FE[[i]]) >= 1)  FE[[i]]$model <- names(x$summary)[i]
+            if(nrow(RE[[i]]) >= 1)  RE[[i]]$model <- names(x$summary)[i]
         }
 
         FE <-  do.call(rbind, FE)
+        RE <-  do.call(rbind, RE)
 
         x$summary <- list("summary" =
-                              list("RE" = NA,
+                              list("RE" = RE,
                                    "FE" = FE,
                                    "tot_n" = NA,
                                    "convergence" = NA,
@@ -1444,6 +1448,7 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
             object$res <- object$res[model]
             summary.plcp_sim(object,
                              alpha = alpha,
+                             para = para,
                              ...)
         }
     } else if(model_selection %in% c("FW", "BW")) {
@@ -1734,7 +1739,7 @@ summary.plcp_multi_sim <- function(object,
     res <- object
     mod_names <- names(res[[1]][[1]])
     if (is.null(model_selection)) {
-        if(is.character(model) & !model %in% mod_names) {
+        if(!is.null(model) && is.character(model) && !model %in% mod_names) {
             stop("Incorrect 'model', no model named: ", model, call. = FALSE)
         }
 
@@ -1762,9 +1767,10 @@ summary.plcp_multi_sim <- function(object,
     }
 
     if (type == "fixed") {
-        out <- lapply(res, summary_fixed.plcp_multi_sim, para, model, alpha = alpha)
+        #out <- lapply(res, summary_fixed.plcp_multi_sim, para, model, alpha = alpha)
+        out <- lapply(res, function(x) summary(x, para = para, model = model)$summary[[1]]$FE)
     } else {
-        out <- lapply(res, summary_random.plcp_multi_sim, para, model)
+        out <- lapply(res, function(x) summary(x, para = para, model = model)$summary[[1]]$RE)
     }
 
     out <- do.call(rbind, out)
