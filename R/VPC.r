@@ -303,12 +303,12 @@ print.plcp_sds <- function(x, ...) {
 #'                           icc_slope = 0.05,
 #'                           var_ratio = 0.03)
 #' get_correlation_matrix(paras)
-get_correlation_matrix <- function(object) {
+get_correlation_matrix <- function(object, level = 2) {
     UseMethod("get_correlation_matrix")
 }
 
 #' @export
-get_correlation_matrix.plcp <- function(object) {
+get_correlation_matrix.plcp <- function(object, level = 2) {
     paras <- NA_to_zero(object)
 
 
@@ -331,7 +331,13 @@ get_correlation_matrix.plcp <- function(object) {
                   u01, u1^2), ncol = 2)
     D2 <- matrix(c(v0^2, v01,
                    v01, v1^2), ncol = 2)
-    V <- Z %*% D %*% t(Z) + Z %*% D2 %*% t(Z) + error^2*diag(n1)
+
+    if(level == 2) {
+        V <- Z %*% D %*% t(Z) + Z %*% D2 %*% t(Z) + error^2*diag(n1)
+    } else if(level == 3) {
+        V <- Z %*% D %*% t(Z) + Z %*% D2 %*% t(Z) + error^2*diag(n1)
+    }
+
     V <- cov2cor(V)
 
     time_rounded <- round(time, 1)
@@ -400,7 +406,7 @@ print.plcp_ICC2 <- function(x, ...) {
 
 #' @rdname get_correlation_matrix
 #' @export
-get_correlation_matrix.plcp_multi <- function(object) {
+get_correlation_matrix.plcp_multi <- function(object, level = 2) {
     warning("Multiple study designs used, only the first is shown")
     get_correlation_matrix.plcp(object[1, ])
 }

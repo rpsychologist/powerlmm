@@ -223,42 +223,84 @@ summary(res_power, para = "time:treatment")
 ```
 
 
-# Compare longitudinal and posttest only model---data transformations
+# ANCOVA vs 2-level LMM---data transformations
 Sometimes it usefull to compare if the full longitudinal model is prefered over just analyzing posttest data. This might be especially relevent when you are faced with 3-level longitudinal data. In this example we'll compare power for a longitudal model with a cluster effect at the 3-level, to the 2-level model that analyze the outcome as a cross-sectional model at posttest. This can be accomplished by using the `data_transform` argument, note that we must specify `test = "treatment"` for the 2-level posttest model. 
 
 ```{r}
-# Same model as we used in the previous example
 p <- study_parameters(n1 = 11,
                       n2 = 40,
-                      n3 = 3,
                       icc_pre_subject = 0.5,
                       cor_subject = -0.5,
-                      icc_slope = 0.05,
-                      var_ratio = 0.03)
+                      var_ratio = c(0, 0.01, 0.02, 0.03),
+                      dropout = c(0, dropout_weibull(0.3, 1)),
+                      effect_size = cohend(c(0, 0.8)))
 
-# simulation formulas
-# analyze as a posttest only 2-level model
-f_pt <- sim_formula("y ~ treatment + (1 | cluster)",
-                 test = "treatment",
-                 data_transform = transform_to_posttest)
 
-# analyze as 3-level longitudinal
-f_lt <- sim_formula("y ~ time*treatment +
-                         (1 + time | subject) +
-                         (1 + time | cluster)")
+# OLS
+f_PT <- sim_formula("y ~ treatment",
+                    test = "treatment",
+                    data_transform = transform_to_posttest)
 
-f <- sim_formula_compare("posttest" = f_pt, "longitudinal" = f_lt)
+# ANCOVA
+f_PT_pre <- sim_formula("y ~ treatment + pretest",
+                        test = "treatment",
+                        data_transform = transform_to_posttest)
+
+# analyze as 2-level longitudinal
+f_LMM <- sim_formula("y ~ time * treatment +
+                         (1 + time | subject)")
+
+# constrain treatment 
+f_LMM_c <- sim_formula("y ~ time + time:treatment +
+                         (1 + time | subject)")
+
+# combine formulas
+sim_formula_compare("posttest" = f_PT,
+                    "ANCOVA" = f_PT_pre,
+                    "LMM" = f_LDA,
+                    "LMM_c" = f_LDA_c)
 
 res <- simulate(p,
-                formula = f,
-                nsim = nsim,
-                cores = cores,
-                satterthwaite = TRUE)
+                 formula = f,
+                 nsim = nsim,
+                 cores = cores,
+                 satterthwaite = TRUE)
 
-# extract different para per model
-# 'para' is not needed, the default is to print all model parameters.
-summary(res, para = list("posttest" = "treatment", 
-                         "longitudinal" = "time:treatment"))
+tests <-  list("posttest" = "treatment",
+               "ANCOVA" = "treatment",
+               "LMM" = "time:treatment",
+               "LMM_c" = "time:treatment")
+
+x <- summary(res, para = tests)
+print(x, add_cols = c("var_ratio", "effect_size"))
+
+d_limits <- data.frame(effect_size = c(0), 
+                       Power_satt = c(0.025, 0.075),
+                       var_ratio = 0, 
+                       model = 0,
+                       dropout = 0)
+d_hline <- data.frame(effect_size = c(0, 0.8), 
+                      x = c(0.05, 0.8))
+x <- as.data.frame(x) %>%
+    mutate(model = factor(model, levels = c("posttest",
+                                            "ANCOVA", 
+                                            "LMM", 
+                                            "LMM_c"))) 
+ggplot(x, aes(model, 
+               Power_satt,
+               group = interaction(var_ratio, dropout), 
+               color = factor(var_ratio),
+               linetype = factor(dropout))) + 
+    geom_hline(data = d_hline,  aes(yintercept = x)) +
+    geom_point() + 
+    geom_blank(data = d_limits) +
+    geom_line() +
+    facet_grid(dropout ~ effect_size, 
+               scales = "free", 
+               labeller = "label_both") +
+    coord_flip()
+
+
 ```
 
 ## Compare consequences of ignoring clustering in longitudinal versus posttest only model

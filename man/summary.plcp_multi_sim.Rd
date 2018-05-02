@@ -5,17 +5,14 @@
 \title{Summarize simulations based on a combination of multiple parameter values}
 \usage{
 \method{summary}{plcp_multi_sim}(object, para = "time:treatment",
-  type = "fixed", model = 1, alpha = 0.05, model_selection = NULL,
-  LRT_alpha = 0.1, ...)
+  model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1,
+  ...)
 }
 \arguments{
 \item{object}{A multiple simulation object created with
 \code{\link{simulate.plcp_multi}}}
 
 \item{para}{The name of the fixed or random effect that should be summarized.}
-
-\item{type}{Specifies what type of effect \code{para} is; can be either
-"random" or "fixed".}
 
 \item{model}{Specifies which model that should be summarized. Accepts either
 a \code{character} with the name used in \code{\link{sim_formula_compare}}, or
@@ -31,6 +28,9 @@ is based on the selected model from each simulation.}
 \item{LRT_alpha}{Indicates the alpha level used when comparing models during model selection.}
 
 \item{...}{Optional arguments.}
+
+\item{type}{Specifies what type of effect \code{para} is; can be either
+"random" or "fixed".}
 }
 \value{
 A \code{data.frame} with class \code{plcp_multi_sim_summary}. Each row

@@ -31,7 +31,7 @@ f <- sim_formula_compare("posttest" = f_pt,
 
 res <- simulate(p,
                 formula = f,
-                nsim = 5000,
+                nsim = 15,
                 cores = 15,
                 satterthwaite = TRUE)
 
@@ -50,12 +50,24 @@ summary(res, model = NULL,
                     "longitudinal" = "time:treatment",
                     "longi_constrained" = "time:treatment"))
 
+summary(res, model = 1, para = "treatment")
+
 summary(res, para = "subject_slope")
+summary(res, para = "subject_slope", model = 3)
+
+# should give error
+summary(res, model = "posttest",
+        para = list("posttest" = "treatment",
+                    "post_covariate" = "treatment",
+                    "longitudinal" = "time:treatment",
+                    "longi_constrained" = "time:treatment"))
 
 res1 <- simulate(p,
                 formula = f_pt,
                 nsim = 5,
                 cores = 1,
                 satterthwaite = TRUE)
-summary(res1[[1]], para = "treatment")
-summary(res[[1]], para = "treatment")
+
+
+
+

@@ -5,20 +5,22 @@
 \alias{summary.plcp_sim_formula_compare}
 \title{Summarize the results from a simulation of a single study design-object}
 \usage{
-\method{summary}{plcp_sim}(object, alpha = 0.05, para = NULL, ...)
+\method{summary}{plcp_sim}(object, model = NULL, alpha = 0.05,
+  para = NULL, ...)
 
 \method{summary}{plcp_sim_formula_compare}(object, model = NULL,
-  alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, ...)
+  alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, para = NULL,
+  ...)
 }
 \arguments{
 \item{object}{A \code{simulate.plcp}-object}
+
+\item{model}{NULL}
 
 \item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
 one-tailed tests are not yet implemented.}
 
 \item{...}{Currently not used}
-
-\item{model}{NULL}
 
 \item{model_selection}{NULL}
 

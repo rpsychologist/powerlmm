@@ -125,6 +125,8 @@ print.plcp_sim_formula <- function(x, ...) {
     cat("\n")
 
 }
+
+#' @export
 print.plcp_compare_sim_formula <- function(x, ...) {
 
     cat("# Simulation formulas\n")
@@ -205,6 +207,8 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 transform_to_posttest <- function(data) {
     tmp <- data[data$time == max(data$time), ]
     tmp$pretest <- data[data$time == min(data$time), "y"]
+    tmp$pretest_cluster <- tapply(tmp$pretest, tmp$cluster, mean)[tmp$cluster]
+    tmp$pretest_subject_c <- tmp$pretest - tmp$pretest_cluster
 
     tmp
 }
@@ -1251,7 +1255,7 @@ print.plcp_sim_summary <- function(x, verbose = TRUE, digits = 2, ...) {
         data_bool <- vapply(res$formula, function(x) is.function(x$data_transform), logical(1))
         if(any(data_bool)) cat("---\nAt least one of the models applied a data transformation during simulation,\n",
                                "summaries that depend on the true parameter values will no longer be correct,\n",
-                               "see 'help(summary.plcp_sim)'", sep = "")
+                               "see 'help(summary.plcp_sim)'\n", sep = "")
     }
     if(any(x$correct$RE$is_NA > 0)) warning("Some estimated random effects were removed due to being NA.", call. = FALSE)
 }
@@ -1267,7 +1271,14 @@ print.plcp_multi_sim <- function(x, ...) {
     nmulti <- length(x)
     cat("# ", nmulti, " x ", nsim, "grid of simulations")
     cat("\n")
-    print(x[[1]]$formula[[1]])
+
+    ff <- x[[1]]$formula
+    if(inherits(ff, "plcp_compare_sim_formula")) {
+        print(ff)
+    } else if(inherits(ff[[1]], "plcp_sim_formula")) {
+        print(ff[[1]])
+    }
+
     cat("# Object size:", format(object.size(x), units = "auto"))
     cat("\n")
 }
@@ -1377,7 +1388,7 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #'
 #' @method summary plcp_sim
 #' @export
-summary.plcp_sim <- function(object, alpha = 0.05, para = NULL, ...) {
+summary.plcp_sim <- function(object, model = NULL, alpha = 0.05, para = NULL, ...) {
     res <- object
     x <- lapply(res$res, summary_.plcp_sim,
                 paras = res$paras,
@@ -1399,9 +1410,14 @@ summary.plcp_sim <- function(object, alpha = 0.05, para = NULL, ...) {
         for(i in 1:nr) {
             mod <- names(x$summary)[i]
             tmp <- x$summary[[i]]
-            if(is.list(para)) pp <- para[[mod]] else pp <- para
+            if(is.list(para)) {
+                pp <- para[[mod]]
+            } else pp <- para
             FE[[i]] <- tmp$FE[tmp$FE$parameter == pp, ]
             RE[[i]] <- tmp$RE[tmp$RE$parameter == pp, ]
+            if(is.list(para) && nrow(FE[[i]]) == 0 && nrow(RE[[i]]) == 0) {
+                stop("No 'para': ", pp, " found in 'model': ", mod, call. = FALSE)
+            }
             if(nrow(FE[[i]]) >= 1)  FE[[i]]$model <- names(x$summary)[i]
             if(nrow(RE[[i]]) >= 1)  RE[[i]]$model <- names(x$summary)[i]
         }
@@ -1443,8 +1459,8 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
                              para = para,
                              ...)
         } else {
+            if(is.numeric(model)) model <- names(object$res)[model]
             if(!model %in% names(object$res)) stop("No 'model' named: ", model, call. = FALSE)
-            if(!is.null(para) & !is.null(model)) warning("'para' is ignored when 'model' is used.", call. = FALSE)
             object$res <- object$res[model]
             summary.plcp_sim(object,
                              alpha = alpha,
@@ -1685,6 +1701,15 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
 # }
 
 
+.check_para_in_mod <- function(eff_names, para) {
+    x <- lapply(seq_along(eff_names), function(i) {
+        mod <- names(eff_names[i])
+        any(eff_names[[mod]] %in% para[[mod]])
+    } )
+
+    unlist(x)
+}
+
 #' Summarize simulations based on a combination of multiple parameter values
 #'
 #' @param object A multiple simulation object created with
@@ -1730,33 +1755,38 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
 #'
 summary.plcp_multi_sim <- function(object,
                                    para = "time:treatment",
-                                   type = "fixed",
-                                   model = 1,
+                                   model = NULL,
                                    alpha = 0.05,
                                    model_selection = NULL,
                                    LRT_alpha = 0.1,
                                    ...) {
     res <- object
     mod_names <- names(res[[1]][[1]])
+    mod_n <- length(mod_names)
     if (is.null(model_selection)) {
         if(!is.null(model) && is.character(model) && !model %in% mod_names) {
             stop("Incorrect 'model', no model named: ", model, call. = FALSE)
         }
 
         if(is.numeric(model)) {
-            if(model > length(mod_names)) stop("Argument 'model' is too large.", call. = FALSE)
+            if(model > length(mod_names)) stop("Numeric argument 'model' is too large.", call. = FALSE)
             model <- mod_names[model]
+            mod_n <- 1
+        }
+        if(!is.null(model) && is.character(model) && is.list(para)) {
+            if(!model %in% names(para)) stop("'model' not found in 'para'", call. = FALSE)
+            para <- para[[model]]
+            mod_n <- 1
+        }
+        if(is.null(model) && is.list(para)) {
+            if(!all(mod_names %in% names(para))) stop("At least one of the model names in 'para' does not exist.", call. = FALSE)
         }
 
     }
 
-    if (!type %in% c("fixed", "random"))
-        stop("'type' should be either 'fixed' or 'random'", call. = FALSE)
-    # if (type == "fixed" &
-    #     !para %in% c("intercept", "time", "treatment", "time:treatment")) {
-    #     stop("Para should be one of: 'intercept' 'time', 'treatment', 'time:treatment'")
-    # }
 
+
+    # model selection
     if(!is.null(model_selection)) {
         for(i in seq_along(res)) {
             res[[i]] <- do_model_selection(res[[i]],
@@ -1766,11 +1796,43 @@ summary.plcp_multi_sim <- function(object,
         }
     }
 
+    # check 'paras'
+    RE_names <- lapply(res[[1]]$res, function(x) unique(x$RE$parameter))
+    FE_names <- lapply(res[[1]]$res, function(x) unique(x$FE$parameter))
+
+    if(!is.null(model)) {
+        RE_names <- RE_names[[model]]
+        FE_names <- FE_names[[model]]
+    }
+
+    if(length(para) == 1 && is.character(para)) {
+        if(para %in% unique(unlist(RE_names))) {
+            type <- "random"
+        } else if(para %in% unique(unlist(FE_names))) {
+            type <- "fixed"
+        } else stop("No 'para' named: ", para, call. = FALSE)
+    } else if(is.list(para)) {
+        if(length(para) != mod_n) stop("When 'para' is a list it",
+                                       "must be the same length as the number of models: ",
+                                       mod_n)
+        if(any(.check_para_in_mod(RE_names, para))) {
+            type <- "random"
+        } else if(any(.check_para_in_mod(FE_names, para))) {
+            type <- "fixed"
+        } else {
+            stop("At least one of the 'para'(s) was not found", call. = FALSE)
+        }
+    }
+
+    # summarize
     if (type == "fixed") {
-        #out <- lapply(res, summary_fixed.plcp_multi_sim, para, model, alpha = alpha)
-        out <- lapply(res, function(x) summary(x, para = para, model = model)$summary[[1]]$FE)
-    } else {
-        out <- lapply(res, function(x) summary(x, para = para, model = model)$summary[[1]]$RE)
+        out <- lapply(res, function(x) summary(x,
+                                               para = para,
+                                               model = model)$summary[[1]]$FE)
+    } else if (type == "random") {
+        out <- lapply(res, function(x) summary(x,
+                                               para = para,
+                                               model = model)$summary[[1]]$RE)
     }
 
     out <- do.call(rbind, out)
@@ -1778,6 +1840,7 @@ summary.plcp_multi_sim <- function(object,
 
     paras <- prepare_multi_setup(paras)$out_dense
     paras <- as.data.frame(paras)
+    paras <- paras[rep(1:nrow(paras), each = mod_n), ]
     out <- list("ret" = cbind(paras, as.data.frame(out)),
                 "out" = out)
 
@@ -1798,6 +1861,19 @@ summary.plcp_multi_sim <- function(object,
 #' @export
 as.data.frame.plcp_multi_sim_summary <- function(x, ...) {
     x$ret
+}
+
+#' @export
+as.data.frame.plcp_sim_summary <- function(x, ...) {
+
+    RE <- lapply(seq_along(x$summary), function(i) {
+        d <- x$summary[[i]]
+        tmp <- d$RE
+        tmp$model <- names(x$summary)[i]
+        tmp$type <- "random"
+        tmp
+    })
+
 }
 
 #' Print method for \code{summary.plcp_multi_sim}-objects
@@ -1825,7 +1901,7 @@ print.plcp_multi_sim_summary <- function(x,
     nsim <- attr(x, "nsim")
     x <- x$out
     x <- as.data.frame(x)
-    para <- as.character(unique(x$parameter))
+    para <- paste(as.character(unique(x$parameter)), collapse = "', '")
     x <- x[, !colnames(x) %in% "parameter", ]
     if(!bias) {
         x <- x[, !colnames(x) %in% c("est_rel_bias", "se_rel_bias")]
@@ -1838,12 +1914,19 @@ print.plcp_multi_sim_summary <- function(x,
     }
 
     x <- cbind(ret[ , add_cols, drop = FALSE], x)
-
+    mod_col <- colnames(x) %in% "model"
+    if(length(unique(x$model)) > 1) {
+        x <- cbind(x[, mod_col, drop = FALSE],
+                   x[, !mod_col])
+        x <- x[order(x$model), ]
+    } else x <- x[, !mod_col]
     x[t(do.call(rbind, lapply(x, is.nan)))] <- "."
     x[t(do.call(rbind, lapply(x, is.na)))] <- "."
-    cat("Model: '", model, "' | Type: '", type, "' | Parameter: '", para, "'\n", sep = "")
+
+    if(is.null(model)) model <- "All"
+    cat("Model: '", model, "' | Type: '", type, "' | Parameter(s): '", para, "'\n", sep = "")
     cat("---\n")
-    print(x, digits = digits)
+    print(x, digits = digits, row.names = FALSE)
     cat("---\n")
     cat("nsim: ", nsim, "\n")
     if(any(x$is_NA > 0)) warning("Some simulations had NA estimates that was removed.", call. = FALSE)
