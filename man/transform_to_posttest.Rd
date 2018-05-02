@@ -19,8 +19,8 @@ a \code{data.frame}. Includes two new columns:
 \description{
 This is en example of a data transformation applied during simulation.
 It takes the longitudinal data and transforms it into a pretest-posttest
-model in wide format. Usefull if when you want to compare the longitudinal and
-the cross-sectional model.
+model in wide format. Useful if you want to compare the longitudinal LMM with
+e.g. AN(C)OVA models.
 }
 \examples{
 

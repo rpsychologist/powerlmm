@@ -9,6 +9,9 @@
 \arguments{
 \item{x}{An object of class \code{plcp_sim_summary}}
 
+\item{verbose}{\code{logical}; indicates if additional information
+should be printed (default is \code{TRUE}).}
+
 \item{digits}{number of significant digits.}
 
 \item{...}{Optional arguments.}

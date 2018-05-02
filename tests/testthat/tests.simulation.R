@@ -95,6 +95,26 @@ test_that("simulation summary", {
                     progress = FALSE)
     tmp <- summary(res)
 
+    # print
+    expect_output(print(tmp), "Model:  default")
+    expect_output(print(tmp), "Random effects")
+    expect_output(print(tmp), "Fixed effects")
+    expect_output(print(tmp), "Number of simulations: 3")
+    expect_output(print(tmp), "Total number of subjects")
+    expect_error(summary(res, para = c("time", "time:treatment")), "'para' must have length equal to 1")
+
+    tmp2 <- summary(res, para = "treatment:time")
+    expect_output(print(tmp2), "Model:  summary")
+    expect_output(print(tmp2), "Fixed effects: 'treatment:time'")
+    expect_output(print(tmp2), "model M_est theta")
+    expect_output(print(tmp2), "Total number of subjects:  100")
+
+    tmp2 <- summary(res, para = "cluster_slope")
+    expect_output(print(tmp2), "Model:  summary")
+    expect_output(print(tmp2), "Random effects: 'cluster_slope'")
+    expect_output(print(tmp2), "model  M_est  theta")
+    expect_output(print(tmp2), "Total number of subjects:  100")
+
     # params
     x <- as.character(tmp$summary$default$FE$parameter)
     expect_equal(x, c("(Intercept)", "treatment", "time", "treatment:time"))

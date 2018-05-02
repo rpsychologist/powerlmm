@@ -10,6 +10,17 @@
 \arguments{
 \item{x}{An object of class \code{plcp_multi_sim_summary}}
 
+\item{add_cols}{\code{character} vector; indicates the names of the
+additional columns that should be added to the output. Intended use case is
+when you want to add some of the setup parameters, this print method
+is not smart enough to figure out which parameters you are investigating.}
+
+\item{bias}{\code{logical}; indicates if parameter bias should be printed.}
+
+\item{power}{\code{logical}; indicates if empirical power should be printed.}
+
+\item{estimates}{\code{logical}; indicates if the parameter estimates should be printed.}
+
 \item{digits}{number of significant digits.}
 
 \item{...}{Optional arguments.}

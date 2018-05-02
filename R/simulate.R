@@ -53,7 +53,7 @@ create_dropout_indicator <- function(paras) {
 #' @param formula A \code{character} containing a lme4 formula.
 #' @param data_transform Optional; a \code{function} that applies a transformation
 #' to the data during each simulation.
-#' @param test A \code{character} vector indicating wich parameters should be tested.
+#' @param test A \code{character} vector indicating which parameters should be tested.
 #' Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.
 #'
 #' @details
@@ -111,6 +111,16 @@ sim_formula_compare <- function(...) {
     class(x) <- append(class(x), "plcp_compare_sim_formula")
     x
 }
+
+
+#' Print method for simulation formulas
+#'
+#' @param x A formula object.
+#' @param ... Not used
+#'
+#' @export
+#'
+#' @method print plcp_sim_formula
 print.plcp_sim_formula <- function(x, ...) {
     cat("# Simulation formula\n")
     f <- x$formula
@@ -126,6 +136,8 @@ print.plcp_sim_formula <- function(x, ...) {
 
 }
 
+#' @rdname print.plcp_sim_formula
+#' @method print plcp_compare_sim_formula
 #' @export
 print.plcp_compare_sim_formula <- function(x, ...) {
 
@@ -154,8 +166,8 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 #'
 #' This is en example of a data transformation applied during simulation.
 #' It takes the longitudinal data and transforms it into a pretest-posttest
-#' model in wide format. Usefull if when you want to compare the longitudinal and
-#' the cross-sectional model.
+#' model in wide format. Useful if you want to compare the longitudinal LMM with
+#' e.g. AN(C)OVA models.
 #'
 #' @param data a \code{data.frame} created using \code{\link{simulate_data}}
 #'
@@ -1133,40 +1145,39 @@ munge_results_ <- function(model, res, effect) {
 
 
 # Print -------------------------------------------------------------------
-print_model <- function(i, x, digits) {
-    models <- names(x)
-    cat("Model: ", models[i], "\n")
-    RE <- x[[i]]$RE
-    if(!all(is.na(RE))) {
-        RE <- format(RE, digits = digits)
-        cat("  Random effects\n\n")
-        print.data.frame(x[[i]]$RE,
+
+.print_effect <- function(effect, lab, digits) {
+    if(nrow(effect) >= 1) {
+        if(c("model" %in% colnames(effect))) {
+            fix_eff <- paste(as.character(unique(effect$parameter)), collapse = "', '")
+            tmp <- effect[ , colnames(effect) %in% c("model"), drop = FALSE]
+            cat("\n", lab, ": '", fix_eff, "'\n\n", sep = "")
+        } else {
+            cat("\n", lab, " \n\n", sep = "")
+            tmp <- effect[ , colnames(effect) %in% c("parameter", "model"), drop = FALSE]
+        }
+        effect <- effect[, !colnames(effect) %in% c("parameter", "model"), drop = FALSE]
+        effect <- signif(effect, digits)
+        effect <- cbind(tmp, effect)
+        effect[t(do.call(rbind, lapply(effect, is.nan)))] <- "."
+        effect[t(do.call(rbind, lapply(effect, is.na)))] <- "."
+        print.data.frame(effect,
                          row.names = FALSE,
                          digits = digits,
                          quote = FALSE)
     }
+}
 
-    FE <- x[[i]]$FE
-    if(nrow(FE) >= 1) {
-        if(c("model" %in% colnames(FE))) {
-            fix_eff <- paste(as.character(unique(FE$parameter)), collapse = "', '")
-            tmp <- FE[ , colnames(FE) %in% c("model"), drop = FALSE]
-            cat("\n  Fixed effect: '", fix_eff, "'\n\n", sep = "")
-        } else {
-            cat("\n  Fixed effects \n\n")
-            tmp <- FE[ , colnames(FE) %in% c("parameter", "model"), drop = FALSE]
-        }
-
-
-        FE <- FE[, !colnames(FE) %in% c("parameter", "model"), drop = FALSE]
-        FE <- signif(FE, digits)
-        FE <- cbind(tmp, FE)
-        FE[t(do.call(rbind, lapply(FE, is.nan)))] <- "."
-        FE[t(do.call(rbind, lapply(FE, is.na)))] <- "."
-        print.data.frame(FE, row.names = FALSE)
-    }
+print_model <- function(i, x, digits = 2) {
+    models <- names(x)
+    cat("Model: ", models[i], "\n")
+    .print_effect(x[[i]]$RE,
+                  lab = "Random effects",
+                  digits = digits)
+    .print_effect(x[[i]]$FE,
+                  lab = "Fixed effects",
+                  digits = digits)
     cat("---\n")
-
 }
 
 #' @importFrom stats median
@@ -1209,6 +1220,8 @@ print_test_NA <- function(i, x) {
 
 #' Print method for \code{summary.plcp_sim}-objects
 #' @param x An object of class \code{plcp_sim_summary}
+#' @param verbose \code{logical}; indicates if additional information
+#' should be printed (default is \code{TRUE}).
 #' @param digits number of significant digits.
 #' @param ... Optional arguments.
 #' @method print plcp_sim_summary
@@ -1335,37 +1348,40 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #' @param object A \code{simulate.plcp}-object
 #' @param alpha Indicates the significance level. Default is 0.05 (two-tailed),
 #' one-tailed tests are not yet implemented.
+#' @param para Selects a parameter to return. Default is \code{NULL},
+#' which returns all parameters. If multiple model formulas are compared a named list can be
+#' used to specify different parameters per model.
 #' @param ... Currently not used
 #'
 #' @details
 #'
 #' \strong{Model selection}
 #'
-#' It is possible to summarise the performance of a data driven model selection strategy
+#' It is possible to summarize the performance of a data driven model selection strategy
 #' based on the formulas used in the simulation (see \code{\link{sim_formula_compare}}).
 #' The two model selection strategies are:
 #' \itemize{
 #'   \item \code{FW}: Forward selection of the models. Starts with the first model formula and
-#'   compares it with the next formula. Continues untill the test of M_i vs M_{i + 1} is non-significant,
+#'   compares it with the next formula. Continues until the test of M_i vs M_{i + 1} is non-significant,
 #'   and then picks M_i. Thus if three models are compared, and the comparison of M_1 vs M_2 is non-significant, M_3
 #'   will not be tested and M_1 is the winning model.
 #'  \item \code{BW}: Backward selection of the models. Starts with the last model formula and
-#'   compares it with the previous formula. Continues untill the test of M_i vs M_{i - 1} is significant or untill
-#'   all adjecent formulas have been compared. Thus if three models are compared, and the comparison of M_3 vs M_2 is non-significant,
+#'   compares it with the previous formula. Continues until the test of M_i vs M_{i - 1} is significant or until
+#'   all adjacent formulas have been compared. Thus if three models are compared, and the comparison of M_3 vs M_2 is non-significant,
 #'   M2 vs M1 will be tested and M2 will be picked if significant, and M1 if not.
 #' }
 #'
 #' The model comparison is performed using a likelihood ratio test based the REML criterion. Hence, it assumed you are comparing models
-#' with the same fixed effects, and that of the models is a reduced veresion of the other (nested models). The LRT test is done as a
-#' post-processing step, so \code{model_selection} option will not rerun the simulation. This also means that different alpha levels
-#' for the LRTs can be investigated without rerunning the simulation.
+#' with the same fixed effects, and that one of the models is a reduced version of the other (nested models). The LRT test is done as a
+#' post-processing step, so \code{model_selection} option will not re-run the simulation. This also means that different alpha levels
+#' for the LRTs can be investigated without re-running the simulation.
 #'
 #' \strong{Data transformation}
 #'
 #' If the data has been transformed \code{sim_formula(data_transform = ...)}, then
 #' true parameter values (\code{theta}s shown in the summary will most likely no longer
 #' apply. Hence, relative bias and CI coverage will be in relation to the original model.
-#' However, the empirical estimates will be summarised correctly, enabling investigation of
+#' However, the empirical estimates will be summarized correctly, enabling investigation of
 #' power and Type I errors using arbitrary transformation.
 #'
 #' @return Object with class \code{plcp_sim_summary}. It contains
@@ -1412,7 +1428,12 @@ summary.plcp_sim <- function(object, model = NULL, alpha = 0.05, para = NULL, ..
             tmp <- x$summary[[i]]
             if(is.list(para)) {
                 pp <- para[[mod]]
-            } else pp <- para
+            } else if(is.character(para)) {
+                if(length(para) > 1) stop("'para' must have length equal to 1. ",
+                                          "If you want different parameters per model ",
+                                          "formula use a named list.", call. = FALSE)
+                pp <- para
+            }
             FE[[i]] <- tmp$FE[tmp$FE$parameter == pp, ]
             RE[[i]] <- tmp$RE[tmp$RE$parameter == pp, ]
             if(is.list(para) && nrow(FE[[i]]) == 0 && nrow(RE[[i]]) == 0) {
@@ -1715,8 +1736,6 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
 #' @param object A multiple simulation object created with
 #' \code{\link{simulate.plcp_multi}}
 #' @param para The name of the fixed or random effect that should be summarized.
-#' @param type Specifies what type of effect \code{para} is; can be either
-#' "random" or "fixed".
 #' @param model Specifies which model that should be summarized. Accepts either
 #' a \code{character} with the name used in \code{\link{sim_formula_compare}}, or
 #' an \code{integer} value.
@@ -1730,25 +1749,23 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
 #'
 #' @method summary plcp_multi_sim
 #'
-#' @return A \code{data.frame} with class \code{plcp_multi_sim_summary}. Each row
-#' summarizes one of the parameter combinations used in the simulation. It contains
-#' the following columns:
+#' @return A \code{list} with class \code{plcp_multi_sim_summary}. It can be coursed to a \code{data.frame},
+#' using \code{as.data.frame}. Each row summarizes one of the parameter combinations used in the simulation.
+#' In addition to the setup parameter values, it contains the following columns:
 #' \itemize{
 #'  \item \code{parameter} is the name of the coefficient
 #'  \item \code{M_est} is the mean of the estimates taken over all the simulations.
 #'  \item \code{theta} is the population parameter values specified with \code{study_parameters}
-#'  \item \code{est_rel_bias} is the relative bias of the estimate
 #'  \item \code{M_se} is the mean estimated standard error taken over all the simulations.
 #'  \item \code{SD_est} is the empirical standard error; i.e. the standard
 #'  deviation of the distribution of the generated estimates
-#'  \item \code{se_rel_bias} is the relative bias of the standard error.
 #'  \item \code{power} is the empirical power of the Wald Z test, i.e. the proportion
 #'  of simulated p-values < alpha
 #'  \item \code{power_satt} is the empirical power of the Wald \emph{t} test using
-#'   Satterthwaite's degree of freedom approximation
+#'   Satterthwaite's degree of freedom approximation.
 #'  \item \code{satt_NA} is the proportion of Satterthwaite's approximations that failed.
 #'  \item \code{prop_zero} is the proportion of the simulated estimates that
-#'  are zero; only shown for random effects
+#'  are zero; only shown for random effects.
 #' }
 #'
 #' @export
@@ -1776,6 +1793,7 @@ summary.plcp_multi_sim <- function(object,
         if(!is.null(model) && is.character(model) && is.list(para)) {
             if(!model %in% names(para)) stop("'model' not found in 'para'", call. = FALSE)
             para <- para[[model]]
+            if(is.numeric(para)) stop("'para' can't be a numeric value", call. = FALSE)
             mod_n <- 1
         }
         if(is.null(model) && is.list(para)) {
@@ -1812,7 +1830,7 @@ summary.plcp_multi_sim <- function(object,
             type <- "fixed"
         } else stop("No 'para' named: ", para, call. = FALSE)
     } else if(is.list(para)) {
-        if(length(para) != mod_n) stop("When 'para' is a list it",
+        if(length(para) != mod_n) stop("When 'para' is a list it ",
                                        "must be the same length as the number of models: ",
                                        mod_n)
         if(any(.check_para_in_mod(RE_names, para))) {
@@ -1878,6 +1896,13 @@ as.data.frame.plcp_sim_summary <- function(x, ...) {
 
 #' Print method for \code{summary.plcp_multi_sim}-objects
 #' @param x An object of class \code{plcp_multi_sim_summary}
+#' @param add_cols \code{character} vector; indicates the names of the
+#' additional columns that should be added to the output. Intended use case is
+#' when you want to add some of the setup parameters, this print method
+#' is not smart enough to figure out which parameters you are investigating.
+#' @param bias \code{logical}; indicates if parameter bias should be printed.
+#' @param power \code{logical}; indicates if empirical power should be printed.
+#' @param estimates \code{logical}; indicates if the parameter estimates should be printed.
 #' @param digits number of significant digits.
 #' @param ... Optional arguments.
 #' @method print plcp_multi_sim_summary

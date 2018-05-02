@@ -106,13 +106,13 @@ test_that("sim LRT multi", {
     f <- sim_formula_compare("m0" = f0, "m1" = f1, "m2" = f2)
 
 
-    res <- simulate(p, formula = f, nsim = 4, satterthwaite = FALSE, cores = 1, CI = FALSE)
+    res <- simulate(p, formula = f, nsim = 4, satterthwaite = FALSE, cores = 1, CI = FALSE, batch_progress = FALSE)
 
     x <-  summary(res)
-    expect_output(print(x), "^Model:  m0 | Type: fixed$")
+    expect_output(print(x), "^Model: 'All' | Type: fixed$")
 
     x <- summary(res, model_selection = "FW")
-    expect_output(print(x), "^Model:  model_selection | Type: fixed$")
+    expect_output(print(x), "^Model: 'model_selection' | Type: fixed$")
 })
 
 test_that("LRT calcs", {

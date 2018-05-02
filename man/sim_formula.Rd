@@ -12,7 +12,7 @@ sim_formula(formula, data_transform = NULL, test = "time:treatment")
 \item{data_transform}{Optional; a \code{function} that applies a transformation
 to the data during each simulation.}
 
-\item{test}{A \code{character} vector indicating wich parameters should be tested.
+\item{test}{A \code{character} vector indicating which parameters should be tested.
 Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.}
 }
 \value{

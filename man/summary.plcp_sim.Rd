@@ -20,6 +20,10 @@
 \item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
 one-tailed tests are not yet implemented.}
 
+\item{para}{Selects a parameter to return. Default is \code{NULL},
+which returns all parameters. If multiple model formulas are compared a named list can be
+used to specify different parameters per model.}
+
 \item{...}{Currently not used}
 
 \item{model_selection}{NULL}
@@ -50,30 +54,30 @@ Summarize the results from a simulation of a single study design-object
 \details{
 \strong{Model selection}
 
-It is possible to summarise the performance of a data driven model selection strategy
+It is possible to summarize the performance of a data driven model selection strategy
 based on the formulas used in the simulation (see \code{\link{sim_formula_compare}}).
 The two model selection strategies are:
 \itemize{
   \item \code{FW}: Forward selection of the models. Starts with the first model formula and
-  compares it with the next formula. Continues untill the test of M_i vs M_{i + 1} is non-significant,
+  compares it with the next formula. Continues until the test of M_i vs M_{i + 1} is non-significant,
   and then picks M_i. Thus if three models are compared, and the comparison of M_1 vs M_2 is non-significant, M_3
   will not be tested and M_1 is the winning model.
  \item \code{BW}: Backward selection of the models. Starts with the last model formula and
-  compares it with the previous formula. Continues untill the test of M_i vs M_{i - 1} is significant or untill
-  all adjecent formulas have been compared. Thus if three models are compared, and the comparison of M_3 vs M_2 is non-significant,
+  compares it with the previous formula. Continues until the test of M_i vs M_{i - 1} is significant or until
+  all adjacent formulas have been compared. Thus if three models are compared, and the comparison of M_3 vs M_2 is non-significant,
   M2 vs M1 will be tested and M2 will be picked if significant, and M1 if not.
 }
 
 The model comparison is performed using a likelihood ratio test based the REML criterion. Hence, it assumed you are comparing models
-with the same fixed effects, and that of the models is a reduced veresion of the other (nested models). The LRT test is done as a
-post-processing step, so \code{model_selection} option will not rerun the simulation. This also means that different alpha levels
-for the LRTs can be investigated without rerunning the simulation.
+with the same fixed effects, and that one of the models is a reduced version of the other (nested models). The LRT test is done as a
+post-processing step, so \code{model_selection} option will not re-run the simulation. This also means that different alpha levels
+for the LRTs can be investigated without re-running the simulation.
 
 \strong{Data transformation}
 
 If the data has been transformed \code{sim_formula(data_transform = ...)}, then
 true parameter values (\code{theta}s shown in the summary will most likely no longer
 apply. Hence, relative bias and CI coverage will be in relation to the original model.
-However, the empirical estimates will be summarised correctly, enabling investigation of
+However, the empirical estimates will be summarized correctly, enabling investigation of
 power and Type I errors using arbitrary transformation.
 }
