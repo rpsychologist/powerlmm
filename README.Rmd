@@ -149,11 +149,15 @@ res <- simulate(p,
                 nsim = 2000, 
                 formula = f, 
                 cores = parallel::detectCores(logical = FALSE))
+```
 
+We then summarize the results using `summary`. Let's look specifically at the treatment effects.
+
+```{r}
 summary(res, para = list("LMM" = "time:treatment",
                          "ANCOVA" = "treatment"))
-
 ```
+
 
 We can also look at a specific model, here's the results for the 2-lvl LMM.
 
