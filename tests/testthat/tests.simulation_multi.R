@@ -22,22 +22,19 @@ res <- simulate(paras, nsim = 2, formula = formula, satterthwaite = FALSE, progr
 
 test_that("multi_sim", {
 
-    sr <- summary(res, para = "treatment:time")
-    expect_is(sr, "plcp_multi_sim_summary")
-    expect_output(print(sr), "^Model: 'All' \\| Type: 'fixed'")
-    tmp <- sr$out
+    tmp <- summary(res, para = "treatment:time")
+    expect_is(tmp, "plcp_multi_sim_summary")
+    expect_output(print(tmp), "^Model: 'All' \\| Type: 'fixed'")
     expect_identical(nrow(tmp), 4L)
 
-    sr <- summary(res, para = "treatment:time", model = 1)
-    expect_is(sr, "plcp_multi_sim_summary")
-    expect_output(print(sr), "^Model: 'correct' \\| Type: 'fixed'")
-    tmp <- sr$out
+    tmp <- summary(res, para = "treatment:time", model = 1)
+    expect_is(tmp, "plcp_multi_sim_summary")
+    expect_output(print(tmp), "^Model: 'correct' \\| Type: 'fixed'")
     expect_identical(nrow(tmp), 2L)
 
-    sr <- summary(res, para = "treatment:time", model = "correct")
-    expect_is(sr, "plcp_multi_sim_summary")
-    expect_output(print(sr), "^Model: 'correct' \\| Type: 'fixed'")
-    tmp <- sr$out
+    tmp <- summary(res, para = "treatment:time", model = "correct")
+    expect_is(tmp, "plcp_multi_sim_summary")
+    expect_output(print(tmp), "^Model: 'correct' \\| Type: 'fixed'")
     expect_identical(nrow(tmp), 2L)
 
     ## correct class for paras
@@ -63,7 +60,7 @@ test_that("multi_sim", {
     ## Random effect
 
     # set 1
-    tmp <- summary(res, para = "subject_slope", model = "correct")$out
+    tmp <- summary(res, para = "subject_slope", model = "correct")
     expect_identical(nrow(tmp), 2L)
 
     x <- c(res[[1]]$res$correct$RE[2, "vcov"],

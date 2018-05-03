@@ -11,7 +11,8 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 ```{r, include = FALSE}
-library(powerlmm)
+library(knitr)
+library(dplyr)
 NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
 options(width = 90)
 knitr::opts_chunk$set(
@@ -37,6 +38,7 @@ nsim <- 3
 ## Partially nested three-level model
 When doing simulations it can be a good idea to specify the model using raw values, to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
 ```{r}
+library(powerlmm)
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 6,
@@ -56,7 +58,7 @@ p <- study_parameters(n1 = 11,
 p
 ```
 
-## How many simulations to run?
+### How many simulations to run?
 The `get_monte_carlo_se`-function accepts an power object, and will return the 95 % interval for a given amount of simulations. This is useful to gauge the precision of the empirical power estimates.  
 ```{r}
 x <- get_power(p)
@@ -146,20 +148,120 @@ The setup and simulation is the same, except that we define vectors of values fo
 
 ```{r}
 # Summarize the 'time:treatment' results 
-x <- summary(res, para = "time:treatment", type = "fixed")
+x <- summary(res, para = "treatment:time")
 
 # customize what to print
 print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"),
       estimates = FALSE)
 
 # Summarize the cluster-level random slope 
-x <- summary(res, para = "cluster_slope", type = "random")
+x <- summary(res, para = "cluster_slope")
 print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"))
 ```
 
 
-# Investigate model selection using LRT
-A common strategy when analyzing (longitudinal) data is to build the model in a data driven fashion. We can investigate how well such a strategy works using the `sim_formula_compare`. We'll define four model formulas, starting with a 2-level random intercept model and working up to a 3-level random intercept and slope model. The true model is a 3-level model with only a random slope. Let's first stup the model
+
+# ANCOVA vs 2-level LMM---data transformations
+Sometimes it usefull to compare if the full longitudinal model is prefered over just analyzing posttest data. This might be especially relevent when you are faced with 3-level longitudinal data. In this example we'll compare power for a longitudal model with a cluster effect at the 3-level, to the 2-level model that analyze the outcome as a cross-sectional model at posttest. This can be accomplished by using the `data_transform` argument, note that we must specify `test = "treatment"` for the 2-level posttest model. 
+
+```{r}
+p <- study_parameters(n1 = 11,
+                      n2 = 40,
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.5,
+                      var_ratio = c(0, 0.01, 0.02, 0.03),
+                      dropout = c(0, dropout_weibull(0.3, 1)),
+                      effect_size = cohend(c(0, 0.8)))
+
+# Formulas --------------------------------------------------------------------
+# OLS
+f_PT <- sim_formula("y ~ treatment",
+                    test = "treatment",
+                    data_transform = transform_to_posttest)
+
+# ANCOVA
+f_PT_pre <- sim_formula("y ~ treatment + pretest",
+                        test = "treatment",
+                        data_transform = transform_to_posttest)
+
+# analyze as 2-level longitudinal
+f_LMM <- sim_formula("y ~ time * treatment +
+                         (1 + time | subject)")
+
+# constrain treatment differences at pretest
+f_LMM_c <- sim_formula("y ~ time + time:treatment +
+                         (1 + time | subject)")
+
+# combine formulas
+f <- sim_formula_compare("posttest" = f_PT,
+                         "ANCOVA" = f_PT_pre,
+                         "LMM" = f_LMM,
+                         "LMM_c" = f_LMM_c)
+
+# Run sim --------------------------------------------------------------------
+res <- simulate(p,
+                formula = f,
+                nsim = nsim,
+                cores = cores,
+                satterthwaite = TRUE,
+                batch_progress = FALSE)
+
+
+
+
+```
+
+
+```{r}
+tests <-  list("posttest" = "treatment",
+               "ANCOVA" = "treatment",
+               "LMM" = "time:treatment",
+               "LMM_c" = "time:treatment")
+
+x <- summary(res, para = tests)
+print(head(x, 5), 
+      add_cols = c("var_ratio", 
+                   "effect_size"))
+
+```
+
+
+```{r, dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center"}
+library(ggplot2)
+x$model <- factor(x$model, levels = c("posttest",
+                                      "ANCOVA", 
+                                      "LMM", 
+                                      "LMM_c")) 
+
+d_limits <- data.frame(effect_size = c(0), 
+                       Power_satt = c(0.025, 0.075),
+                       var_ratio = 0, 
+                       model = 0,
+                       dropout = 0)
+
+d_hline <- data.frame(effect_size = c(0, 0.8), 
+                      x = c(0.05, 0.8))
+
+ggplot(x, aes(model, 
+               Power_satt,
+               group = interaction(var_ratio, dropout), 
+               color = factor(var_ratio),
+               linetype = factor(dropout))) + 
+    geom_hline(data = d_hline,  aes(yintercept = x)) +
+    geom_point() + 
+    geom_blank(data = d_limits) +
+    geom_line() +
+    labs(y = "Power (Satterthwaite)",
+         linetype = "Dropout",
+         color = "Variance ratio") +
+    facet_grid(dropout ~ effect_size, 
+               scales = "free", 
+               labeller = "label_both") +
+    coord_flip()
+```
+
+# Investigate LRT model selection strategies 
+A common strategy when analyzing (longitudinal) data is to build the model in a data driven fashion. We can investigate how well such a strategy works using the `sim_formula_compare`. We'll define four model formulas, starting with a 2-level random intercept model and working up to a 3-level random intercept and slope model. The true model is a 3-level model with only a random slope. Let's first setup the model
 ```{r}
 cores <- parallel::detectCores(logical = FALSE)
 
@@ -223,87 +325,7 @@ summary(res_power, para = "time:treatment")
 ```
 
 
-# ANCOVA vs 2-level LMM---data transformations
-Sometimes it usefull to compare if the full longitudinal model is prefered over just analyzing posttest data. This might be especially relevent when you are faced with 3-level longitudinal data. In this example we'll compare power for a longitudal model with a cluster effect at the 3-level, to the 2-level model that analyze the outcome as a cross-sectional model at posttest. This can be accomplished by using the `data_transform` argument, note that we must specify `test = "treatment"` for the 2-level posttest model. 
-
-```{r}
-p <- study_parameters(n1 = 11,
-                      n2 = 40,
-                      icc_pre_subject = 0.5,
-                      cor_subject = -0.5,
-                      var_ratio = c(0, 0.01, 0.02, 0.03),
-                      dropout = c(0, dropout_weibull(0.3, 1)),
-                      effect_size = cohend(c(0, 0.8)))
-
-
-# OLS
-f_PT <- sim_formula("y ~ treatment",
-                    test = "treatment",
-                    data_transform = transform_to_posttest)
-
-# ANCOVA
-f_PT_pre <- sim_formula("y ~ treatment + pretest",
-                        test = "treatment",
-                        data_transform = transform_to_posttest)
-
-# analyze as 2-level longitudinal
-f_LMM <- sim_formula("y ~ time * treatment +
-                         (1 + time | subject)")
-
-# constrain treatment 
-f_LMM_c <- sim_formula("y ~ time + time:treatment +
-                         (1 + time | subject)")
-
-# combine formulas
-sim_formula_compare("posttest" = f_PT,
-                    "ANCOVA" = f_PT_pre,
-                    "LMM" = f_LDA,
-                    "LMM_c" = f_LDA_c)
-
-res <- simulate(p,
-                 formula = f,
-                 nsim = nsim,
-                 cores = cores,
-                 satterthwaite = TRUE)
-
-tests <-  list("posttest" = "treatment",
-               "ANCOVA" = "treatment",
-               "LMM" = "time:treatment",
-               "LMM_c" = "time:treatment")
-
-x <- summary(res, para = tests)
-print(x, add_cols = c("var_ratio", "effect_size"))
-
-d_limits <- data.frame(effect_size = c(0), 
-                       Power_satt = c(0.025, 0.075),
-                       var_ratio = 0, 
-                       model = 0,
-                       dropout = 0)
-d_hline <- data.frame(effect_size = c(0, 0.8), 
-                      x = c(0.05, 0.8))
-x <- as.data.frame(x) %>%
-    mutate(model = factor(model, levels = c("posttest",
-                                            "ANCOVA", 
-                                            "LMM", 
-                                            "LMM_c"))) 
-ggplot(x, aes(model, 
-               Power_satt,
-               group = interaction(var_ratio, dropout), 
-               color = factor(var_ratio),
-               linetype = factor(dropout))) + 
-    geom_hline(data = d_hline,  aes(yintercept = x)) +
-    geom_point() + 
-    geom_blank(data = d_limits) +
-    geom_line() +
-    facet_grid(dropout ~ effect_size, 
-               scales = "free", 
-               labeller = "label_both") +
-    coord_flip()
-
-
-```
-
-## Compare consequences of ignoring clustering in longitudinal versus posttest only model
+## Compare consequences of ignoring clustering in a longitudinal versus a posttest only model
 
 We already investigate the consequences of ignoring the cluster-level. We can also investigate the consequences of ignoring clustering in a posttest only analysis, by using the `data_transform` argument in `sim_formula`. 
 Same parameters, different models. Shows that LM models can also be used with model selection.
@@ -318,13 +340,15 @@ f1 <- sim_formula("y ~ treatment + (1 | cluster)",
                  test = "treatment",
                  data_transform = transform_to_posttest)
 
-f <- sim_formula_compare("post_ignore" = f0, "post_2lvl" = f1)
-## Not run: 
+f <- sim_formula_compare("post_ignore" = f0, 
+                         "post_2lvl" = f1)
+
 res <- simulate(p,
                 formula = f,
                 nsim = nsim,
                 cores = cores,
-                satterthwaite = TRUE)
+                satterthwaite = TRUE,
+                batch_progress = FALSE)
 
 # type I OLS model
 summary(res, para = "treatment")
@@ -335,4 +359,4 @@ summary(res, model_selection = "FW", para = "treatment")
 
 
 
-TODO: also add pretest as covariate
+

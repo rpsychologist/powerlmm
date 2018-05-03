@@ -1790,12 +1790,16 @@ summary.plcp_multi_sim <- function(object,
             model <- mod_names[model]
             mod_n <- 1
         }
-        if(!is.null(model) && is.character(model) && is.list(para)) {
-            if(!model %in% names(para)) stop("'model' not found in 'para'", call. = FALSE)
-            para <- para[[model]]
+        if(!is.null(model) && is.character(model)) {
+            if(is.list(para)) {
+                if(!model %in% names(para)) stop("'model' not found in 'para'", call. = FALSE)
+                para <- para[[model]]
+            }
+
             if(is.numeric(para)) stop("'para' can't be a numeric value", call. = FALSE)
             mod_n <- 1
         }
+
         if(is.null(model) && is.list(para)) {
             if(!all(mod_names %in% names(para))) stop("At least one of the model names in 'para' does not exist.", call. = FALSE)
         }
@@ -1853,18 +1857,20 @@ summary.plcp_multi_sim <- function(object,
                                                model = model)$summary[[1]]$RE)
     }
 
-    out <- do.call(rbind, out)
+    out <- as.data.frame(do.call(rbind, out))
+
     paras <- attr(object, "paras")
 
     paras <- prepare_multi_setup(paras)$out_dense
     paras <- as.data.frame(paras)
     paras <- paras[rep(1:nrow(paras), each = mod_n), ]
-    out <- list("ret" = cbind(paras, as.data.frame(out)),
-                "out" = out)
-
+    out <- cbind(paras, as.data.frame(out))
+    out <- out[order(out$model), ]
     class(out) <- append("plcp_multi_sim_summary", class(out))
     attr(out, "type") <- type
     attr(out, "model") <- model
+    attr(out, "used_models") <- unique(out$model)
+    attr(out, "used_tests") <- unique(out$parameter)
     attr(out, "nsim") <- res[[1]]$nsim
     out
 }
@@ -1878,7 +1884,7 @@ summary.plcp_multi_sim <- function(object,
 #' Columns include the simulation study parameters and the results.
 #' @export
 as.data.frame.plcp_multi_sim_summary <- function(x, ...) {
-    x$ret
+    attr(x, "dense")
 }
 
 #' @export
@@ -1913,49 +1919,40 @@ print.plcp_multi_sim_summary <- function(x,
                                          power = TRUE,
                                          estimates = TRUE,
                                          digits = 2, ...) {
-    ret <- x$ret
-    if(!is.null(add_cols) & !all(add_cols %in% colnames(ret))) {
-        not_found <- which(!add_cols %in% colnames(ret))
-        stop("No column called: '",
-             paste(add_cols[not_found], sep = "','"),
-             "'",
-             call. = FALSE)
+
+     if(!is.null(add_cols) & !all(add_cols %in% colnames(x))) {
+         not_found <- which(!add_cols %in% colnames(x))
+         stop("No column called: '",
+              paste(add_cols[not_found], sep = "','"),
+              "'",
+              call. = FALSE)
     }
     model <- attr(x, "model")
     type <- attr(x, "type")
     nsim <- attr(x, "nsim")
-    x <- x$out
-    x <- as.data.frame(x)
-    para <- paste(as.character(unique(x$parameter)), collapse = "', '")
-    x <- x[, !colnames(x) %in% "parameter", ]
-    if(!bias) {
-        x <- x[, !colnames(x) %in% c("est_rel_bias", "se_rel_bias")]
-    }
-    if(!estimates) {
-        x <- x[, !colnames(x) %in% c("M_est", "theta", "M_se", "SD_est")]
-    }
-    if(!power) {
-        x <- x[, !colnames(x) %in% c("Power", "Power_bw", "Power_satt", "Satt_NA")]
-    }
-
-    x <- cbind(ret[ , add_cols, drop = FALSE], x)
-    mod_col <- colnames(x) %in% "model"
-    if(length(unique(x$model)) > 1) {
-        x <- cbind(x[, mod_col, drop = FALSE],
-                   x[, !mod_col])
-        x <- x[order(x$model), ]
-    } else x <- x[, !mod_col]
-    x[t(do.call(rbind, lapply(x, is.nan)))] <- "."
-    x[t(do.call(rbind, lapply(x, is.na)))] <- "."
+    out <- as.data.frame.data.frame(x)
+    if(estimates) est_cols <- c("M_est", "theta", "M_se", "SD_est") else est_cols <- NULL
+    if(power) power_cols <- c("Power" ,"Power_bw" ,"Power_satt") else power_cols <- NULL
+    print_cols <- c("model", add_cols, est_cols, power_cols, c("CI_Cover", "CI_Wald_cover"))
+    out <- out[, colnames(x) %in% print_cols]
+    para <- paste(as.character(unique(attr(x, "used_tests"))), collapse = "', '")
+    out <- out[, !colnames(out) %in% "parameter", ]
+    mod_col <- colnames(out) %in% "model"
+    if(length(attr(x, "used_models")) > 1) {
+        out <- cbind(out[, mod_col, drop = FALSE],
+                   out[, !mod_col])
+    } else out <- out[, !mod_col]
+    out[t(do.call(rbind, lapply(out, is.nan)))] <- "."
+    out[t(do.call(rbind, lapply(out, is.na)))] <- "."
 
     if(is.null(model)) model <- "All"
     cat("Model: '", model, "' | Type: '", type, "' | Parameter(s): '", para, "'\n", sep = "")
     cat("---\n")
-    print(x, digits = digits, row.names = FALSE)
+    print(out, digits = digits, row.names = FALSE)
     cat("---\n")
-    cat("nsim: ", nsim, "\n")
+    cat("nsim: ", nsim, "|", sum(!colnames(x) %in% print_cols), "columns not shown\n")
     if(any(x$is_NA > 0)) warning("Some simulations had NA estimates that was removed.", call. = FALSE)
-    invisible(ret)
+    invisible(out)
 }
 
 ## random effect
