@@ -23,7 +23,7 @@ one-tailed tests are not yet implemented.}
 
 \item{model_selection}{Indicates if model selection should be performed. If \code{NULL} (default),
 all models are returned, if \code{FW} or \code{BW} model selection is performed using LRT, and the result
-is based on the selected model from each simulation.}
+is based on the selected model from each simulation. See \code{\link{summary.plcp_sim}} for more information.}
 
 \item{LRT_alpha}{Indicates the alpha level used when comparing models during model selection.}
 

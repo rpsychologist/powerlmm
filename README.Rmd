@@ -32,12 +32,13 @@ groups, or physician), and missing data. The main features of the package are:
 * Design effect, and estimated type I error when the third-level is ignored.
 * Fast analytical power calculations for all designs.
 * Power for small samples sizes using Satterthwaite's degrees of freedom approximation.
-* Explore bias, Type I errors and model misspecification using convenient simulation methods.
+* Explore bias, Type I errors, model misspecification, and LRT model selection 
+  using convenient simulation methods.
 
 ## Installation
 `powerlmm` can be installed from CRAN and GitHub. 
 ```{r, eval = FALSE}
-# CRAN, version 0.2.0
+# CRAN, version 0.3.0
 install.packages("powerlmm")
 
 # GitHub, dev version
@@ -120,6 +121,46 @@ x <- get_power_table(p,
 plot(x)
 ```
 ![](http://rpsychologist.com/img/powerlmm/README-three-level-power-curve-1.png)
+
+## Simulation
+The package includes a flexible simulation method that makes it easy to investigate the performance of different models. As an example, let's compare the power difference
+between the 2-level LMM with 11 repeated measures, to doing an ANCOVA at posttest. Using `sim_formula` different models can be fit to the same data set during the simulation.
+```{r}
+p <- study_parameters(n1 = 11,
+                      n2 = 40, 
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.4,
+                      var_ratio = 0.02,
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
+
+# 2-lvl LMM
+f0 <- sim_formula("y ~ time + time:treatment + (1 + time | subject)")
+
+# ANCOVA, formulas with no random effects are with using lm()
+f1 <- sim_formula("y ~ treatment + pretest", 
+                  data_transform = transform_to_posttest, 
+                  test = "treatment")
+
+f <- sim_formula_compare("LMM" = f0, 
+                         "ANCOVA" = f1)
+
+res <- simulate(p, 
+                nsim = 2000, 
+                formula = f, 
+                cores = parallel::detectCores(logical = FALSE))
+
+summary(res, para = list("LMM" = "time:treatment",
+                         "ANCOVA" = "treatment"))
+
+```
+
+We can also look at a specific model, here's the results for the 2-lvl LMM.
+
+```{r}
+summary(res, model = "LMM")
+```
+
 
 ## Launch interactive web application
 The package's basic functionality is also implemented in a Shiny web application, 

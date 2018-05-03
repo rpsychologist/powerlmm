@@ -7,13 +7,13 @@
 sim_formula(formula, data_transform = NULL, test = "time:treatment")
 }
 \arguments{
-\item{formula}{A \code{character} containing a lme4 formula.}
+\item{formula}{A \code{character} containing a \pkg{lme4} formula.}
 
 \item{data_transform}{Optional; a \code{function} that applies a transformation
 to the data during each simulation.}
 
 \item{test}{A \code{character} vector indicating which parameters should be tested.
-Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.}
+Only applies to tests using Satterthwaite \emph{dfs}, or when calculating confidence intervals.}
 }
 \value{
 Object with class \code{plcp_sim_formula}
@@ -26,7 +26,14 @@ It is possible to fit model without any random effects. If no random effects is 
 the model is fit using \code{lm()}.
 }
 \examples{
+# 2-lvl model
 f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
+
+# ANCOVA using 'data_transform'
+f <- sim_formula("y ~ treatment + pretest",
+                 data_transform = transform_to_posttest,
+                 test = "treatment")
+
 }
 \seealso{
 \code{\link{sim_formula_compare}}, \code{\link{transform_to_posttest}}

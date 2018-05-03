@@ -15,7 +15,9 @@
 \arguments{
 \item{object}{A \code{simulate.plcp}-object}
 
-\item{model}{NULL}
+\item{model}{Indicates which model that should be returned.
+Default is \code{NULL} which return results from all model formulas. Can also be a \code{character} matching the
+names used in \code{\link{sim_formula_compare}}.}
 
 \item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
 one-tailed tests are not yet implemented.}
@@ -26,9 +28,10 @@ used to specify different parameters per model.}
 
 \item{...}{Currently not used}
 
-\item{model_selection}{NULL}
+\item{model_selection}{indicates if the summary should be based on a LRT model selection strategy. Default is \code{NULL},
+which returns all models, if \code{FW} or \code{BW} a forward or backward model selection strategy is used, see \emph{Details}.}
 
-\item{LRT_alpha}{NULL}
+\item{LRT_alpha}{Indicates the alpha level used if doing LRT model comparisons.}
 }
 \value{
 Object with class \code{plcp_sim_summary}. It contains
@@ -79,5 +82,5 @@ If the data has been transformed \code{sim_formula(data_transform = ...)}, then
 true parameter values (\code{theta}s shown in the summary will most likely no longer
 apply. Hence, relative bias and CI coverage will be in relation to the original model.
 However, the empirical estimates will be summarized correctly, enabling investigation of
-power and Type I errors using arbitrary transformation.
+power and Type I errors using arbitrary transformations.
 }

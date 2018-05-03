@@ -10,10 +10,13 @@ transform_to_posttest(data)
 \item{data}{a \code{data.frame} created using \code{\link{simulate_data}}}
 }
 \value{
-a \code{data.frame}. Includes two new columns:
+a \code{data.frame} with \code{y} now only includes the posttest values.
+Also includes three new columns:
 \itemize{
    \item \code{pre} subject-level pretest scores.
    \item \code{pre_cluster} cluster-level pretest scores.
+   \item \code{pre_subject_c} subject-level pretest scores center
+   around the cluster-level pretest.
 }
 }
 \description{

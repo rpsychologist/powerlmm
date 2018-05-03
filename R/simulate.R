@@ -50,11 +50,11 @@ create_dropout_indicator <- function(paras) {
 
 #' Create a simulation formula
 #'
-#' @param formula A \code{character} containing a lme4 formula.
+#' @param formula A \code{character} containing a \pkg{lme4} formula.
 #' @param data_transform Optional; a \code{function} that applies a transformation
 #' to the data during each simulation.
 #' @param test A \code{character} vector indicating which parameters should be tested.
-#' Only applies to tests using Satterthwaite dfs, or when calculating confidence intervals.
+#' Only applies to tests using Satterthwaite \emph{dfs}, or when calculating confidence intervals.
 #'
 #' @details
 #'
@@ -66,7 +66,14 @@ create_dropout_indicator <- function(paras) {
 #' @export
 #'
 #' @examples
+#' # 2-lvl model
 #' f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
+#'
+#' # ANCOVA using 'data_transform'
+#' f <- sim_formula("y ~ treatment + pretest",
+#'                  data_transform = transform_to_posttest,
+#'                  test = "treatment")
+#'
 sim_formula <- function(formula, data_transform = NULL, test = "time:treatment") {
 
      x <- list("formula" = formula,
@@ -171,10 +178,13 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 #'
 #' @param data a \code{data.frame} created using \code{\link{simulate_data}}
 #'
-#' @return a \code{data.frame}. Includes two new columns:
+#' @return a \code{data.frame} with \code{y} now only includes the posttest values.
+#' Also includes three new columns:
 #' \itemize{
 #'    \item \code{pre} subject-level pretest scores.
 #'    \item \code{pre_cluster} cluster-level pretest scores.
+#'    \item \code{pre_subject_c} subject-level pretest scores center
+#'    around the cluster-level pretest.
 #' }
 #' @export
 #'
@@ -298,10 +308,9 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #' @param object An object created by \code{\link{study_parameters}}.
 #' @param nsim The number of simulations to run.
 #' @param seed Currently ignored.
-#' @param formula \code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
-#' Should either be a character vector or named list if one model is simulated.
-#' It also possible to compare two models, e.g. a correct and a misspecified model,
-#' by passing the two formulas as a named list, with the names "wrong" and "correct".
+#' @param formula Model formula(s) used to analyze the data, see \emph{Details}.
+#' Should be created using \code{\link{sim_formula}}. It is also possible to compare multiple
+#' models, e.g. a correct and a misspecified model, by combining the formulas using \code{\link{sim_formula_compare}}.
 #' See \emph{Examples}. If \code{NULL} the formula is made automatically,
 #' using \code{\link{create_lmer_formula}}, which does not support objects with multiple
 #' simulation setups.
@@ -328,7 +337,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' \strong{Model formula}
 #'
-#' The available model terms are:
+#' If no data transformation is used, the available model terms are:
 #' \itemize{
 #'  \item \code{y} the outcome vector, with potential missing data.
 #'  \item \code{y_c} the complete version of \code{y}, before dropout was simulated.
@@ -338,12 +347,6 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'  \item \code{cluster} for three-level models; the cluster-level id variable,
 #'  from 1 to the total number of clusters.
 #' }
-#'
-#' Currently, the models are assumed to be of the form "\code{y ~ time * treatment + (time | subject) + (time | clusters)}",
-#' i.e., "\code{subject}" and "\code{cluster}" are included as random effects.
-#' The \code{\link{summary.plcp_sim}} method will not
-#' work if you include parameters that are not defined by the study_parameters-object,
-#' e.g. "\code{y ~ time * cluster + (1 | subject)}".
 #'
 #' See \emph{Examples} and the simulation-vignette for formula examples. For
 #' \code{object}s that contain a single study setup, then the lmer formula
@@ -408,7 +411,7 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                       sigma_subject_slope = 0.2,
 #'                       icc_slope = 0.05,
 #'                       sigma_error = 1.44,
-#'                       effect_size = cohend(0.5))
+#'                       effect_size = 0)
 #'
 #' ## compare correct and miss-specified model
 #' f0 <- "y ~ treatment * time + (1 + time | subject)"
@@ -426,6 +429,12 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'
 #' summary(res)
 #'
+#' ## Compare random effects using LRT,
+#' ## summarise based on best model from each sim
+#' summary(res,
+#'         model_selection = "FW",
+#'         LRT_alpha = 0.1,
+#'         para = "treatment:time")
 #'
 #' # Partially nested design ---------------------------------------------------
 #' p <- study_parameters(n1 = 11,
@@ -478,10 +487,10 @@ simulate_data.plcp_multi <- function(paras, n = 1) {
 #'                 save = FALSE)
 #'
 #' # Summarize 'time:treatment' results for n3 = c(2, 4, 6) for 'correct' model
-#' summary(res, para = "time:treatment", type = "fixed", model = "correct")
+#' summary(res, para = "time:treatment", model = "correct")
 #'
 #' # Summarize cluster-level random slope  for n3 = c(2, 4, 6) for 'correct' model
-#' summary(res, para = "cluster_slope", type = "random", model = "correct")
+#' summary(res, para = "cluster_slope", model = "correct")
 #' }
 #' @export
 simulate.plcp <- function(object,
@@ -1382,7 +1391,7 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #' true parameter values (\code{theta}s shown in the summary will most likely no longer
 #' apply. Hence, relative bias and CI coverage will be in relation to the original model.
 #' However, the empirical estimates will be summarized correctly, enabling investigation of
-#' power and Type I errors using arbitrary transformation.
+#' power and Type I errors using arbitrary transformations.
 #'
 #' @return Object with class \code{plcp_sim_summary}. It contains
 #' the following output:
@@ -1466,9 +1475,12 @@ summary.plcp_sim <- function(object, model = NULL, alpha = 0.05, para = NULL, ..
 }
 
 #' @rdname summary.plcp_sim
-#' @param model NULL
-#' @param model_selection NULL
-#' @param LRT_alpha NULL
+#' @param model Indicates which model that should be returned.
+#' Default is \code{NULL} which return results from all model formulas. Can also be a \code{character} matching the
+#' names used in \code{\link{sim_formula_compare}}.
+#' @param model_selection indicates if the summary should be based on a LRT model selection strategy. Default is \code{NULL},
+#' which returns all models, if \code{FW} or \code{BW} a forward or backward model selection strategy is used, see \emph{Details}.
+#' @param LRT_alpha Indicates the alpha level used if doing LRT model comparisons.
 #' @method summary plcp_sim_formula_compare
 #' @export
 summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, para = NULL, ...) {
@@ -1743,7 +1755,7 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
 #' one-tailed tests are not yet implemented.
 #' @param model_selection Indicates if model selection should be performed. If \code{NULL} (default),
 #' all models are returned, if \code{FW} or \code{BW} model selection is performed using LRT, and the result
-#' is based on the selected model from each simulation.
+#' is based on the selected model from each simulation. See \code{\link{summary.plcp_sim}} for more information.
 #' @param LRT_alpha Indicates the alpha level used when comparing models during model selection.
 #' @param ... Optional arguments.
 #'

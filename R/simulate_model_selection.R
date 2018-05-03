@@ -11,11 +11,22 @@ LRT_test <- function(m0, m1, alpha) {
 }
 comp_LRT <- function(m0, m1) {
 
-    dev0 <- -2 * m0$ll
-    df0 <- m0$df
 
-    dev1 <- -2 * m1$ll
-    df1 <- m1$df
+
+    if(unique(m0$df) < unique(m1$df)) {
+        dev0 <- -2 * m0$ll
+        df0 <- m0$df
+
+        dev1 <- -2 * m1$ll
+        df1 <- m1$df
+    } else {
+        dev0 <- -2 * m1$ll
+        df0 <- m1$df
+
+        dev1 <- -2 * m0$ll
+        df1 <- m0$df
+    }
+
 
     pval <- 1 - stats::pchisq(dev0-dev1, df1-df0)
 

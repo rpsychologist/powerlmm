@@ -20,10 +20,9 @@
 
 \item{seed}{Currently ignored.}
 
-\item{formula}{\code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
-Should either be a character vector or named list if one model is simulated.
-It also possible to compare two models, e.g. a correct and a misspecified model,
-by passing the two formulas as a named list, with the names "wrong" and "correct".
+\item{formula}{Model formula(s) used to analyze the data, see \emph{Details}.
+Should be created using \code{\link{sim_formula}}. It is also possible to compare multiple
+models, e.g. a correct and a misspecified model, by combining the formulas using \code{\link{sim_formula_compare}}.
 See \emph{Examples}. If \code{NULL} the formula is made automatically,
 using \code{\link{create_lmer_formula}}, which does not support objects with multiple
 simulation setups.}
@@ -57,7 +56,7 @@ See also \code{vignette("simulations", package = "powerlmm")} for a tutorial.
 
 \strong{Model formula}
 
-The available model terms are:
+If no data transformation is used, the available model terms are:
 \itemize{
  \item \code{y} the outcome vector, with potential missing data.
  \item \code{y_c} the complete version of \code{y}, before dropout was simulated.
@@ -67,12 +66,6 @@ The available model terms are:
  \item \code{cluster} for three-level models; the cluster-level id variable,
  from 1 to the total number of clusters.
 }
-
-Currently, the models are assumed to be of the form "\code{y ~ time * treatment + (time | subject) + (time | clusters)}",
-i.e., "\code{subject}" and "\code{cluster}" are included as random effects.
-The \code{\link{summary.plcp_sim}} method will not
-work if you include parameters that are not defined by the study_parameters-object,
-e.g. "\code{y ~ time * cluster + (1 | subject)}".
 
 See \emph{Examples} and the simulation-vignette for formula examples. For
 \code{object}s that contain a single study setup, then the lmer formula
@@ -135,7 +128,7 @@ p <- study_parameters(n1 = 10,
                       sigma_subject_slope = 0.2,
                       icc_slope = 0.05,
                       sigma_error = 1.44,
-                      effect_size = cohend(0.5))
+                      effect_size = 0)
 
 ## compare correct and miss-specified model
 f0 <- "y ~ treatment * time + (1 + time | subject)"
@@ -153,6 +146,12 @@ res <- simulate(object = p,
 
 summary(res)
 
+## Compare random effects using LRT,
+## summarise based on best model from each sim
+summary(res,
+        model_selection = "FW",
+        LRT_alpha = 0.1,
+        para = "treatment:time")
 
 # Partially nested design ---------------------------------------------------
 p <- study_parameters(n1 = 11,
@@ -205,10 +204,10 @@ res <- simulate(object = p,
                 save = FALSE)
 
 # Summarize 'time:treatment' results for n3 = c(2, 4, 6) for 'correct' model
-summary(res, para = "time:treatment", type = "fixed", model = "correct")
+summary(res, para = "time:treatment", model = "correct")
 
 # Summarize cluster-level random slope  for n3 = c(2, 4, 6) for 'correct' model
-summary(res, para = "cluster_slope", type = "random", model = "correct")
+summary(res, para = "cluster_slope", model = "correct")
 }
 }
 \seealso{
