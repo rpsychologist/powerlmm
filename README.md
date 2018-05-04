@@ -30,7 +30,7 @@ Installation
 install.packages("powerlmm")
 
 # GitHub, dev version
-devtools::install_github("rpsychologist/powerlmm", build_vignettes = TRUE)
+devtools::install_github("rpsychologist/powerlmm")
 ```
 
 Example usage
@@ -105,7 +105,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
-#>               df = 7.961324
+#>               df = 7.953218
 #>            alpha = 0.05
 #>            power = 68%
 ```
@@ -172,9 +172,9 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 25.23       (control)
-#>                    25.23       (treatment)
-#>                    50.46       (total)
+#>          total_n = 26          (control)
+#>                    26          (treatment)
+#>                    52          (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
@@ -183,7 +183,7 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 #>               df = 8
 #>            alpha = 0.05
-#>            power = 48% (MCSE: 1%)
+#>            power = 49% (MCSE: 1%)
 #> 
 #> NOTE: n2 is randomly sampled. Values are the mean from R = 100 realizations.
 ```
@@ -246,8 +246,8 @@ summary(res, para = list("LMM" = "time:treatment",
 #> Fixed effects: 'time:treatment', 'treatment'
 #> 
 #>   model M_est theta M_se SD_est Power Power_bw Power_satt
-#>     LMM  -1.1  -1.1 0.32   0.34  0.92     0.92          .
-#>  ANCOVA -11.0   0.0 3.70   3.80  0.84     0.84       0.84
+#>     LMM  -1.1  -1.1 0.32   0.31  0.94     0.93          .
+#>  ANCOVA -11.0   0.0 3.70   3.70  0.85     0.85       0.85
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
@@ -269,17 +269,17 @@ summary(res, model = "LMM")
 #> Random effects 
 #> 
 #>          parameter  M_est theta est_rel_bias prop_zero is_NA
-#>  subject_intercept 100.00 100.0     -0.00076         0     0
-#>      subject_slope   2.00   2.0      0.00300         0     0
-#>              error 100.00 100.0      0.00170         0     0
-#>        cor_subject  -0.39  -0.4     -0.01900         0     0
+#>  subject_intercept 100.00 100.0      0.00600         0     0
+#>      subject_slope   2.00   2.0      0.00630         0     0
+#>              error 100.00 100.0     -0.00049         0     0
+#>        cor_subject  -0.39  -0.4     -0.01400         0     0
 #> 
 #> Fixed effects 
 #> 
-#>       parameter    M_est theta M_se SD_est Power Power_bw Power_satt
-#>     (Intercept) -0.01400   0.0 1.30   1.20 0.045        .          .
-#>            time  0.00029   0.0 0.25   0.25 0.056        .          .
-#>  time:treatment -1.10000  -1.1 0.32   0.34 0.920     0.92          .
+#>       parameter   M_est theta M_se SD_est Power Power_bw Power_satt
+#>     (Intercept)  0.0150   0.0 1.30   1.30 0.046        .          .
+#>            time  0.0013   0.0 0.25   0.25 0.055        .          .
+#>  time:treatment -1.1000  -1.1 0.32   0.31 0.940     0.93          .
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
