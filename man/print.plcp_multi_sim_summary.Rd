@@ -4,10 +4,22 @@
 \alias{print.plcp_multi_sim_summary}
 \title{Print method for \code{summary.plcp_multi_sim}-objects}
 \usage{
-\method{print}{plcp_multi_sim_summary}(x, digits = 2, ...)
+\method{print}{plcp_multi_sim_summary}(x, add_cols = NULL, bias = TRUE,
+  power = TRUE, estimates = TRUE, digits = 2, ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_multi_sim_summary}}
+
+\item{add_cols}{\code{character} vector; indicates the names of the
+additional columns that should be added to the output. Intended use case is
+when you want to add some of the setup parameters, this print method
+is not smart enough to figure out which parameters you are investigating.}
+
+\item{bias}{\code{logical}; indicates if parameter bias should be printed.}
+
+\item{power}{\code{logical}; indicates if empirical power should be printed.}
+
+\item{estimates}{\code{logical}; indicates if the parameter estimates should be printed.}
 
 \item{digits}{number of significant digits.}
 

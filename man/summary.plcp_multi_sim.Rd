@@ -5,7 +5,8 @@
 \title{Summarize simulations based on a combination of multiple parameter values}
 \usage{
 \method{summary}{plcp_multi_sim}(object, para = "time:treatment",
-  type = "fixed", model = "correct", alpha = 0.05, ...)
+  model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1,
+  ...)
 }
 \arguments{
 \item{object}{A multiple simulation object created with
@@ -13,37 +14,39 @@
 
 \item{para}{The name of the fixed or random effect that should be summarized.}
 
-\item{type}{Specifies what type of effect \code{para} is; can be either
-"random" or "fixed".}
-
-\item{model}{Specifies which model should be summarized. Used when models are
-simulated from formulas named "correct" and "wrong".}
+\item{model}{Specifies which model that should be summarized. Accepts either
+a \code{character} with the name used in \code{\link{sim_formula_compare}}, or
+an \code{integer} value.}
 
 \item{alpha}{Indicates the significance level. Default is 0.05 (two-tailed),
 one-tailed tests are not yet implemented.}
 
+\item{model_selection}{Indicates if model selection should be performed. If \code{NULL} (default),
+all models are returned, if \code{FW} or \code{BW} model selection is performed using LRT, and the result
+is based on the selected model from each simulation. See \code{\link{summary.plcp_sim}} for more information.}
+
+\item{LRT_alpha}{Indicates the alpha level used when comparing models during model selection.}
+
 \item{...}{Optional arguments.}
 }
 \value{
-A \code{data.frame} with class \code{plcp_multi_sim_summary}. Each row
-summarizes one of the parameter combinations used in the simulation. It contains
-the following columns:
+A \code{list} with class \code{plcp_multi_sim_summary}. It can be coursed to a \code{data.frame},
+using \code{as.data.frame}. Each row summarizes one of the parameter combinations used in the simulation.
+In addition to the setup parameter values, it contains the following columns:
 \itemize{
  \item \code{parameter} is the name of the coefficient
  \item \code{M_est} is the mean of the estimates taken over all the simulations.
  \item \code{theta} is the population parameter values specified with \code{study_parameters}
- \item \code{est_rel_bias} is the relative bias of the estimate
  \item \code{M_se} is the mean estimated standard error taken over all the simulations.
  \item \code{SD_est} is the empirical standard error; i.e. the standard
  deviation of the distribution of the generated estimates
- \item \code{se_rel_bias} is the relative bias of the standard error.
  \item \code{power} is the empirical power of the Wald Z test, i.e. the proportion
  of simulated p-values < alpha
  \item \code{power_satt} is the empirical power of the Wald \emph{t} test using
-  Satterthwaite's degree of freedom approximation
+  Satterthwaite's degree of freedom approximation.
  \item \code{satt_NA} is the proportion of Satterthwaite's approximations that failed.
  \item \code{prop_zero} is the proportion of the simulated estimates that
- are zero; only shown for random effects
+ are zero; only shown for random effects.
 }
 }
 \description{

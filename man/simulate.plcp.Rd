@@ -20,10 +20,9 @@
 
 \item{seed}{Currently ignored.}
 
-\item{formula}{\code{lme4::lmer} formula(s) used to analyze the data, see \emph{Details}.
-Should either be a character vector or named list if one model is simulated.
-It also possible to compare two models, e.g. a correct and a misspecified model,
-by passing the two formulas as a named list, with the names "wrong" and "correct".
+\item{formula}{Model formula(s) used to analyze the data, see \emph{Details}.
+Should be created using \code{\link{sim_formula}}. It is also possible to compare multiple
+models, e.g. a correct and a misspecified model, by combining the formulas using \code{\link{sim_formula_compare}}.
 See \emph{Examples}. If \code{NULL} the formula is made automatically,
 using \code{\link{create_lmer_formula}}, which does not support objects with multiple
 simulation setups.}
@@ -32,7 +31,7 @@ simulation setups.}
 approximation will be used when computing \emph{p}-values. This is implemented using
 the \code{lmerTest}-package. See \emph{Details}.}
 
-\item{CI}{Logical; if \code{TRUE} coverage rates for confidence intervals
+\item{CI}{Logical; if \code{TRUE} coverage rates for 95 \% confidence intervals
 will be calculated. See \emph{Details}.}
 
 \item{cores}{Number of CPU cores to use. If called from a GUI environment (e.g. RStudio) or
@@ -53,9 +52,11 @@ simulations with multiple setups.}
 Perform a simulation study using a \code{study_parameters}-object
 }
 \details{
+See also \code{vignette("simulations", package = "powerlmm")} for a tutorial.
+
 \strong{Model formula}
 
-The available model terms are:
+If no data transformation is used, the available model terms are:
 \itemize{
  \item \code{y} the outcome vector, with potential missing data.
  \item \code{y_c} the complete version of \code{y}, before dropout was simulated.
@@ -66,23 +67,18 @@ The available model terms are:
  from 1 to the total number of clusters.
 }
 
-Currently, the models are assumed to be of the form "\code{y ~ time * treatment + (time | subject) + (time | clusters)}",
-i.e., "\code{subject}" and "\code{cluster}" are included as random effects.
-The \code{\link{summary.plcp_sim}} method will not
-work if you include parameters that are not defined by the study_parameters-object,
-e.g. "\code{y ~ time * cluster + (1 | subject)}".
-
 See \emph{Examples} and the simulation-vignette for formula examples. For
 \code{object}s that contain a single study setup, then the lmer formula
 can be created automatically using \code{\link{create_lmer_formula}}.
 
 \strong{Satterthwaite's approximation, and CI coverage}
 
-To decrease the simulation time Satterthwaite's \emph{dfs} and the CIs' coverage rates
-will only be calculated for the test of 'time:treatment'-interaction.
+To decrease the simulation time the default is to only calculate Satterthwaite's \emph{dfs}
+and the CIs' coverage rates for the test of 'time:treatment'-interaction. This can be
+changed using the argument \code{test} in \code{\link{sim_formula}}.
 
 Confidence intervals are both calculated using profile likelihood and by
-the Wald approximation.
+the Wald approximation, using a 95 \% confidence level.
 
 \strong{Saving intermediate results for multi-sims}
 
@@ -109,7 +105,7 @@ p <- study_parameters(n1 = 11,
                       sigma_error = 1.44,
                       effect_size = cohend(0.5))
 
-f <- "y ~ treatment * time + (1 + time | subject)"
+f <- sim_formula("y ~ treatment * time + (1 + time | subject)")
 
 
 res <- simulate(object = p,
@@ -123,7 +119,7 @@ res <- simulate(object = p,
 summary(res)
 
 
-# Three-level (nested) ---------------------------------------------------------
+# Three-level (nested) ------------------------------------------------------
 p <- study_parameters(n1 = 10,
                       n2 = 20,
                       n3 = 4,
@@ -132,11 +128,13 @@ p <- study_parameters(n1 = 10,
                       sigma_subject_slope = 0.2,
                       icc_slope = 0.05,
                       sigma_error = 1.44,
-                      effect_size = cohend(0.5))
+                      effect_size = 0)
 
 ## compare correct and miss-specified model
-f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+f0 <- "y ~ treatment * time + (1 + time | subject)"
+f1 <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+f <- sim_formula_compare("correct" = f1,
+                         "wrong" = f0)
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -148,8 +146,14 @@ res <- simulate(object = p,
 
 summary(res)
 
+## Compare random effects using LRT,
+## summarise based on best model from each sim
+summary(res,
+        model_selection = "FW",
+        LRT_alpha = 0.1,
+        para = "treatment:time")
 
-# Partially nested design ------------------------------------------------
+# Partially nested design ---------------------------------------------------
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 4,
@@ -162,7 +166,8 @@ p <- study_parameters(n1 = 11,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.5))
 
-f <- "y ~ treatment * time + (1 + time | subject) + (0 + treatment:time | cluster)"
+f <- sim_formula("y ~ treatment * time + (1 + time | subject) +
+                  (0 + treatment:time | cluster)")
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -174,7 +179,7 @@ res <- simulate(object = p,
 
 summary(res)
 
-# Run multiple designs  --------------------------------------------------------
+# Run multiple designs  -----------------------------------------------------
 p <- study_parameters(n1 = 10,
                       n2 = 20,
                       n3 = c(2, 4, 6),
@@ -185,8 +190,10 @@ p <- study_parameters(n1 = 10,
                       sigma_error = 1.44,
                       effect_size = cohend(0.5))
 
-f <- list("correct" = "y ~ treatment * time + (1 + time | subject) + (time | cluster)",
-          "wrong" = "y ~ treatment * time + (1 + time | subject)")
+f0 <- "y ~ treatment * time + (1 + time | subject)"
+f1 <- "y ~ treatment * time + (1 + time | subject) + (0 + time | cluster)"
+f <- sim_formula_compare("correct" = f1,
+                         "wrong" = f0)
 
 res <- simulate(object = p,
                 nsim = 1000,
@@ -197,12 +204,12 @@ res <- simulate(object = p,
                 save = FALSE)
 
 # Summarize 'time:treatment' results for n3 = c(2, 4, 6) for 'correct' model
-summary(res, para = "time:treatment", type = "fixed", model = "correct")
+summary(res, para = "time:treatment", model = "correct")
 
 # Summarize cluster-level random slope  for n3 = c(2, 4, 6) for 'correct' model
-summary(res, para = "cluster_slope", type = "random", model = "correct")
+summary(res, para = "cluster_slope", model = "correct")
 }
 }
 \seealso{
-\code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
+\code{\link{sim_formula}}, \code{\link{sim_formula_compare}}, \code{\link{summary.plcp_sim}}, \code{\link{simulate_data}}
 }

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Kristoffer Magnusson" />
 
-<meta name="date" content="2018-04-17" />
+<meta name="date" content="2018-04-30" />
 
 <title>Power Analysis for Three-level Longitudinal Models with Missing Data</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Power Analysis for Three-level Longitudinal Models with Missing Data</h1>
 <h4 class="author"><em>Kristoffer Magnusson</em></h4>
-<h4 class="date"><em>2018-04-17</em></h4>
+<h4 class="date"><em>2018-04-30</em></h4>
 
 
 <div id="TOC">
@@ -578,9 +578,9 @@ p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span c
 ##               n3 = 5                        (treatment)
 ##                    5                        (control)
 ##                    10                       (total)
-##          total_n = 25.9                     (control)
-##                    25.9                     (treatment)
-##                    51.8                     (total)
+##          total_n = 21.9                     (control)
+##                    21.9                     (treatment)
+##                    43.8                     (total)
 ##          dropout = No missing data
 ## icc_pre_subjects = 0.5
 ## icc_pre_clusters = 0
@@ -589,7 +589,7 @@ p &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span c
 ##      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 ##               df = 8
 ##            alpha = 0.05
-##            power = 69% (MCSE: 2%)
+##            power = 61% (MCSE: 3%)
 ## 
 ## NOTE: n2 is randomly sampled. Values are the mean from R = 10 realizations.</code></pre>
 <p>N.B., in this case cluster sizes are <em>not</em> sampled independently for each treatment group, i.e. both groups will have exactly the same cluster imbalance. To sample each group independently, either from the same or from a different distribution, use <code>per_treatment</code>.</p>
@@ -803,11 +803,11 @@ p2 &lt;-<span class="st"> </span><span class="kw">study_parameters</span>(<span 
                                            <span class="dt">standardizer =</span> <span class="st">&quot;pretest_SD&quot;</span>))
 <span class="kw">get_DEFT</span>(p2)</code></pre></div>
 <pre><code>##   icc_slope var_ratio     DEFT approx_type1
-## 1      0.05      0.02 1.050119   0.06198255
-## 2      0.05      0.02 1.110566   0.07759167
-## 3      0.05      0.02 1.169592   0.09378368
-## 4      0.05      0.02 1.223365   0.10913165
-## 5      0.05      0.02 1.325465   0.13922083</code></pre>
+## 1      0.05      0.02 1.050327   0.06203420
+## 2      0.05      0.02 1.110992   0.07770548
+## 3      0.05      0.02 1.169819   0.09384759
+## 4      0.05      0.02 1.222454   0.10886770
+## 5      0.05      0.02 1.325468   0.13922159</code></pre>
 <p>We can see that the design effect increases with more subjects per cluster. Even when only 5 % of the slope variance is at the cluster level, Type I errors can be considerably inflated if the random slope at the third-level is ignored.</p>
 </div>
 <div id="references" class="section level1 unnumbered">

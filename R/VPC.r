@@ -331,7 +331,10 @@ get_correlation_matrix.plcp <- function(object) {
                   u01, u1^2), ncol = 2)
     D2 <- matrix(c(v0^2, v01,
                    v01, v1^2), ncol = 2)
+
     V <- Z %*% D %*% t(Z) + Z %*% D2 %*% t(Z) + error^2*diag(n1)
+
+
     V <- cov2cor(V)
 
     time_rounded <- round(time, 1)
@@ -340,6 +343,12 @@ get_correlation_matrix.plcp <- function(object) {
     class(V) <- append(class(V), "plcp_ICC2")
 
     V
+}
+#' @rdname get_correlation_matrix
+#' @export
+get_correlation_matrix.plcp_multi <- function(object) {
+    warning("Multiple study designs used, only the first is shown")
+    get_correlation_matrix.plcp(object[1, ])
 }
 
 
@@ -398,11 +407,5 @@ print.plcp_ICC2 <- function(x, ...) {
     print(round(x, 2), ...)
 }
 
-#' @rdname get_correlation_matrix
-#' @export
-get_correlation_matrix.plcp_multi <- function(object) {
-    warning("Multiple study designs used, only the first is shown")
-    get_correlation_matrix.plcp(object[1, ])
-}
 
 

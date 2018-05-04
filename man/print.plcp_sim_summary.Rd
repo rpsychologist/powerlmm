@@ -4,10 +4,13 @@
 \alias{print.plcp_sim_summary}
 \title{Print method for \code{summary.plcp_sim}-objects}
 \usage{
-\method{print}{plcp_sim_summary}(x, digits = 2, ...)
+\method{print}{plcp_sim_summary}(x, verbose = TRUE, digits = 2, ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_sim_summary}}
+
+\item{verbose}{\code{logical}; indicates if additional information
+should be printed (default is \code{TRUE}).}
 
 \item{digits}{number of significant digits.}
 

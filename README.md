@@ -18,7 +18,7 @@ The purpose of `powerlmm` is to help design longitudinal treatment studies (para
 -   Design effect, and estimated type I error when the third-level is ignored.
 -   Fast analytical power calculations for all designs.
 -   Power for small samples sizes using Satterthwaite's degrees of freedom approximation.
--   Explore bias, Type I errors and model misspecification using convenient simulation methods.
+-   Explore bias, Type I errors, model misspecification, and LRT model selection using convenient simulation methods.
 
 Installation
 ------------
@@ -26,7 +26,7 @@ Installation
 `powerlmm` can be installed from CRAN and GitHub.
 
 ``` r
-# CRAN, version 0.2.0
+# CRAN, version 0.3.0
 install.packages("powerlmm")
 
 # GitHub, dev version
@@ -105,7 +105,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
-#>               df = 7.947873
+#>               df = 7.961324
 #>            alpha = 0.05
 #>            power = 68%
 ```
@@ -172,9 +172,9 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 24.89       (control)
-#>                    24.89       (treatment)
-#>                    49.78       (total)
+#>          total_n = 25.23       (control)
+#>                    25.23       (treatment)
+#>                    50.46       (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
@@ -204,6 +204,93 @@ plot(x)
 ```
 
 ![](http://rpsychologist.com/img/powerlmm/README-three-level-power-curve-1.png)
+
+Simulation
+----------
+
+The package includes a flexible simulation method that makes it easy to investigate the performance of different models. As an example, let's compare the power difference between the 2-level LMM with 11 repeated measures, to doing an ANCOVA at posttest. Using `sim_formula` different models can be fit to the same data set during the simulation.
+
+``` r
+p <- study_parameters(n1 = 11,
+                      n2 = 40, 
+                      icc_pre_subject = 0.5,
+                      cor_subject = -0.4,
+                      var_ratio = 0.02,
+                      effect_size = cohend(-0.8, 
+                                           standardizer = "pretest_SD"))
+
+# 2-lvl LMM
+f0 <- sim_formula("y ~ time + time:treatment + (1 + time | subject)")
+
+# ANCOVA, formulas with no random effects are with using lm()
+f1 <- sim_formula("y ~ treatment + pretest", 
+                  data_transform = transform_to_posttest, 
+                  test = "treatment")
+
+f <- sim_formula_compare("LMM" = f0, 
+                         "ANCOVA" = f1)
+
+res <- simulate(p, 
+                nsim = 2000, 
+                formula = f, 
+                cores = parallel::detectCores(logical = FALSE))
+```
+
+We then summarize the results using `summary`. Let's look specifically at the treatment effects.
+
+``` r
+summary(res, para = list("LMM" = "time:treatment",
+                         "ANCOVA" = "treatment"))
+#> Model:  summary 
+#> 
+#> Fixed effects: 'time:treatment', 'treatment'
+#> 
+#>   model M_est theta M_se SD_est Power Power_bw Power_satt
+#>     LMM  -1.1  -1.1 0.32   0.34  0.92     0.92          .
+#>  ANCOVA -11.0   0.0 3.70   3.80  0.84     0.84       0.84
+#> ---
+#> Number of simulations: 2000  | alpha:  0.05
+#> Time points (n1):  11
+#> Subjects per cluster (n2 x n3):  40 (treatment)
+#>                                  40 (control)
+#> Total number of subjects:  80 
+#> ---
+#> At least one of the models applied a data transformation during simulation,
+#> summaries that depend on the true parameter values will no longer be correct,
+#> see 'help(summary.plcp_sim)'
+```
+
+We can also look at a specific model, here's the results for the 2-lvl LMM.
+
+``` r
+summary(res, model = "LMM")
+#> Model:  LMM 
+#> 
+#> Random effects 
+#> 
+#>          parameter  M_est theta est_rel_bias prop_zero is_NA
+#>  subject_intercept 100.00 100.0     -0.00076         0     0
+#>      subject_slope   2.00   2.0      0.00300         0     0
+#>              error 100.00 100.0      0.00170         0     0
+#>        cor_subject  -0.39  -0.4     -0.01900         0     0
+#> 
+#> Fixed effects 
+#> 
+#>       parameter    M_est theta M_se SD_est Power Power_bw Power_satt
+#>     (Intercept) -0.01400   0.0 1.30   1.20 0.045        .          .
+#>            time  0.00029   0.0 0.25   0.25 0.056        .          .
+#>  time:treatment -1.10000  -1.1 0.32   0.34 0.920     0.92          .
+#> ---
+#> Number of simulations: 2000  | alpha:  0.05
+#> Time points (n1):  11
+#> Subjects per cluster (n2 x n3):  40 (treatment)
+#>                                  40 (control)
+#> Total number of subjects:  80 
+#> ---
+#> At least one of the models applied a data transformation during simulation,
+#> summaries that depend on the true parameter values will no longer be correct,
+#> see 'help(summary.plcp_sim)'
+```
 
 Launch interactive web application
 ----------------------------------
