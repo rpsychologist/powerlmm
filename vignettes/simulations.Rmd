@@ -19,24 +19,23 @@ knitr::opts_chunk$set(
     eval = NOT_CRAN,
     purl = NOT_CRAN
     )
-
-
 ```
 
 This vignette shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the model, e.g. estimates of cluster-level random effects with only a few clusters. 
 
 ## Setup
-The simulation-function accepts the same study setup-object that we've used in the two- and three-level power vignettes. The simulation-function supports all models that are available in **powerlmm**. As an example we'll investigate the partially nested three-level model.
+The simulation-function accepts the same study setup-object that we have used in the two- and three-level power vignettes. The simulation-function supports all models that are available in **powerlmm**.
 
 ```{r}
-cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
-nsim <- 3
+#cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
+cores <- 16
+nsim <- 1000
 
 ```
 
 
 ## Partially nested three-level model
-When doing simulations it can be a good idea to specify the model using raw values, to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
+We will start with an example of how to evaluate the partially nested three-level model. When doing simulations it can be a good idea to specify the model using raw values, to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
 ```{r}
 library(powerlmm)
 p <- study_parameters(n1 = 11,
@@ -59,7 +58,7 @@ p
 ```
 
 ### How many simulations to run?
-The `get_monte_carlo_se`-function accepts an power object, and will return the 95 % interval for a given amount of simulations. This is useful to gauge the precision of the empirical power estimates.  
+The `get_monte_carlo_se`-function accepts a power object, and will return the 95 % interval for a given amount of simulations. This is useful to gauge the precision of the empirical power estimates.  
 ```{r}
 x <- get_power(p)
 get_monte_carlo_se(x, nsim = c(1000, 2000, 5000))
@@ -74,7 +73,7 @@ f <- sim_formula("y ~ treatment * time +
                  (0 + treatment:time | cluster)")
 
 res <- simulate(object = p,
-                nsim = 1000,
+                nsim = nsim,
                 formula = f,
                 satterthwaite = TRUE,
                 cores = cores,
@@ -109,7 +108,7 @@ summary(res)
 ```
 
 
-All of the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald *t* test using Satterthwaite's *df* approximation (from the **lmerTest** package).
+All the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald *t* test using Satterthwaite's *df* approximation (from the **lmerTest** package).
 
 ## Compare multiple combinations of parameter values
 We can also simulate multiple designs and compare them. Let's compare 6 vs 12 clusters in the treatment arm, and a `ìcc_slope` of 0.05 and 0.1, and a Cohen's d of 0.5 and 0.8. 
@@ -144,7 +143,7 @@ res <- simulate(object = p,
                 batch_progress = FALSE)
 ```
 
-The setup and simulation is the same, except that we define vectors of values for some of the parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups `nsim` number of simulations will be performed. With multiple designs `summary` works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.
+The setup and simulation is the same, except that we define vectors of values for some parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups `nsim` number of simulations will be performed. With multiple designs `summary` works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.
 
 ```{r}
 # Summarize the 'time:treatment' results 
@@ -162,7 +161,7 @@ print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"))
 
 
 # ANCOVA vs 2-level LMM---data transformations
-Sometimes it usefull to compare if the full longitudinal model is prefered over just analyzing posttest data. This might be especially relevent when you are faced with 3-level longitudinal data. In this example we'll compare power for a longitudal model with a cluster effect at the 3-level, to the 2-level model that analyze the outcome as a cross-sectional model at posttest. This can be accomplished by using the `data_transform` argument, note that we must specify `test = "treatment"` for the 2-level posttest model. 
+Sometimes it is useful to compare if the full longitudinal model is preferred over just analyzing posttest data. In this example we will compare the 2-level LMM to models that analyze the results as a cross-sectional model at posttest. This can be accomplished by using the `data_transform` argument, note that we must specify `test = "treatment"` for the OLS posttest models. 
 
 ```{r}
 p <- study_parameters(n1 = 11,
@@ -174,7 +173,7 @@ p <- study_parameters(n1 = 11,
                       effect_size = cohend(c(0, 0.8)))
 
 # Formulas --------------------------------------------------------------------
-# OLS
+# OLS "t-test"
 f_PT <- sim_formula("y ~ treatment",
                     test = "treatment",
                     data_transform = transform_to_posttest)
@@ -206,12 +205,9 @@ res <- simulate(p,
                 satterthwaite = TRUE,
                 batch_progress = FALSE)
 
-
-
-
 ```
 
-
+We are mostly interested in the treatment effect, so we use the `para` argument. Since the treatment effect is represented by different terms in the cross-sectional and longitudinal model we specify the name of the treatment effect for each model. 
 ```{r}
 tests <-  list("posttest" = "treatment",
                "ANCOVA" = "treatment",
@@ -225,8 +221,9 @@ print(head(x, 5),
 
 ```
 
+We only show the first 5 results, for these data a figure will show the results better.
 
-```{r, dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center"}
+```{r, dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center", warnings = FALSE, message = FALSE}
 library(ggplot2)
 x$model <- factor(x$model, levels = c("posttest",
                                       "ANCOVA", 
@@ -253,7 +250,9 @@ ggplot(x, aes(model,
     geom_line() +
     labs(y = "Power (Satterthwaite)",
          linetype = "Dropout",
-         color = "Variance ratio") +
+         color = "Variance ratio",
+         title = "Power and Type I errors",
+         subtitle = 'Comparing "cross-sectional" and longitudinal models\nunder various amounts of heterogeneity and dropout') +
     facet_grid(dropout ~ effect_size, 
                scales = "free", 
                labeller = "label_both") +
@@ -261,10 +260,9 @@ ggplot(x, aes(model,
 ```
 
 # Investigate LRT model selection strategies 
-A common strategy when analyzing (longitudinal) data is to build the model in a data driven fashion. We can investigate how well such a strategy works using the `sim_formula_compare`. We'll define four model formulas, starting with a 2-level random intercept model and working up to a 3-level random intercept and slope model. The true model is a 3-level model with only a random slope. Let's first setup the model
+## Do we need a 3-level model?
+A common strategy when analyzing (longitudinal) data is to build the model in a data driven fashion. We can investigate how well such a strategy works using  `sim_formula_compare`. We'll define four model formulas, starting with a 2-level random intercept model and working up to a 3-level random intercept and slope model. The true model is a 3-level model with only a random slope at the third level. Let's first setup the model
 ```{r}
-cores <- parallel::detectCores(logical = FALSE)
-
 p <- study_parameters(n1 = 11,
                       n2 = 40,
                       n3 = 3,
@@ -295,19 +293,39 @@ res <- simulate(p, formula = f,
                 CI = FALSE)
 ```
 
-During each simulation the REML log likelihood is saved for each model, we can therefore perform the model selection in the summary method, as a post-processing step. Let's try a forward selection strategy, where start with the first model and compare it to the next. If the comparison is significant we continue testing models, else we stop.
+During each simulation the REML log-likelihood is saved for each model, we can therefore perform the model selection using the summary method, as a post-processing step. Since REML is used it is assumed the fixed effects are the same, and that we compare a "full model" to a "reduced model". Let's try a forward selection strategy, where start with the first model and compare it to the next. If the comparison is significant we continue testing models, else we stop. The summary function performs this model comparison for each of the `nsim` simulations and returns the results from the "winning" model in each simulation replication.
 
 ```{r}
-summary(res, model_selection = "FW")
+x <- summary(res, model_selection = "FW", LRT_alpha = 0.05)
+x
 ```
 
-We can also see the results from each of the four models. Here we'll just look at the `time:treatment` effect.
+The point of the model selection algorithm is to mimic a type of data driven model selection that is quite common. We see that this strategy do not lead to nominal Type I errors in this scenario. However, it is fairly common to increase the LRT's alpha level to try to improve this strategy. Let's try a range of alpha levels to see the impact.
+
+```{r, dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center", warnings = FALSE, message = FALSE}
+alphas <- seq(0.01, 0.5, length.out = 50)
+x <- vapply(alphas, function(a) {
+    type1 <- summary(res, model_selection = "FW", LRT_alpha = a)
+    type1$summary$model_selection$FE$Power_satt[4]
+    }, numeric(1))
+
+d <- data.frame(LRT_alpha = alphas, type1 = x)
+ggplot(d, aes(LRT_alpha, type1)) + 
+    geom_line() +
+    labs(y = "Type I errors (time:treatment)",
+         title = "Impact of the alpha level when using LRT for model selection")
+```
+
+We can also see the results from each of the four models. Here we will look at the `time:treatment` effect.
 
 ```{r}
-summary(res, para = "time:treatment")
+x1 <- summary(res, para = "time:treatment")
+x1
 ```
 
-When choosing a strategy Type I errors is not only factor we wan't to minimize, power is also import. So let's see how power is affected.
+We see that the 2-lvl random intercept model lead to substantially inflated Type I errors = `r round(x1$summary$summary$FE[1, "Power_satt"], 2)`. The 2-level model that also adds a random slope is somewhat better but still not good, Type I errors = `r round(x1$summary$summary$FE[2, "Power_satt"], 2)`. The correct 3-level model that account for the third level using a random slope have close to nominal Type I errors = `r round(x1$summary$summary$FE[3, "Power_satt"], 2)`. The full 3-level that adds an unnecessary random intercept is somewhat conservative, Type I errors = `r round(x1$summary$summary$FE[4, "Power_satt"], 2)`.  
+
+When choosing a strategy Type I errors is not only factor we want to minimize, power is also important. So let's see how power is affected.
 
 ```{r}
 # See if power is impacted
@@ -320,22 +338,24 @@ res_power <- simulate(p1,
                       CI = FALSE)
 
 # we can also summary a fixed effect for convenience
-summary(res_power, model_selection = "FW", para = "time:treatment")
-summary(res_power, para = "time:treatment")
+x <- summary(res_power, model_selection = "FW", para = "time:treatment")
+print(x, verbose = FALSE)
+x1 <- summary(res_power, para = "time:treatment")
+print(x1, verbose = FALSE)
 ```
 
+## Consequences of ignoring clustering in a posttest only model
 
-## Compare consequences of ignoring clustering in a longitudinal versus a posttest only model
-
-We already investigate the consequences of ignoring the cluster-level. We can also investigate the consequences of ignoring clustering in a posttest only analysis, by using the `data_transform` argument in `sim_formula`. 
-Same parameters, different models. Shows that LM models can also be used with model selection.
+We already investigated the consequences of ignoring the cluster-level. We can also investigate the consequences of ignoring higher-level clustering in a posttest only analysis, by using the `data_transform` argument in `sim_formula`. 
 ```{r}
 # simulation formulas
-# analyze as a posttest only 2-level model
+
+# analyze as a posttest only 1-level OLS model
 f0 <- sim_formula("y ~ treatment",
                  test = "treatment",
                  data_transform = transform_to_posttest)
 
+# analyze as a posttest only 2-level model
 f1 <- sim_formula("y ~ treatment + (1 | cluster)",
                  test = "treatment",
                  data_transform = transform_to_posttest)
@@ -350,11 +370,14 @@ res <- simulate(p,
                 satterthwaite = TRUE,
                 batch_progress = FALSE)
 
-# type I OLS model
-summary(res, para = "treatment")
+# Type I error
+print(summary(res, para = "treatment"), verbose = FALSE)
 
 # model selection
-summary(res, model_selection = "FW", para = "treatment")
+summary(res,
+        model_selection = "FW", 
+        para = "treatment", 
+        LRT_alpha = 0.1)
 ```
 
 
