@@ -1,11 +1,11 @@
 
 # Changes in version 0.4.0
 
-This version substantially improves the simulate method.
+This version substantially improves the `simulate` method.
 
 ## New features
 * The simulate method is now much more flexible. New features include:
-   - Compare more than 2 model formulas.
+   - Compare more than 2 model formulas (#2).
    - Apply a data transformation during simulation; `sim_formula(..., data_transform = func)`.
      As an example `transform_to_posttest` is included.
    - Choose which parameters to test; `sim_formula(..., test = "treatment")`
@@ -18,8 +18,8 @@ This version substantially improves the simulate method.
    post-processing step; `summary.plcp_sim(..., model_selection = "FW", LRT_alpha = 0.25)`.
    
 ## Breaking canges
-* `simulate(formula = x)` must now be created using the new functinos `sim_formula`, or
-`sim_formula_compare`, and can no longer be a named list or character vector. 
+* `simulate(formula = x)` must now be created using the new functions `sim_formula`, or
+`sim_formula_compare`, and can no longer be a named list or a character vector. 
 
 ## Bug fixes
 * `summary.plcp_sim()` now show fixed effect `theta`s in the correct order, thanks to
