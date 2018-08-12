@@ -9,9 +9,9 @@
   satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
   batch_progress = TRUE, ...)
 
-\method{simulate}{plcp_multi}(object, nsim, seed = NULL, formula = NULL,
-  satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
-  batch_progress = TRUE, ...)
+\method{simulate}{plcp_multi}(object, nsim, seed = NULL,
+  formula = NULL, satterthwaite = FALSE, CI = FALSE, cores = 1,
+  progress = FALSE, batch_progress = TRUE, ...)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}.}

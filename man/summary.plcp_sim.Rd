@@ -9,8 +9,8 @@
   para = NULL, ...)
 
 \method{summary}{plcp_sim_formula_compare}(object, model = NULL,
-  alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, para = NULL,
-  ...)
+  alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1,
+  para = NULL, ...)
 }
 \arguments{
 \item{object}{A \code{simulate.plcp}-object}

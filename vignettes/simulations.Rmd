@@ -13,7 +13,16 @@ vignette: >
 ```{r, include = FALSE}
 library(knitr)
 library(dplyr)
+
+# set 'Sys.setenv("NOT_CRAN" = TRUE)' to run simulations
 NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+
+# avoid inline eval error
+if(!NOT_CRAN) {
+    round2 <- function(...) NA
+} else {
+    round2 <- round
+}
 options(width = 90)
 knitr::opts_chunk$set(
     eval = NOT_CRAN,
@@ -86,7 +95,7 @@ summary(res)
 It is also possible to automatically create the `formula` by leaving it blank. Then the `lmer-formula` is created by including the parameters that are not specified as `NA` or `NULL` in the model, see `?create_lmer_formula`. N.B., parameters specified as 0 are included in the model.
 
 ## Investigate model misspecification
-Let's compare the correct partially nested model to a two-level linear mixed-effects model. The formula argument accepts a named list with a `correct` and `wrong` formula. By setting `effect_size` to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.
+Let's compare the correct partially nested model to a two-level linear mixed-effects model. The `sim_formula_compare` function lets us fit multiple models to each simulated data set, by passing the model formulas as named arguments. By setting `effect_size` to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.
 
 ```{r}
 p <- update(p, effect_size = 0)
@@ -157,7 +166,6 @@ print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"),
 x <- summary(res, para = "cluster_slope")
 print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"))
 ```
-
 
 
 # ANCOVA vs 2-level LMM---data transformations
@@ -259,6 +267,8 @@ ggplot(x, aes(model,
     coord_flip()
 ```
 
+More information about this simulation can be found in this blog post [http://rpsychologist.com/do-you-need-multilevel-powerlmm-0-4-0](http://rpsychologist.com/do-you-need-multilevel-powerlmm-0-4-0).
+
 # Investigate LRT model selection strategies 
 ## Do we need a 3-level model?
 A common strategy when analyzing (longitudinal) data is to build the model in a data driven fashion. We can investigate how well such a strategy works using  `sim_formula_compare`. We'll define four model formulas, starting with a 2-level random intercept model and working up to a 3-level random intercept and slope model. The true model is a 3-level model with only a random slope at the third level. Let's first setup the model
@@ -312,6 +322,7 @@ x <- vapply(alphas, function(a) {
 d <- data.frame(LRT_alpha = alphas, type1 = x)
 ggplot(d, aes(LRT_alpha, type1)) + 
     geom_line() +
+    geom_hline(yintercept = 0.05, linetype = "dotted") +
     labs(y = "Type I errors (time:treatment)",
          title = "Impact of the alpha level when using LRT for model selection")
 ```
@@ -323,7 +334,7 @@ x1 <- summary(res, para = "time:treatment")
 x1
 ```
 
-We see that the 2-lvl random intercept model lead to substantially inflated Type I errors = `r round(x1$summary$summary$FE[1, "Power_satt"], 2)`. The 2-level model that also adds a random slope is somewhat better but still not good, Type I errors = `r round(x1$summary$summary$FE[2, "Power_satt"], 2)`. The correct 3-level model that account for the third level using a random slope have close to nominal Type I errors = `r round(x1$summary$summary$FE[3, "Power_satt"], 2)`. The full 3-level that adds an unnecessary random intercept is somewhat conservative, Type I errors = `r round(x1$summary$summary$FE[4, "Power_satt"], 2)`.  
+We see that the 2-lvl random intercept model lead to substantially inflated Type I errors = `r round2(x1$summary$summary$FE[1, "Power_satt"], 2)`. The 2-level model that also adds a random slope is somewhat better but still not good, Type I errors = `r round2(x1$summary$summary$FE[2, "Power_satt"], 2)`. The correct 3-level model that account for the third level using a random slope have close to nominal Type I errors = `r round2(x1$summary$summary$FE[3, "Power_satt"], 2)`. The full 3-level that adds an unnecessary random intercept is somewhat conservative, Type I errors = `r round2(x1$summary$summary$FE[4, "Power_satt"], 2)`.  
 
 When choosing a strategy Type I errors is not only factor we want to minimize, power is also important. So let's see how power is affected.
 
@@ -372,7 +383,11 @@ res <- simulate(p,
 
 # Type I error
 print(summary(res, para = "treatment"), verbose = FALSE)
+```
 
+We see that the Type I errors is substantially increased when clustering is ignored.
+
+```{r}
 # model selection
 summary(res,
         model_selection = "FW", 
@@ -380,6 +395,4 @@ summary(res,
         LRT_alpha = 0.1)
 ```
 
-
-
-
+Just as with the longitudinal model, the LRT model selection strategy rejects the 2-level model too often leading to inflated Type I errors.

@@ -4,8 +4,8 @@
 \alias{print.plcp_multi}
 \title{Print method for \code{study_parameters}-multiobjects}
 \usage{
-\method{print}{plcp_multi}(x, print_max = 10, empty = ".", digits = 2,
-  ...)
+\method{print}{plcp_multi}(x, print_max = 10, empty = ".",
+  digits = 2, ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_multi}.}

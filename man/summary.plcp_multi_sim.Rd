@@ -5,8 +5,8 @@
 \title{Summarize simulations based on a combination of multiple parameter values}
 \usage{
 \method{summary}{plcp_multi_sim}(object, para = "time:treatment",
-  model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1,
-  ...)
+  model = NULL, alpha = 0.05, model_selection = NULL,
+  LRT_alpha = 0.1, ...)
 }
 \arguments{
 \item{object}{A multiple simulation object created with
