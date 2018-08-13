@@ -8,9 +8,7 @@
 
 0 errors
 0 warnings
-1 note
-    - "Possibly mis-spelled words in DESCRIPTION:"
-       'et', 'al', 'analytical', 'misspecification', are spelled correctly.
+0 note
 
 ## Reverse dependencies
 There are no reverse dependencies.
