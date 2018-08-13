@@ -1,7 +1,7 @@
 ## Test environments
-* local OS X (High Sierra, 10.13.4) install, R 3.4.4
-* local ubuntu (16.04) install, R 3.4.4
-* ubuntu 14.04 (on travis-ci), R 3.4.4
+* local OS X (High Sierra, 10.13.6) install, R 3.5.1
+* local ubuntu (18.04.1) install, R 3.5.1
+* ubuntu 14.04 (on travis-ci), R 3.5.0
 * win-builder (devel and release)
 
 ## R CMD check results
