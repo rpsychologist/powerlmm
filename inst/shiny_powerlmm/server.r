@@ -20,7 +20,8 @@ get_sample_size <- function(paras) {
     } else n2_cc <- n2
 
     data.frame(cluster = c(1:n3$treatment, "total"),
-               control = c(n2_cc, sum(n2_cc, na.rm=TRUE)), treatment = c(n2_tx, sum(n2_tx)))
+               control = c(n2_cc, sum(n2_cc, na.rm=TRUE)),
+               treatment = c(n2_tx, sum(n2_tx)))
 }
 
 shinyServer(function(input, output, session) {
@@ -136,7 +137,7 @@ shinyServer(function(input, output, session) {
                                     cor_subject = input$cor.person,
                                     cor_cluster = input$cor.cluster,
                                     cor_within = 0,
-                                    cohend = -input$cohend,
+                                    effect_size = -input$cohend,
                                     partially_nested = as.logical(input$partially_nested),
                                     dropout = retention)
           p$paras <- paras
@@ -155,12 +156,12 @@ shinyServer(function(input, output, session) {
 
     output$plot_ES <- renderPlot({
         if(p$run == FALSE) return()
-        plot(p$paras, plot = 1) + theme_minimal()
+        plot(p$paras, type = "effect") + theme_minimal()
 
     })
     output$plot_retention <- renderPlot({
         if(p$run == FALSE) return()
-        plot(p$paras, plot = 2) + theme_minimal()
+        plot(p$paras, type = "dropout") + theme_minimal()
 
     })
     output$table_retention <- renderTable({
