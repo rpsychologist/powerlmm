@@ -334,6 +334,16 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
 
      time <- get_time_vector(paras)
 
+     ES <- get_effect_size(paras)
+     subtitle <- paste("The treatment effect at posttest",
+                       ifelse(ES$standardizer == "raw", "", " (Cohen's d)"),
+                       " = ",
+                       ES$ES,
+                       sep = "")
+
+     caption <- ifelse(ES$standardizer == "raw",
+                       "N.B.: The treatment effect is the raw (unstandardized) difference",
+                       paste("N.B.: Cohen's d is calculated using the", ES$standardizer))
 
      y <- paras$fixed_intercept + paras$fixed_slope * time
      y1 <-  paras$fixed_intercept + (paras$fixed_slope + get_slope_diff(paras)/paras$T_end) * time
@@ -347,8 +357,8 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
          ggplot2::geom_line(show.legend = TRUE) +
          ggplot2::geom_point(show.legend = FALSE) +
          ggplot2::labs(title = "Treatment effects", y = "Outcome", x = "Time point",
-               subtitle = paste("Difference at endpoint is equal to Cohen's d =", paras$cohend),
-               caption = "N.B Cohen's d is calculated using baseline standard deviations")
+               subtitle = subtitle,
+               caption = caption)
 
      d <- simulate_data(paras)
      d <- sum_missing_tx_time(d)

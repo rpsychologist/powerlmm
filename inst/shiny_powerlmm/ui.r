@@ -102,7 +102,12 @@ dashboardPage(
                            box("Fixed effects", width=3,
                                     numericInput("fixed.intercept", "Intercept", 0),
                                     numericInput("fixed.slope", "Slope control", 1),
-                                    numericInput("cohend", "Treatment effect (Cohen's d)", 0.5),
+                               conditionalPanel("input.use_standardized == 'yes'",
+                                    numericInput("cohend", "Treatment effect (Cohen's d)", 0.5)
+                                    ),
+                               conditionalPanel("input.use_standardized == 'no'",
+                                                numericInput("cohend", "Treatment effect (posttest diff)", 0.5)
+                               ),
                                actionButton("button3", "Update", icon("refresh"),
                                             class = "btn btn-primary")),
 
