@@ -2,19 +2,23 @@
 library(knitr)
 library(dplyr)
 
-# set 'Sys.setenv("NOT_CRAN" = TRUE)' to run simulations
-NOT_CRAN <- identical(tolower(Sys.getenv("NOT_CRAN")), "true")
+# set 'Sys.setenv("VIGNETTE_EVAL" = TRUE)' to print cached sims
+VIGNETTE_EVAL <- identical(tolower(Sys.getenv("VIGNETTE_EVAL")), "true")
+
+# set 'Sys.setenv("RUN_SIM" = TRUE)' re-run sims
+RUN_SIM <- identical(tolower(Sys.getenv("RUN_SIM")), "true")
 
 # avoid inline eval error
-if(!NOT_CRAN) {
+if(!VIGNETTE_EVAL) {
     round2 <- function(...) NA
 } else {
     round2 <- round
 }
+
 options(width = 90)
 knitr::opts_chunk$set(
-    eval = NOT_CRAN,
-    purl = NOT_CRAN
+    eval = VIGNETTE_EVAL,
+    purl = VIGNETTE_EVAL
     )
 
 ## ---------------------------------------------------------------------------------------
@@ -22,6 +26,9 @@ knitr::opts_chunk$set(
 cores <- 16
 nsim <- 1000
 
+## ---- echo = FALSE----------------------------------------------------------------------
+if(!RUN_SIM & file.exists("../dev/vignette_cache/sim_res.Rdata")) load("../dev/vignette_cache/sim_res.Rdata")
+if(!RUN_SIM & file.exists("dev/vignette_cache/sim_res.Rdata")) load("dev/vignette_cache/sim_res.Rdata")
 
 ## ---------------------------------------------------------------------------------------
 library(powerlmm)
@@ -52,12 +59,15 @@ f <- sim_formula("y ~ treatment * time +
                  (1 + time | subject) + 
                  (0 + treatment:time | cluster)")
 
-res <- simulate(object = p,
-                nsim = nsim,
-                formula = f,
-                satterthwaite = TRUE,
-                cores = cores,
-                save = FALSE)
+if(RUN_SIM) {
+    res <- simulate(object = p,
+                    nsim = nsim,
+                    formula = f,
+                    satterthwaite = TRUE,
+                    cores = cores,
+                    save = FALSE)
+    
+}
 
 summary(res)
 
@@ -69,15 +79,17 @@ f <- sim_formula_compare("correct" = "y ~ treatment * time +
                                       (0 + treatment:time | cluster)",
                          "wrong" = "y ~ treatment * time + 
                                     (1 + time | subject)")
+if(RUN_SIM) {
+    res2 <- simulate(object = p,
+                     nsim = nsim,
+                     formula = f,
+                     satterthwaite = TRUE,
+                     cores = cores,
+                     save = FALSE)
+}
 
-res <- simulate(object = p,
-                nsim = nsim,
-                formula = f,
-                satterthwaite = TRUE,
-                cores = cores,
-                save = FALSE)
 
-summary(res)
+summary(res2)
 
 ## ---------------------------------------------------------------------------------------
 p <- study_parameters(n1 = 11,
@@ -100,24 +112,26 @@ p <- study_parameters(n1 = 11,
 
 f <- sim_formula("y ~ treatment * time + (1 + time | subject) + 
                  (0 + treatment:time | cluster)")
+if(RUN_SIM) {
+    res3 <- simulate(object = p,
+                     nsim = nsim,
+                     formula = f,
+                     satterthwaite = TRUE,
+                     cores = cores,
+                     batch_progress = FALSE)
+}
 
-res <- simulate(object = p,
-                nsim = nsim,
-                formula = f,
-                satterthwaite = TRUE,
-                cores = cores,
-                batch_progress = FALSE)
 
 ## ---------------------------------------------------------------------------------------
 # Summarize the 'time:treatment' results 
-x <- summary(res, para = "treatment:time")
+x <- summary(res3, para = "treatment:time")
 
 # customize what to print
 print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"),
       estimates = FALSE)
 
 # Summarize the cluster-level random slope 
-x <- summary(res, para = "cluster_slope")
+x <- summary(res3, para = "cluster_slope")
 print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"))
 
 ## ---------------------------------------------------------------------------------------
@@ -155,13 +169,14 @@ f <- sim_formula_compare("posttest" = f_PT,
                          "LMM_c" = f_LMM_c)
 
 # Run sim --------------------------------------------------------------------
-res <- simulate(p,
-                formula = f,
-                nsim = nsim,
-                cores = cores,
-                satterthwaite = TRUE,
-                batch_progress = FALSE)
-
+if(RUN_SIM) {
+    res4 <- simulate(p,
+                     formula = f,
+                     nsim = nsim,
+                     cores = cores,
+                     satterthwaite = TRUE,
+                     batch_progress = FALSE) 
+}
 
 ## ---------------------------------------------------------------------------------------
 tests <-  list("posttest" = "treatment",
@@ -169,7 +184,7 @@ tests <-  list("posttest" = "treatment",
                "LMM" = "time:treatment",
                "LMM_c" = "time:treatment")
 
-x <- summary(res, para = tests)
+x <- summary(res4, para = tests)
 print(head(x, 5), 
       add_cols = c("var_ratio", 
                    "effect_size"))
@@ -231,20 +246,23 @@ f <- sim_formula_compare("subject-intercept" = f0,
 
 
 ## ---------------------------------------------------------------------------------------
-res <- simulate(p, formula = f, 
-                nsim = nsim, 
-                satterthwaite = TRUE, 
-                cores = cores,
-                CI = FALSE)
+if(RUN_SIM) {
+    res5 <- simulate(p, formula = f, 
+                     nsim = nsim, 
+                     satterthwaite = TRUE, 
+                     cores = cores,
+                     CI = FALSE)    
+}
+
 
 ## ---------------------------------------------------------------------------------------
-x <- summary(res, model_selection = "FW", LRT_alpha = 0.05)
+x <- summary(res5, model_selection = "FW", LRT_alpha = 0.05)
 x
 
 ## ---- dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center", warnings = FALSE, message = FALSE----
 alphas <- seq(0.01, 0.5, length.out = 50)
 x <- vapply(alphas, function(a) {
-    type1 <- summary(res, model_selection = "FW", LRT_alpha = a)
+    type1 <- summary(res5, model_selection = "FW", LRT_alpha = a)
     type1$summary$model_selection$FE$Power_satt[4]
     }, numeric(1))
 
@@ -256,23 +274,26 @@ ggplot(d, aes(LRT_alpha, type1)) +
          title = "Impact of the alpha level when using LRT for model selection")
 
 ## ---------------------------------------------------------------------------------------
-x1 <- summary(res, para = "time:treatment")
+x1 <- summary(res5, para = "time:treatment")
 x1
 
 ## ---------------------------------------------------------------------------------------
 # See if power is impacted
 p1 <- update(p, effect_size = cohend(0.8))
-res_power <- simulate(p1, 
-                      formula = f, 
-                      nsim = nsim, 
-                      satterthwaite = TRUE,
-                      cores = cores, 
-                      CI = FALSE)
+if(RUN_SIM) {
+    res6 <- simulate(p1, 
+                     formula = f, 
+                     nsim = nsim, 
+                     satterthwaite = TRUE,
+                     cores = cores, 
+                     CI = FALSE) 
+}
+
 
 # we can also summary a fixed effect for convenience
-x <- summary(res_power, model_selection = "FW", para = "time:treatment")
+x <- summary(res6, model_selection = "FW", para = "time:treatment")
 print(x, verbose = FALSE)
-x1 <- summary(res_power, para = "time:treatment")
+x1 <- summary(res6, para = "time:treatment")
 print(x1, verbose = FALSE)
 
 ## ---------------------------------------------------------------------------------------
@@ -291,20 +312,27 @@ f1 <- sim_formula("y ~ treatment + (1 | cluster)",
 f <- sim_formula_compare("post_ignore" = f0, 
                          "post_2lvl" = f1)
 
-res <- simulate(p,
-                formula = f,
-                nsim = nsim,
-                cores = cores,
-                satterthwaite = TRUE,
-                batch_progress = FALSE)
+if(RUN_SIM) {
+    res7 <- simulate(p,
+                     formula = f,
+                     nsim = nsim,
+                     cores = cores,
+                     satterthwaite = TRUE,
+                     batch_progress = FALSE) 
+}
+
 
 # Type I error
-print(summary(res, para = "treatment"), verbose = FALSE)
+print(summary(res7, para = "treatment"), verbose = FALSE)
 
 ## ---------------------------------------------------------------------------------------
 # model selection
-summary(res,
+summary(res7,
         model_selection = "FW", 
         para = "treatment", 
         LRT_alpha = 0.1)
+
+## ---- echo = FALSE----------------------------------------------------------------------
+if(RUN_SIM) save(res, res2, res3, res4, res5, res6, res7, 
+                 file = "../dev/vignette_cache/sim_res.Rdata")
 

@@ -19,4 +19,4 @@ BuildType: Package
 PackageUseDevtools: Yes
 PackageInstallArgs: --no-multiarch --with-keep.source --as-cran --no-build-vignettes
 PackageBuildArgs: --no-build-vignettes
-PackageCheckArgs: --as-cran --no-build-vignettes
+PackageCheckArgs: --as-cran
