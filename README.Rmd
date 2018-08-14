@@ -38,7 +38,7 @@ groups, or physician), and missing data. The main features of the package are:
 ## Installation
 `powerlmm` can be installed from CRAN and GitHub. 
 ```{r, eval = FALSE}
-# CRAN, version 0.3.0
+# CRAN, version 0.4.0
 install.packages("powerlmm")
 
 # GitHub, dev version
