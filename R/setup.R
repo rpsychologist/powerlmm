@@ -1,3 +1,44 @@
+
+study_design <- function(nested = TRUE,
+                         levels = 3,
+                         groups = 2,
+                         time_form = "linear") {
+
+    # check inputs
+    stopifnot(is.logical(nested))
+    stopifnot(levels %in% 2:3)
+    stopifnot(groups %in% 1:2)
+    stopifnot(time_form == "linear")
+
+    args <- list(nested = nested,
+                 levels = levels,
+                 groups = groups,
+                 time_form = time_form)
+
+    class(args) <- append(class(args), "plcp_design")
+    if(nested) {
+        class(args) <- append(class(args), "nested")
+    } else {
+        class(args) <- append(class(args), "crossed")
+    }
+
+    args
+}
+
+study_parameters <- function(design = study_design(nested = TRUE,
+                                                   levels = 3,
+                                                   groups = 2,
+                                                   time_form = "linear"), ...) {
+    UseMethod("study_parameters")
+}
+
+# study_parameters.plcp_design <- function(design, ...) {
+#     NextMethod()
+# }
+study_parameters.crossed <- function(design, n1, n2 ,n3,...) {
+    print("crossed")
+}
+
 #' Setup study parameters
 #'
 #' Setup the parameters for calculating power for longitudinal multilevel studies
@@ -206,7 +247,8 @@
 #'
 #' get_power(p)
 #' @export
-study_parameters <- function(n1,
+study_parameters.nested <- function(design,
+                                    n1,
                              n2,
                              n3 = 1,
                              T_end = NULL,
