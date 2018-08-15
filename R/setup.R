@@ -32,10 +32,48 @@ study_parameters <- function(design = study_design(nested = TRUE,
     UseMethod("study_parameters")
 }
 
+study_parameters.default <- function(...) {
+    study_parameters.nested(...)
+}
 # study_parameters.plcp_design <- function(design, ...) {
 #     NextMethod()
 # }
-study_parameters.crossed <- function(design, n1, n2 ,n3,...) {
+
+# V0 = random intercept
+# V1 = random slope
+# V2 = intercept interaction
+# V3 = slope interaction
+
+
+study_parameters.crossed <- function(design, design,
+                                     n1,
+                                     n2,
+                                     n3 = 1,
+                                     T_end = NULL,
+                                     fixed_intercept = 0L,
+                                     fixed_slope = 0L,
+                                     sigma_subject_intercept = NULL,
+                                     sigma_subject_slope = NULL,
+                                     sigma_cluster_intercept = NULL,
+                                     sigma_cluster_intercept_tx = NULL,
+                                     sigma_cluster_slope = NULL,
+                                     sigma_cluster_slope_tx = NULL,
+                                     sigma_error = 10,
+                                     cor_subject = 0L,
+                                     cor_cluster = 0L, # cor(V0, V1)
+                                     cor_cluster_intercepts = 0L, # cor(V0, V2) cor intercepts
+                                     cor_cluster_slopes = 0L, # cor(V0, V3) cor intercept_cc slope_tx
+                                     cor_cluster_slope_tx_intercept_cc = 0L, #cor(V1, V2)
+                                     cor_cluster_slope_tx_intercept_cc = 0L, #cor(V1, V3)
+                                     cor_within = 0L,
+                                     var_ratio = NULL,
+                                     icc_slope = NULL,
+                                     icc_pre_subject = NULL,
+                                     icc_pre_cluster = NULL,
+                                     effect_size = 0L,
+                                     cohend = NULL,
+                                     dropout = 0L,
+                                     deterministic_dropout = TRUE) {
     print("crossed")
 }
 

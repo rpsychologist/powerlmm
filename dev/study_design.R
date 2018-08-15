@@ -24,3 +24,6 @@ p <- study_parameters(n1 = 11,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.8,
                                            standardizer = "pretest_SD"))
+
+
+p
