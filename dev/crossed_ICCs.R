@@ -13,18 +13,18 @@ d <-
         fixed_slope_time_tx = -0.5,
         sigma_subject_intercept = 0,
         sigma_subject_slope = 0,
-        sigma_cluster_V0 = 1, # cc intercept
-        sigma_cluster_V1 = 2, # cc slope
-        sigma_cluster_V2 = 2, # tx intercept
-        sigma_cluster_V3 = 1, # tx
+        sigma_cluster_intercept = 1, # cc intercept
+        sigma_cluster_slope = 2, # cc slope
+        sigma_cluster_intercept_tx = 2, # treatment
+        sigma_cluster_slope_tx = 1, # time:treatment
         sigma_error = 0.1,
         cor_subject = 0.4,
-        cor_cluster_V0V1 = 0.5,
-        cor_cluster_V0V2 = 0.5,
-        cor_cluster_V0V3 = 0.5,
-        cor_cluster_V1V2 = 0.5,
-        cor_cluster_V1V3 = 0.9,
-        cor_cluster_V2V3 = 0.5
+        cor_cluster_intercept_slope = 0.5,
+        cor_cluster_intercept_intercept_tx = 0.5,
+        cor_cluster_intercept_slope_tx = 0.5,
+        cor_cluster_slope_intercept_tx = 0.5,
+        cor_cluster_slope_slope_tx = 0.9,
+        cor_cluster_intercept_tx_slope_tx = 0.5
     )
 
 
