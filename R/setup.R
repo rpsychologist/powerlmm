@@ -45,7 +45,7 @@ study_parameters.default <- function(...) {
 # V3 = slope interaction
 
 
-study_parameters.crossed <- function(design, design,
+study_parameters.crossed <- function(design,
                                      n1,
                                      n2,
                                      n3 = 1,
@@ -64,7 +64,7 @@ study_parameters.crossed <- function(design, design,
                                      cor_cluster_intercepts = 0L, # cor(V0, V2) cor intercepts
                                      cor_cluster_slopes = 0L, # cor(V0, V3) cor intercept_cc slope_tx
                                      cor_cluster_slope_tx_intercept_cc = 0L, #cor(V1, V2)
-                                     cor_cluster_slope_tx_intercept_cc = 0L, #cor(V1, V3)
+                                     cor_cluster_slope_tx_intercept_cc2 = 0L, #cor(V1, V3)
                                      cor_within = 0L,
                                      var_ratio = NULL,
                                      icc_slope = NULL,

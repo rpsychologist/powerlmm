@@ -26,14 +26,14 @@ create_cluster_index <- function(n2, n3) {
     cluster
 
 }
-.simulate_3lvl_data_crossed <- function (n1,
+simulate_3lvl_data_crossed <- function(n1,
                                  n2,
                                  n3,
                                  T_end,
-                                 fixed_intercept_c,
-                                 fixed_intercept_tx,
-                                 fixed_slope_c,
-                                 fixed_slope_tx,
+                                 fixed_intercept,
+                                 fixed_tx,
+                                 fixed_slope,
+                                 fixed_slope_time_tx,
                                  sigma_subject_intercept,
                                  sigma_subject_slope,
                                  sigma_cluster_V0,
@@ -68,6 +68,8 @@ create_cluster_index <- function(n2, n3) {
     subject <- rep(1:length(cluster), each = n1) # subject IDs
     tot_n2 <- length(cluster)
 
+    TX <- rep(rep(rep(0:1, each = n1), n2/2), n3)
+
     # level-2 variance matrix
     Sigma_subject = c(
         sigma_subject_intercept^2 ,
@@ -96,31 +98,41 @@ create_cluster_index <- function(n2, n3) {
     cluster_lvl <-
         MASS::mvrnorm(sum(n3),
                       mu = c(0, 0, 0, 0),
-                      Sigma = Sigma_cluster)
+                      Sigma = Sigma_cluster, empirical = TRUE)
 
     if (is.null(dim(cluster_lvl))) {
         # if theres only one therapist
         cluster_b0 <- cluster_lvl[1]
         cluster_b1 <- cluster_lvl[2]
-        cluster_b3 <- cluster_lvl[3]
-        cluster_b4 <- cluster_lvl[4]
+        cluster_b2 <- cluster_lvl[3]
+        cluster_b3 <- cluster_lvl[4]
     } else {
         cluster_b0 <- cluster_lvl[, 1] # intercept c
         cluster_b1 <- cluster_lvl[, 2] # slope c
-        cluster_b3 <- cluster_lvl[, 3] # intercept tx
-        cluster_b4 <- cluster_lvl[, 4] # slope tx
+        cluster_b2 <- cluster_lvl[, 3] # intercept tx
+        cluster_b3 <- cluster_lvl[, 4] # slope time:tx
     }
 
-    cluster_b0 <- cluster_b0[cluster]
-    cluster_b1 <- cluster_b1[cluster]
-    cluster_b2 <- cluster_b2[cluster]
-    cluster_b3 <- cluster_b3[cluster]
+    print(paste("cor", cor(cluster_b1, cluster_b1 + cluster_b3)))
+    print(paste("cov", cov(cluster_b1, cluster_b1 + cluster_b3)))
+    print(paste("sd", sd(cluster_b1)))
+    print(paste("sd", sd(cluster_b1 + cluster_b3)))
+    print(cor(cluster_b1, cluster_b3))
+
+    v0 <- cluster_b0[cluster][subject]
+    v1 <- cluster_b1[cluster][subject]
+    v2 <- cluster_b2[cluster][subject]
+    v3 <- cluster_b3[cluster][subject]
+
 
     # level 2- model
     subject_lvl <- MASS::mvrnorm(tot_n2, c(0, 0), Sigma_subject)
 
-    b0 <- fixed_intercept_c * TX[TX==0] + fixed_intercept_c * TX[TX==1] * subject_lvl[, 1] + cluster_b0 + cluster_b3
-    b1 <- fixed_slope_c * TX[TX==0] + fixed_slope_c * TX[TX==1] + subject_lvl[, 2] + cluster_b1 + cluster_b4
+    u0 <- subject_lvl[, 1][subject]
+    u1 <- subject_lvl[, 2][subject]
+
+    b0 <- fixed_intercept + fixed_tx * TX + u0 + v0 + v2 * TX
+    b1 <- fixed_slope  + fixed_slope_time_tx * TX + u1 + v1 + v3 * TX
 
     # level-1 model
     sigma.y <- diag(n1)
@@ -131,17 +143,21 @@ create_cluster_index <- function(n2, n3) {
     error_sigma.y <- MASS::mvrnorm(tot_n2, rep(0, n1), sigma.y)
 
     # combine parameters
-    y <- b0[subject] + b1[subject] * time + c(t(error_sigma.y))
+    y <- b0 + b1 * time + c(t(error_sigma.y))
 
     df <-
         data.frame (y,
                     y_c = y,
                     time,
+                    treatment = TX,
                     subject,
                     cluster = rep(cluster, each = n1),
                     intercept_subject = b0[subject],
                     slope_subject = b1[subject],
-                    slope_cluster = cluster_b1[subject],
+                    intercept_cluster = v0,
+                    intercept_cluster_tx = v2,
+                    slope_cluster = v1,
+                    slope_cluster_time_tx = v3,
                     miss = 0)
 
     df
