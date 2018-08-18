@@ -302,61 +302,49 @@ simulate_data.plcp_design_nested <- function(paras, n = NULL) {
 simulate_data.plcp_multi <- function(paras, n = 1) {
     simulate_data.plcp(as.plcp(paras[n,]))
 }
-
+simulate_data.plcp <- function(paras, ...) {
+    NextMethod("simulate_data")
+}
 
 # Crossed data simulate  --------------------------------------------------
 #' @rdname simulate_data
 #' @export
-simulate_data.plcp_design_crossed <- function(paras, n = NULL) {
-    if (is.data.frame(paras))
-        paras <- as.list(paras)
-    if(is.null(paras$prepared)) {
-        tmp <- prepare_paras(paras)
-    } else tmp <- paras
-    paras <- tmp$control
-    paras_tx <- tmp$treatment
+simulate_data.plcp_crossed <- function(paras, n = NULL) {
+   # if (is.data.frame(paras))
+    #    paras <- as.list(paras)
+    #if(is.null(paras$prepared)) {
+    #    tmp <- prepare_paras(paras)
+    #} else tmp <- paras
 
     slope_diff <- get_slope_diff(paras) / paras$T_end
     paras$effect_size <- NULL
-    paras_tx$effect_size <- NULL
 
-    paras_tx$fixed_slope <- paras_tx$fixed_slope + slope_diff
-
-    paras_tx$partially_nested <- NULL
-    paras$partially_nested <- NULL
-    paras$allocation_ratio <- NULL
-    paras_tx$allocation_ratio <- NULL
+    paras$fixed_slope_time_tx <- slope_diff
 
     # replace NA
     paras[is.na(paras)] <- 0
-    paras_tx[is.na(paras_tx)] <- 0
 
-    d_tx <- simulate_3lvl_data(paras_tx)
-    d_c <- simulate_3lvl_data(paras)
+    d <- simulate_3lvl_data_crossed(paras)
 
-    # drop outs
-    if (is.list(paras$dropout) |
-        is.function(paras$dropout) |
-        length(paras$dropout) > 1) {
-
-        miss_c <- create_dropout_indicator(paras)
-        d_c <- add_NA_values_from_indicator(d_c, miss_c)
-    }
-    if (is.list(paras_tx$dropout) |
-        is.function(paras_tx$dropout) |
-        length(paras_tx$dropout) > 1) {
-        miss_tx <- create_dropout_indicator(paras_tx)
-        d_tx <- add_NA_values_from_indicator(d_tx, miss_tx)
-    }
+    # # drop outs
+    # if (is.list(paras$dropout) |
+    #     is.function(paras$dropout) |
+    #     length(paras$dropout) > 1) {
+    #
+    #     miss_c <- create_dropout_indicator(paras)
+    #     d_c <- add_NA_values_from_indicator(d_c, miss_c)
+    # }
+    # if (is.list(paras_tx$dropout) |
+    #     is.function(paras_tx$dropout) |
+    #     length(paras_tx$dropout) > 1) {
+    #     miss_tx <- create_dropout_indicator(paras_tx)
+    #     d_tx <- add_NA_values_from_indicator(d_tx, miss_tx)
+    # }
 
     # combine
-    d_tx$treatment <- 1
-    d_c$treatment <- 0
-    d_c$subject <- d_c$subject + max(d_tx$subject)
-    d_tx$cluster <- d_tx$cluster + max(d_c$cluster)
-    dt <- rbind(d_c, d_tx)
 
-    dt
+
+    d
 }
 
 

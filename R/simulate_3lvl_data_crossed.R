@@ -1,15 +1,8 @@
-simulate_3lvl_data <- function(paras) {
-    UseMethod("simulate_3lvl_data")
+simulate_3lvl_data_crossed <- function(paras) {
+    do.call(.simulate_3lvl_data_crossed, paras)
 }
 
-simulate_3lvl_data.list <- function(paras) {
-    do.call(.simulate_3lvl_data, paras)
-}
-simulate_3lvl_data.data.frame <- function(paras) {
 
-
-    lapply(1:nrow(paras), function(i) do.call(simulate_3lvl_data_, paras[i,]))
-}
 
 create_cluster_index <- function(n2, n3) {
     if(length(n2) == 1) {
@@ -26,7 +19,7 @@ create_cluster_index <- function(n2, n3) {
     cluster
 
 }
-simulate_3lvl_data_crossed <- function(n1,
+.simulate_3lvl_data_crossed <- function(n1,
                                  n2,
                                  n3,
                                  T_end,

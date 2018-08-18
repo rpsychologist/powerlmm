@@ -907,7 +907,7 @@ cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
 .cohend <- function(ES, standardizer, treatment) {
     if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
     # return a ES func
-    # that get_slope_diff can evaluate
+    # that get_slope_diff we can evaluate
     if(standardizer == "pretest_SD") {
         f <- calc_slope_from_d(ES, time = "pre", treatment = treatment)
     } else if(standardizer == "posttest_SD") {

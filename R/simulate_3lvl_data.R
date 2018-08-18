@@ -3,12 +3,11 @@ simulate_3lvl_data <- function(paras) {
 }
 
 simulate_3lvl_data.list <- function(paras) {
-     do.call(simulate_3lvl_data_, paras)
+     do.call(.simulate_3lvl_data, paras)
 }
 simulate_3lvl_data.data.frame <- function(paras) {
 
-
-     lapply(1:nrow(paras), function(i) do.call(simulate_3lvl_data_, paras[i,]))
+     lapply(1:nrow(paras), function(i) do.call(.simulate_3lvl_data, paras[i,]))
 }
 
 create_cluster_index <- function(n2, n3) {
@@ -26,7 +25,7 @@ create_cluster_index <- function(n2, n3) {
     cluster
 
 }
-simulate_3lvl_data_ <- function (n1,
+.simulate_3lvl_data_ <- function (n1,
                            n2,
                            n3,
                            T_end,

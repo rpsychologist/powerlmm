@@ -36,58 +36,6 @@ study_parameters.plcp_design_crossed <- function(design,
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
-    # drop out checks
-    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    if(is.per_treatment(dropout)) {
-        tx <- dropout[[1]]$treatment
-        cc <- dropout[[1]]$control
-        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    }
-
-    # warn n3 is ignored
-    if(is.unequal_clusters(n2) & !is.per_treatment(n2) & is.per_treatment(n3)) {
-        message("'n3' per_treatment argument is ignored. 'n3' is automatically based on length of unequal_clusters")
-    }
-
-    # icc_slope + sigma_*_slope
-    if(!is.null(icc_slope) & (!is.null(sigma_subject_slope) &
-                              !is.null(sigma_cluster_slope))) {
-        stop("Can't use 'icc_slope' with both 'sigma_subject_slope' and 'sigma_cluster_slope'", call. = FALSE)
-
-    }
-    if(!is.null(sigma_subject_slope) &
-       !is.null(var_ratio)) {
-        stop("Can't use both 'sigma_subject_slope' and 'var_ratio'", call. = FALSE)
-
-    }
-    if(!is.null(sigma_cluster_slope) &
-       !is.null(var_ratio)) {
-        stop("Can't use both 'sigma_cluster_slope' and 'var_ratio'", call. = FALSE)
-
-    }
-    if(!is.null(sigma_subject_intercept) & !is.null(icc_pre_subject)) {
-        stop("Can't use both 'icc_pre_subject' and 'sigma_subject_intercept'", call. = FALSE)
-    }
-
-    if(!is.null(sigma_cluster_intercept) & !is.null(icc_pre_cluster)) {
-        stop("Can't use both 'icc_pre_cluster' and 'sigma_cluster_intercept'", call. = FALSE)
-    }
-
-    if(is.null(sigma_subject_intercept) & is.null(icc_pre_subject)) {
-        stop("Both 'sigma_subject_intercept' and 'icc_pre_subject' can't be NULL", call. = FALSE)
-    }
-    if(!is.null(sigma_cluster_slope) & !is.null(icc_slope)) {
-        stop("Can't use both 'icc_slope' and 'sigma_cluster_slope'", call. = FALSE)
-    }
-    if(!is.null(sigma_cluster_slope) & is.null(sigma_subject_slope)) {
-        stop("'sigma_subject_slope' is missing", call. = FALSE)
-    }
-    if(is.null(icc_pre_cluster) &
-       !is.null(sigma_cluster_intercept) &
-       !is.null(icc_pre_subject)) {
-        stop("'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined, use 'icc_pre_cluster'", call. = FALSE)
-    }
 
 
     args <- list(
@@ -96,62 +44,67 @@ study_parameters.plcp_design_crossed <- function(design,
         n3 = n3,
         T_end = T_end,
         fixed_intercept = fixed_intercept,
+        fixed_tx = fixed_tx,
         fixed_slope = fixed_slope,
         sigma_subject_intercept = sigma_subject_intercept,
         sigma_subject_slope = sigma_subject_slope,
         sigma_cluster_intercept = sigma_cluster_intercept,
         sigma_cluster_slope = sigma_cluster_slope,
+        sigma_cluster_intercept_tx = sigma_cluster_intercept_tx,
+        sigma_cluster_slope_tx = sigma_cluster_slope_tx,
         sigma_error = sigma_error,
         cor_subject = cor_subject,
-        cor_cluster = cor_cluster,
+        cor_cluster_intercept_slope = cor_cluster_intercept_slope,
+        cor_cluster_intercept_intercept_tx = cor_cluster_intercept_intercept_tx,
+        cor_cluster_intercept_slope_tx = cor_cluster_intercept_slope_tx,
+        cor_cluster_slope_intercept_tx = cor_cluster_slope_intercept_tx,
+        cor_cluster_slope_slope_tx = cor_cluster_slope_slope_tx,
+        cor_cluster_intercept_tx_slope_tx = cor_cluster_intercept_tx_slope_tx,
         cor_within = cor_within,
         var_ratio = var_ratio,
+        icc_slope = icc_slope,
         icc_pre_subject = icc_pre_subject,
         icc_pre_cluster = icc_pre_cluster,
-        icc_slope = icc_slope,
-        effect_size = effect_size,
-        partially_nested = partially_nested,
-        dropout = dropout,
-        deterministic_dropout = deterministic_dropout
+        effect_size = effect_size
     )
     save_call <- args
 
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
 
-    ## Default NA
-    if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
-        tmp_args$icc_pre_subject <- NA
-    }
-    if(is.null(var_ratio) & (is.null(sigma_subject_slope) || is.na(sigma_subject_slope)) & is.null(sigma_cluster_slope)) {
-        tmp_args$var_ratio <- NA
-    }
-    if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
-        tmp_args$icc_pre_cluster <- NA
-    }
-    if(is.null(icc_slope) & is.null(sigma_cluster_slope)) {
-        tmp_args$icc_slope <- NA
-    }
-    tmp <- expand.grid(tmp_args)
-    ## --
-
-    ## icc_cluster > icc_subject
-    if(!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
-        if(any((tmp$icc_pre_cluster > tmp$icc_pre_subject), na.rm=TRUE)) {
-            stop("'icc_pre_cluster' can't be larger than 'icc_pre_subject'", call. = FALSE)
-        }
-    }
-
-    # check cluster slope variance exists when var ratio is NA or zero.
-    if(!is.null(tmp$var_ratio)) {
-        if(is.na(tmp$var_ratio) && any(tmp$icc_slope >= 0, na.rm=TRUE)) {
-            stop("'icc_slope' can't be >= 0 when 'var_ratio' or 'sigma_subject_slope' is NA", call. = FALSE)
-        }
-        if((any(tmp$var_ratio == 0, na.rm=TRUE) | any(sigma_subject_slope == 0)) &&
-           any(tmp$icc_slope > 0, na.rm=TRUE)) {
-            stop("'icc_slope' can't be > 0 when 'var_ratio' or 'sigma_subject_slope' is 0", call. = FALSE)
-        }
-    }
+    # ## Default NA
+    # if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
+    #     tmp_args$icc_pre_subject <- NA
+    # }
+    # if(is.null(var_ratio) & (is.null(sigma_subject_slope) || is.na(sigma_subject_slope)) & is.null(sigma_cluster_slope)) {
+    #     tmp_args$var_ratio <- NA
+    # }
+    # if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
+    #     tmp_args$icc_pre_cluster <- NA
+    # }
+    # if(is.null(icc_slope) & is.null(sigma_cluster_slope)) {
+    #     tmp_args$icc_slope <- NA
+    # }
+     tmp <- expand.grid(tmp_args)
+    # ## --
+    #
+    # ## icc_cluster > icc_subject
+    # if(!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
+    #     if(any((tmp$icc_pre_cluster > tmp$icc_pre_subject), na.rm=TRUE)) {
+    #         stop("'icc_pre_cluster' can't be larger than 'icc_pre_subject'", call. = FALSE)
+    #     }
+    # }
+    #
+    # # check cluster slope variance exists when var ratio is NA or zero.
+    # if(!is.null(tmp$var_ratio)) {
+    #     if(is.na(tmp$var_ratio) && any(tmp$icc_slope >= 0, na.rm=TRUE)) {
+    #         stop("'icc_slope' can't be >= 0 when 'var_ratio' or 'sigma_subject_slope' is NA", call. = FALSE)
+    #     }
+    #     if((any(tmp$var_ratio == 0, na.rm=TRUE) | any(sigma_subject_slope == 0)) &&
+    #        any(tmp$icc_slope > 0, na.rm=TRUE)) {
+    #         stop("'icc_slope' can't be > 0 when 'var_ratio' or 'sigma_subject_slope' is 0", call. = FALSE)
+    #     }
+    # }
 
     ## Default T_end
     if(is.null(args$T_end)) tmp$T_end <- tmp$n1 - 1
@@ -159,71 +112,71 @@ study_parameters.plcp_design_crossed <- function(design,
 
     ## Solve raw values
 
-    # Solve subject_intercept
-    if(is.null(sigma_subject_intercept)) {
-
-        icc_cluster <- tmp$icc_pre_cluster
-        icc_cluster[is.na(icc_cluster)] <- 0
-
-        tmp$sigma_subject_intercept <-
-            sqrt(
-                tmp$sigma_error^2 /
-                    (1-(tmp$icc_pre_subject)) *
-                    (tmp$icc_pre_subject - icc_cluster)
-            )
-    }
-
-    # solve subject_slope
-    if(is.null(sigma_subject_slope)) {
-
-        icc <- tmp$icc_slope
-        icc[is.na(icc) | is.null(icc)] <- 0
-        tmp$sigma_subject_slope <- sqrt(tmp$var_ratio *
-                                            tmp$sigma_error^2 * (1-icc))
-
-    }
-    # Solve cluster_intercept
-    if(is.null(sigma_cluster_intercept)) {
-        # from icc_pre_subject
-        if(is.null(sigma_subject_intercept)) {
-            tmp$sigma_cluster_intercept <-
-                sqrt(
-                    tmp$sigma_error^2 /
-                        (1-(tmp$icc_pre_subject)) *
-                        tmp$icc_pre_cluster
-                )
-            # from sigma_subject_intercept
-        } else {
-            v0 <- with(tmp, (icc_pre_cluster*(sigma_error^2 + sigma_subject_intercept^2))
-                       /(1-icc_pre_cluster))
-            tmp$sigma_cluster_intercept <- sqrt(v0)
-        }
-
-    }
-
-    # Solve cluster_slope
-    if(is.null(sigma_cluster_slope)) {
-
-        # check if NA
-        if(is.null(icc_slope) || all(is.na(icc_slope)) ) {
-
-            tmp$sigma_cluster_slope <- NA
-        } else {
-            # solve from icc_slope and var_ratio
-            if(is.null(sigma_subject_slope)) {
-                v1 <- with(tmp, var_ratio * sigma_error^2 * icc_slope)
-                tmp$sigma_cluster_slope <- sqrt(v1)
-                # solve from subject_slope and icc_slope
-            } else {
-                x <- with(tmp, sigma_subject_slope^2/(1-icc_slope))
-                v1 <- x - tmp$sigma_subject_slope^2
-                v1 <- sqrt(v1)
-                tmp$sigma_cluster_slope <- v1
-
-            }
-        }
-    }
-
+    # # Solve subject_intercept
+    # if(is.null(sigma_subject_intercept)) {
+    #
+    #     icc_cluster <- tmp$icc_pre_cluster
+    #     icc_cluster[is.na(icc_cluster)] <- 0
+    #
+    #     tmp$sigma_subject_intercept <-
+    #         sqrt(
+    #             tmp$sigma_error^2 /
+    #                 (1-(tmp$icc_pre_subject)) *
+    #                 (tmp$icc_pre_subject - icc_cluster)
+    #         )
+    # }
+    #
+    # # solve subject_slope
+    # if(is.null(sigma_subject_slope)) {
+    #
+    #     icc <- tmp$icc_slope
+    #     icc[is.na(icc) | is.null(icc)] <- 0
+    #     tmp$sigma_subject_slope <- sqrt(tmp$var_ratio *
+    #                                         tmp$sigma_error^2 * (1-icc))
+    #
+    # }
+    # # Solve cluster_intercept
+    # if(is.null(sigma_cluster_intercept)) {
+    #     # from icc_pre_subject
+    #     if(is.null(sigma_subject_intercept)) {
+    #         tmp$sigma_cluster_intercept <-
+    #             sqrt(
+    #                 tmp$sigma_error^2 /
+    #                     (1-(tmp$icc_pre_subject)) *
+    #                     tmp$icc_pre_cluster
+    #             )
+    #         # from sigma_subject_intercept
+    #     } else {
+    #         v0 <- with(tmp, (icc_pre_cluster*(sigma_error^2 + sigma_subject_intercept^2))
+    #                    /(1-icc_pre_cluster))
+    #         tmp$sigma_cluster_intercept <- sqrt(v0)
+    #     }
+    #
+    # }
+    #
+    # # Solve cluster_slope
+    # if(is.null(sigma_cluster_slope)) {
+    #
+    #     # check if NA
+    #     if(is.null(icc_slope) || all(is.na(icc_slope)) ) {
+    #
+    #         tmp$sigma_cluster_slope <- NA
+    #     } else {
+    #         # solve from icc_slope and var_ratio
+    #         if(is.null(sigma_subject_slope)) {
+    #             v1 <- with(tmp, var_ratio * sigma_error^2 * icc_slope)
+    #             tmp$sigma_cluster_slope <- sqrt(v1)
+    #             # solve from subject_slope and icc_slope
+    #         } else {
+    #             x <- with(tmp, sigma_subject_slope^2/(1-icc_slope))
+    #             v1 <- x - tmp$sigma_subject_slope^2
+    #             v1 <- sqrt(v1)
+    #             tmp$sigma_cluster_slope <- v1
+    #
+    #         }
+    #     }
+    # }
+    #
 
     # keep cols
     cols <- which(colnames(tmp) %in% c("icc_slope",
@@ -234,28 +187,30 @@ study_parameters.plcp_design_crossed <- function(design,
     paras <- tmp[, !(names(tmp) %in% cols)]
 
 
-    # Single or multi?
-    if((is.data.frame(paras) & nrow(paras) == 1)) {
-        paras <- as.list(paras)
-    }
-    if(is.data.frame(paras)) {
-        class(paras) <- append(c("plcp_multi"), class(paras))
-    } else class(paras) <- append(c("plcp"), class(paras))
+    # # Single or multi?
+    # if((is.data.frame(paras) & nrow(paras) == 1)) {
+    #     paras <- as.list(paras)
+    # }
+    # if(is.data.frame(paras)) {
+    #     class(paras) <- append(c("plcp_multi"), class(paras))
+    # } else class(paras) <- append(c("plcp"), class(paras))
+    #
+    # # Default cor_*
+    # if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
+    # if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
 
-    # Default cor_*
-    if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
-    if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
+    # # Classes
+    # if(all(is.na(paras$sigma_cluster_slope)) &
+    #    all(is.na(paras$sigma_cluster_intercept))) {
+    #     class(paras) <- append(class(paras), c("plcp_2lvl"))
+    # } else if (all(!is.na(paras$sigma_cluster_slope)) |
+    #            all(!is.na(paras$sigma_cluster_intercept))) {
+    #     class(paras) <- append(class(paras), c("plcp_3lvl"))
+    # } else {
+    #     class(paras) <- append(class(paras), c("plcp_mixed"))
+    # }
 
-    # Classes
-    if(all(is.na(paras$sigma_cluster_slope)) &
-       all(is.na(paras$sigma_cluster_intercept))) {
-        class(paras) <- append(class(paras), c("plcp_2lvl"))
-    } else if (all(!is.na(paras$sigma_cluster_slope)) |
-               all(!is.na(paras$sigma_cluster_intercept))) {
-        class(paras) <- append(class(paras), c("plcp_3lvl"))
-    } else {
-        class(paras) <- append(class(paras), c("plcp_mixed"))
-    }
+    class(paras) <- append(class(paras), c("plcp","plcp_crossed"))
 
     attr(paras, "call") <- save_call
     paras
