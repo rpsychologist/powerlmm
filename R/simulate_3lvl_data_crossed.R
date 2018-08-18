@@ -4,7 +4,8 @@ simulate_3lvl_data_crossed <- function(paras) {
 
 
 
-create_cluster_index <- function(n2, n3) {
+create_cluster_index_crossed <- function(n2) {
+    n3 <- length(n2)
     if(length(n2) == 1) {
         cluster <- rep(1:n3, each = n2)
     } else {
@@ -43,7 +44,7 @@ create_cluster_index <- function(n2, n3) {
                                  cor_cluster_intercept_tx_slope_tx = 0,
                                  cor_within = 0,
                                  dropout = NULL,
-                                 deterministic_dropout = NULL) {
+                                 deterministic_dropout = NULL, ...) {
 
     # errors
     #if(!"MASS" %in% installed.packages()) stop("Package 'MASS' is not installed")
@@ -55,13 +56,17 @@ create_cluster_index <- function(n2, n3) {
     time <- seq(0, T_end, length.out = n1) # n1 measurements during the year
 
     n2_func <- names(n2)
-    n2 <- unlist(n2)
-    cluster <- create_cluster_index(n2, n3)
+    #n2 <- unlist(n2)
 
-    subject <- rep(1:length(cluster), each = n1) # subject IDs
-    tot_n2 <- length(cluster)
+    cluster <- lapply(n2, create_cluster_index_crossed)
 
-    TX <- rep(rep(rep(0:1, each = n1), n2/2), n3)
+    tot_n2 <- length(unlist(cluster))
+    subject <- rep(1:tot_n2, each = n1) # subject IDs
+
+
+    TX <- rep(1, length(cluster$treatment), each = n1)
+    CC <- rep(0, length(cluster$control), each = n1)
+    TX <- c(TX,CC)
 
     # level-2 variance matrix
     Sigma_subject = c(
@@ -89,9 +94,9 @@ create_cluster_index <- function(n2, n3) {
 
     # level 3-model
     cluster_lvl <-
-        MASS::mvrnorm(sum(n3),
+        MASS::mvrnorm(length(unique(cluster$treatment)),
                       mu = c(0, 0, 0, 0),
-                      Sigma = Sigma_cluster, empirical = TRUE)
+                      Sigma = Sigma_cluster, empirical = FALSE)
 
     if (is.null(dim(cluster_lvl))) {
         # if theres only one therapist
@@ -112,6 +117,7 @@ create_cluster_index <- function(n2, n3) {
     print(paste("sd", sd(cluster_b1 + cluster_b3)))
     print(cor(cluster_b1, cluster_b3))
 
+    cluster <- unlist(cluster)
     v0 <- cluster_b0[cluster][subject]
     v1 <- cluster_b1[cluster][subject]
     v2 <- cluster_b2[cluster][subject]

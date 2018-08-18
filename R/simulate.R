@@ -246,7 +246,7 @@ add_NA_values_from_indicator <- function(d, missing) {
 }
 #' @rdname simulate_data
 #' @export
-simulate_data.plcp_design_nested <- function(paras, n = NULL) {
+simulate_data.plcp_nested <- function(paras, n = NULL) {
     if (is.data.frame(paras))
         paras <- as.list(paras)
     if(is.null(paras$prepared)) {
@@ -319,6 +319,8 @@ simulate_data.plcp_crossed <- function(paras, n = NULL) {
     slope_diff <- get_slope_diff(paras) / paras$T_end
     paras$effect_size <- NULL
 
+    tmp <- prepare_paras(paras)
+    paras$n2 <- get_n2(paras)
     paras$fixed_slope_time_tx <- slope_diff
 
     # replace NA
@@ -327,13 +329,17 @@ simulate_data.plcp_crossed <- function(paras, n = NULL) {
     d <- simulate_3lvl_data_crossed(paras)
 
     # # drop outs
-    # if (is.list(paras$dropout) |
-    #     is.function(paras$dropout) |
-    #     length(paras$dropout) > 1) {
-    #
-    #     miss_c <- create_dropout_indicator(paras)
-    #     d_c <- add_NA_values_from_indicator(d_c, miss_c)
-    # }
+
+    if (is.list(paras$dropout) |
+        is.function(paras$dropout) |
+        length(paras$dropout) > 1) {
+
+
+        miss_c <- create_dropout_indicator(tmp$control)
+        miss_tx <- create_dropout_indicator(tmp$treatment)
+
+        d <- add_NA_values_from_indicator(d, c(miss_tx, miss_c))
+    }
     # if (is.list(paras_tx$dropout) |
     #     is.function(paras_tx$dropout) |
     #     length(paras_tx$dropout) > 1) {

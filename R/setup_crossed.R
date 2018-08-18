@@ -36,6 +36,7 @@ study_parameters.plcp_design_crossed <- function(design,
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
+    if(is.per_treatment(n3)) stop("the number of clusters can't differ per preatment in a crossed design.", call. = FALSE)
 
 
     args <- list(
@@ -65,11 +66,14 @@ study_parameters.plcp_design_crossed <- function(design,
         icc_slope = icc_slope,
         icc_pre_subject = icc_pre_subject,
         icc_pre_cluster = icc_pre_cluster,
-        effect_size = effect_size
+        effect_size = effect_size,
+        dropout = dropout,
+        deterministic_dropout = deterministic_dropout
     )
     save_call <- args
 
     tmp_args <- args[!vapply(args, is.null, logical(1))]
+
 
 
     # ## Default NA
@@ -187,10 +191,13 @@ study_parameters.plcp_design_crossed <- function(design,
     paras <- tmp[, !(names(tmp) %in% cols)]
 
 
-    # # Single or multi?
-    # if((is.data.frame(paras) & nrow(paras) == 1)) {
-    #     paras <- as.list(paras)
-    # }
+    # Single or multi?
+    if((is.data.frame(paras) & nrow(paras) == 1)) {
+        paras <- as.list(paras)
+    }
+
+    # avoid problems with prepare_paras()
+    paras$partially_nested <- FALSE
     # if(is.data.frame(paras)) {
     #     class(paras) <- append(c("plcp_multi"), class(paras))
     # } else class(paras) <- append(c("plcp"), class(paras))

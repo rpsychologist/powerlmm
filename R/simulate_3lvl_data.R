@@ -25,7 +25,7 @@ create_cluster_index <- function(n2, n3) {
     cluster
 
 }
-.simulate_3lvl_data_ <- function (n1,
+.simulate_3lvl_data <- function (n1,
                            n2,
                            n3,
                            T_end,

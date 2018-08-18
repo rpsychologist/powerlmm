@@ -498,6 +498,7 @@ study_parameters.plcp_design_nested <- function(design,
         class(paras) <- append(class(paras), c("plcp_mixed"))
     }
 
+    class(paras) <- append(class(paras), c("plcp_nested"))
     attr(paras, "call") <- save_call
     paras
 
@@ -1147,6 +1148,7 @@ eval_n2 <- function(n2) {
 
 prepare_paras <- function(paras) {
     paras_tx <- paras
+
     per_tx_n2 <- FALSE
     if (is.per_treatment(paras$n3)) {
         n3_tx <- paras$n3[[1]]$treatment
