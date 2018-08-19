@@ -284,25 +284,39 @@ create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
 
     f
 }
+
+get_pars_short_name <- function(object) {
+
+    pars <- list()
+    pars["u0"] <- object$sigma_subject_intercept
+    pars["u1"] <- object$sigma_subject_slope
+    pars["u01"] <- object$cor_subject
+    pars["v0"] <- object$sigma_cluster_intercept
+    pars["v1"] <- object$sigma_cluster_slope
+    pars["v2"] <- object$sigma_cluster_intercept_tx
+    pars["v3"] <- object$sigma_cluster_slope_tx
+    pars["v01"] <- object$cor_cluster_intercept_slope
+    pars["v02"] <- object$cor_cluster_intercept_intercept_tx
+    pars["v03"] <- object$cor_cluster_intercept_slope_tx
+    pars["v12"] <- object$cor_cluster_slope_intercept_tx
+    pars["v13"] <- object$cor_cluster_slope_slope_tx
+    pars["v23"] <- object$cor_cluster_intercept_tx_slope_tx
+
+    pars
+}
+
 create_lmer_formula.plcp_crossed <- function(object, n = NULL, ...) {
-    u0 <- object$sigma_subject_intercept
-    u1 <- object$sigma_subject_slope
-    u01 <- object$cor_subject
 
-    v0 <- object$sigma_cluster_intercept
-    v1 <- object$sigma_cluster_slope
-    v2 <- object$sigma_cluster_intercept_tx
-    v3 <- object$sigma_cluster_slope_tx
-    v01 <- object$cor_cluster_intercept_slope
-    v02 <- object$cor_cluster_intercept_intercept_tx
-    v03 <- object$cor_cluster_intercept_slope_tx
-    v12 <- object$cor_cluster_slope_intercept_tx
-    v13 <- object$cor_cluster_slope_slope_tx
-    v23 <- object$cor_cluster_intercept_tx_slope_tx
-
+    tmp <- get_pars_short_name(object)
     f0 <- "y ~ time*treatment"
-    lvl2 <- make_random_formula(u0, u01, u1, term = "subject")
-    lvl3 <- make_random_formula_crossed(v0, v1, v2, v3, v01, v02, v03, v12, v13, v23)
+    lvl2 <- with(tmp,
+                 make_random_formula(u0, u01, u1,
+                                     term = "subject")
+                 )
+    lvl3 <- with(tmp,
+                 make_random_formula_crossed(v0, v1, v2, v3,
+                                             v01, v02, v03, v12, v13, v23)
+                 )
     f <-  paste(f0, lvl2, lvl3, sep  = " + ")
 
     f
@@ -456,8 +470,12 @@ varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
         t(Lc) %*% (sigma2 * solve(RXtRX)) %*% Lc
     }
 }
+setup_power_calc <- function(object, d, f) {
+    UseMethod("setup_power_calc")
+}
 
-setup_power_calc <- function(d, f, object) {
+
+setup_power_calc.plcp_nested <- function(object, d, f) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     cor_subject <- object$cor_subject
@@ -488,6 +506,35 @@ setup_power_calc <- function(d, f, object) {
          "Lind" = Lind)
 
 }
+setup_power_calc.plcp_crossed <- function(object, d, f) {
+    browser()
+    tmp <- get_pars_short_name(object)
+    tmp$sigma <- object$sigma_error
+    tmp$sigma2 <- sigma^2
+
+    pars <- with(tmp,
+                 c("u0" = u0^2, "u01" = u01, "u1" = u1^2,
+                   "v0" = v0^2, "v01" = v01, "v1" = v1^2,
+                   "sigma" = sigma^2)
+    )
+    theta <- make_theta(pars)
+
+    X <- f$X
+    Lambdat <- f$reTrms$Lambdat
+    Lind <- f$reTrms$Lind
+    Zt <- f$reTrms$Zt
+    Lambdat@x <- theta[Lind]
+    L0 <- Matrix::Cholesky(tcrossprod(Lambdat %*% Zt), LDL = FALSE, Imult = 1)
+
+    list("pars" = pars,
+         "theta" = theta,
+         "X" = X,
+         "Zt" = Zt,
+         "Lambdat" = Lambdat,
+         "L0" = L0,
+         "Lind" = Lind)
+
+}
 
 power_worker <- function(object, df, alpha, use_satterth) {
 
@@ -499,7 +546,9 @@ power_worker <- function(object, df, alpha, use_satterth) {
             f <- lme4::lFormula(formula = create_lmer_formula(object),
                                 data = d)
 
-            pc <- setup_power_calc(d, f, object)
+            pc <- setup_power_calc(object = object,
+                                   d = d,
+                                   f = f)
             pars <- pc$pars
             X <- pc$X
             Zt <- pc$Zt
