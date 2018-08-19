@@ -325,7 +325,7 @@ gradient <- function (fun, x, delta = 1e-04, ...)
 }
 make_theta_vec <- function(x0sq, x01, x1sq) {
 
-    # deal with negative paras in numeric derivative
+    # deal with negative paras in numerical derivative
     x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
     #x01 <- ifelse(x01 < 0, abs(x01), x01)
     x1sq <- ifelse(x1sq < 0, abs(x1sq), x1sq)

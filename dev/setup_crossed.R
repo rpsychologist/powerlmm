@@ -133,6 +133,53 @@ p <- study_parameters(design = des,
 
 simulate_data(p)
 
+### random clusters
+p <- study_parameters(design = des,
+                      n1 = 5,
+                      n2 = unequal_clusters(func = rpois(3, 5)),
+                      fixed_intercept = 4,
+                      fixed_tx = 0,
+                      fixed_slope = -1,
+                      sigma_subject_intercept = 0,
+                      sigma_subject_slope = 0,
+                      sigma_cluster_intercept = 1, # cc intercept
+                      sigma_cluster_slope = 2, # cc slope
+                      sigma_cluster_intercept_tx = 2, # treatment
+                      sigma_cluster_slope_tx = 1, # time:treatment
+                      sigma_error = 0.1,
+                      cor_subject = 0.4,
+                      effect_size = -1
+)
+d <- simulate_data(p)
+
+
+d %>% group_by(treatment,cluster) %>%
+    summarise(n = length(unique(subject)))
+
+
+p <- study_parameters(design = des,
+                      n1 = 5,
+                      n2 = per_treatment(unequal_clusters(func = rpois(4, 5)),
+                                         unequal_clusters(func = rpois(4, 6)) ),
+                      fixed_intercept = 4,
+                      fixed_tx = 0,
+                      fixed_slope = -1,
+                      sigma_subject_intercept = 0,
+                      sigma_subject_slope = 0,
+                      sigma_cluster_intercept = 1, # cc intercept
+                      sigma_cluster_slope = 2, # cc slope
+                      sigma_cluster_intercept_tx = 2, # treatment
+                      sigma_cluster_slope_tx = 1, # time:treatment
+                      sigma_error = 0.1,
+                      cor_subject = 0.4,
+                      effect_size = -1
+)
+d <- simulate_data(p)
+
+
+d %>% group_by(treatment,cluster) %>%
+    summarise(n = length(unique(subject)))
+
 ## Missing data
 p <- study_parameters(design = des,
                       n1 = 11,

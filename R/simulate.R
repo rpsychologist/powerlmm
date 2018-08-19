@@ -312,15 +312,20 @@ simulate_data.plcp <- function(paras, ...) {
 simulate_data.plcp_crossed <- function(paras, n = NULL) {
    # if (is.data.frame(paras))
     #    paras <- as.list(paras)
-    #if(is.null(paras$prepared)) {
-    #    tmp <- prepare_paras(paras)
-    #} else tmp <- paras
+    if(is.null(paras$prepared)) {
+        tmp <- prepare_paras(paras)
+    } else {
+        tmp <- paras
+        paras <- paras$control
+    }
 
-    slope_diff <- get_slope_diff(paras) / paras$T_end
+
+    # doesn't matter if tmp$control or tx
+    slope_diff <- get_slope_diff(tmp$control) / paras$T_end
     paras$effect_size <- NULL
 
-    tmp <- prepare_paras(paras)
-    paras$n2 <- get_n2(paras)
+    paras$n2 <- list(control = tmp$control$n2,
+                     treatment = tmp$treatment$n2)
     paras$fixed_slope_time_tx <- slope_diff
 
     # replace NA
@@ -334,21 +339,11 @@ simulate_data.plcp_crossed <- function(paras, n = NULL) {
         is.function(paras$dropout) |
         length(paras$dropout) > 1) {
 
-
         miss_c <- create_dropout_indicator(tmp$control)
         miss_tx <- create_dropout_indicator(tmp$treatment)
 
         d <- add_NA_values_from_indicator(d, c(miss_tx, miss_c))
     }
-    # if (is.list(paras_tx$dropout) |
-    #     is.function(paras_tx$dropout) |
-    #     length(paras_tx$dropout) > 1) {
-    #     miss_tx <- create_dropout_indicator(paras_tx)
-    #     d_tx <- add_NA_values_from_indicator(d_tx, miss_tx)
-    # }
-
-    # combine
-
 
     d
 }
@@ -1110,18 +1105,39 @@ rename_rr_ <- function(.x, match, new) {
 
     .x
 }
-rename_random_effects <- function(.x) {
-    .x <- rename_rr_(
-        .x,
-        match = c(
-            "cluster_time",
-            "cluster.1_time",
-            "cluster_time:treatment",
-            "cluster_treatment:time",
-            "cluster.1_treatment:time"
-        ),
-        new = "cluster_slope"
-    )
+rename_random_effects <- function(.x, crossed = FALSE) {
+    if(crossed) {
+        .x <- rename_rr_(
+            .x,
+            match = c(
+                "cluster_time",
+                "cluster.1_time"
+            ),
+            new = "cluster_slope"
+        )
+        .x <- rename_rr_(
+            .x,
+            match = c(
+                "cluster_time:treatment",
+                "cluster_treatment:time",
+                "cluster.1_treatment:time"
+            ),
+            new = "cluster_slope_tx"
+        )
+
+    } else {
+        .x <- rename_rr_(
+            .x,
+            match = c(
+                "cluster_time",
+                "cluster.1_time",
+                "cluster_time:treatment",
+                "cluster_treatment:time",
+                "cluster.1_treatment:time"
+            ),
+            new = "cluster_slope"
+        )
+    }
 
     .x <- rename_rr_(.x,
                      match = "Residual_NA",
@@ -1131,10 +1147,21 @@ rename_random_effects <- function(.x) {
                      match = c("subject_(Intercept)"),
                      new = "subject_intercept")
 
-    .x <- rename_rr_(.x,
-                     match = c("cluster_(Intercept)",
-                               "cluster_treatment"),
-                     new = "cluster_intercept")
+    if(crossed) {
+        .x <- rename_rr_(.x,
+                         match = c("cluster_(Intercept)"),
+                         new = "cluster_intercept")
+        .x <- rename_rr_(.x,
+                         match = c("cluster_treatment"),
+                         new = "cluster_intercept_tx")
+    } else {
+        .x <- rename_rr_(.x,
+                         match = c("cluster_(Intercept)",
+                                   "cluster_treatment"),
+                         new = "cluster_intercept")
+    }
+
+
 
     .x <- rename_rr_(.x,
                      match = c("subject.1_time", "subject_time"),
@@ -1145,12 +1172,45 @@ rename_random_effects <- function(.x) {
                      match = "subject_(Intercept)_time",
                      new = "cor_subject")
 
+    if(crossed) {
+        .x <- rename_rr_(.x,
+                         match = c("cluster_(Intercept)_time"),
+                         new = "cor_cluster_intercept_slope")
+        .x <- rename_rr_(.x,
+                         match = c("cluster_(Intercept)_treatment:time",
+                                   "cluster_(Intercept)_time:treatment",
+                                   "cluster_treatment_treatment:time"),
+                         new = "cor_cluster_intercept_slope_tx")
+    } else {
+        .x <- rename_rr_(.x,
+                         match = c("cluster_(Intercept)_time",
+                                   "cluster_(Intercept)_treatment:time",
+                                   "cluster_(Intercept)_time:treatment",
+                                   "cluster_treatment_treatment:time"),
+                         new = "cor_cluster")
+    }
+
+
+    # crossed effects
+    ## cor intercept, time
     .x <- rename_rr_(.x,
-                     match = c("cluster_(Intercept)_time",
-                               "cluster_(Intercept)_treatment:time",
-                               "cluster_(Intercept)_time:treatment",
-                               "cluster_treatment_treatment:time"),
-                     new = "cor_cluster")
+                     match = "cluster_time_treatment",
+                     new = "cor_cluster_slope_intercept_tx")
+    ## cor intercept, treatment
+    .x <- rename_rr_(.x,
+                     match = "cluster_(Intercept)_treatment",
+                     new = "cor_cluster_intercept_intercept_tx")
+
+    ## cor tx, time:tx
+    .x <- rename_rr_(.x,
+                     match = "cluster_treatment_time:treatment",
+                     new = "cor_cluster_intercept_tx_slope_tx")
+
+    ## cor time, time:tx
+    .x <- rename_rr_(.x,
+                     match = "cluster_time_time:treatment",
+                     new = "cor_cluster_slope_slope_tx")
+
 
 }
 order_model_lists <- function(models, RE, FE, ll, df, tot_n, convergence) {
@@ -1169,13 +1229,13 @@ order_model_lists <- function(models, RE, FE, ll, df, tot_n, convergence) {
 }
 munge_results <- function(res) {
     x <- res$res
-
     models <- names(x[[1]])
     RE <- lapply(models, munge_results_, x, "RE")
     FE <- lapply(models, munge_results_, x, "FE")
     convergence <- lapply(models, munge_results_, x, "conv")
     tot_n <- lapply(models, munge_results_, x, "tot_n")
-    RE <- lapply(RE, rename_random_effects)
+    crossed <- inherits(res$paras, "plcp_crossed")
+    RE <- lapply(RE, rename_random_effects, crossed = crossed)
     ll <- lapply(models, munge_results_, x, "logLik")
     df <- lapply(models, munge_results_, x, "df")
 
@@ -1610,7 +1670,6 @@ summarize_FE <- function(res, theta, alpha, df_bw = NULL) {
             tmp_df_bw <- df_bw[[para]]
         }
 
-
         if(any(!is.na(pval))) {
             Satt_NA <- mean(is.na(df))
         } else Satt_NA <- NA
@@ -1673,28 +1732,71 @@ summarize_CI <- function(res, theta = NULL) {
 
     CI_cov
 }
-summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
-    RE_params <-
-        data.frame(
-            parameter = c(
-                "subject_intercept",
-                "subject_slope",
-                "cluster_intercept",
-                "cluster_slope",
-                "error",
-                "cor_subject",
-                "cor_cluster"
-            ),
-            theta = c(
-                paras$sigma_subject_intercept ^ 2,
-                paras$sigma_subject_slope ^ 2,
-                paras$sigma_cluster_intercept ^ 2,
-                paras$sigma_cluster_slope ^ 2,
-                paras$sigma_error ^ 2,
-                paras$cor_subject,
-                paras$cor_cluster
-            )
+
+## Extract random effect thetas
+get_RE_thetas <- function(paras) {
+    UseMethod("get_RE_thetas")
+}
+get_RE_thetas.plcp_nested <- function(paras) {
+    data.frame(
+        parameter = c(
+            "subject_intercept",
+            "subject_slope",
+            "cluster_intercept",
+            "cluster_slope",
+            "error",
+            "cor_subject",
+            "cor_cluster"
+        ),
+        theta = c(
+            paras$sigma_subject_intercept ^ 2,
+            paras$sigma_subject_slope ^ 2,
+            paras$sigma_cluster_intercept ^ 2,
+            paras$sigma_cluster_slope ^ 2,
+            paras$sigma_error ^ 2,
+            paras$cor_subject,
+            paras$cor_cluster
         )
+    )
+}
+get_RE_thetas.plcp_crossed <- function(paras) {
+    data.frame(
+        parameter = c(
+            "subject_intercept",
+            "subject_slope",
+            "cluster_intercept",
+            "cluster_intercept_tx",
+            "cluster_slope",
+            "cluster_slope_tx",
+            "error",
+            "cor_subject",
+            "cor_cluster_intercept_slope",
+            "cor_cluster_intercept_intercept_tx",
+            "cor_cluster_intercept_slope_tx",
+            "cor_cluster_intercept_tx_slope_tx",
+            "cor_cluster_slope_intercept_tx",
+            "cor_cluster_slope_slope_tx"
+        ),
+        theta = c(
+            paras$sigma_subject_intercept ^ 2,
+            paras$sigma_subject_slope ^ 2,
+            paras$sigma_cluster_intercept ^ 2,
+            paras$sigma_cluster_intercept_tx ^ 2,
+            paras$sigma_cluster_slope ^ 2,
+            paras$sigma_cluster_slope_tx^2,
+            paras$sigma_error ^ 2,
+            paras$cor_subject,
+            paras$cor_cluster_intercept_slope,
+            paras$cor_cluster_intercept_intercept_tx,
+            paras$cor_cluster_intercept_slope_tx,
+            paras$cor_cluster_intercept_tx_slope_tx,
+            paras$cor_cluster_slope_intercept_tx,
+            paras$cor_cluster_slope_slope_tx
+        )
+    )
+}
+summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
+    RE_params <- get_RE_thetas(paras)
 
     RE <- summarize_RE(res, theta = RE_params)
 
@@ -1719,7 +1821,6 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
         names(theta)[4] <- t_b_t
     }
 
-
     FE <- summarize_FE(res = res,
                        theta = theta,
                        alpha = alpha,
@@ -1734,12 +1835,9 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
 
     FE$Satt_NA <- NULL
 
-
     ## TODO: update to make compatible with fit$test
     ##       update so function is agnostic to if time:treatment or treatment:time
     CI_NA <- 0
-
-
 
     if ("CI_lwr" %in% colnames(res$FE)) {
         CI_cov <- summarize_CI(res, theta)

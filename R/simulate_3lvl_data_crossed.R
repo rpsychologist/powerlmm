@@ -52,7 +52,6 @@ create_cluster_index_crossed <- function(n2) {
     # unbalanced n2
     #n2 <- unlist(n2)
     #  if(length(n2) != n3) stop("n2 and n3 do not mach")
-
     time <- seq(0, T_end, length.out = n1) # n1 measurements during the year
 
     n2_func <- names(n2)
