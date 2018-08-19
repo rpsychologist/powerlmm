@@ -238,6 +238,8 @@ print.plcp_power_2lvl <- function(x, ...) {
 #' the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is \code{NA} or \code{NULL} the
 #' corresponding term is removed from the lmer formula. Parameters that are 0 are retained.
 #'
+#' For crossed design if all correlations involving an effect is NA then that random effect will be modeled as uncorelated.
+#'
 #'
 #' Currently only objects with one study design are supported, i.e. objects with class \code{plcp},
 #' and not \code{plcp_multi}; \code{data.frame} with multiple designs are currently not supported.
@@ -256,6 +258,9 @@ create_lmer_formula.plcp_multi <- function(object, n = 1, ...) {
 
 #' @export
 create_lmer_formula.plcp <- function(object, n = NULL, ...) {
+    NextMethod("create_lmer_formula")
+}
+create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     u01 <- object$cor_subject
@@ -267,7 +272,7 @@ create_lmer_formula.plcp <- function(object, n = NULL, ...) {
     f0 <- "y ~ time*treatment"
     lvl2 <- make_random_formula(u0, u01, u1, term = "subject")
     if("plcp_2lvl" %in% class(object)) {
-    f <- paste(f0, lvl2, sep  = " + ")
+        f <- paste(f0, lvl2, sep  = " + ")
     } else if("plcp_3lvl" %in% class(object)) {
         if(object$partially_nested) {
             lvl3 <- make_random_formula_pn(v0, v01, v1)
@@ -276,6 +281,29 @@ create_lmer_formula.plcp <- function(object, n = NULL, ...) {
         }
         f <-  paste(f0, lvl2, lvl3, sep  = " + ")
     }
+
+    f
+}
+create_lmer_formula.plcp_crossed <- function(object, n = NULL, ...) {
+    u0 <- object$sigma_subject_intercept
+    u1 <- object$sigma_subject_slope
+    u01 <- object$cor_subject
+
+    v0 <- object$sigma_cluster_intercept
+    v1 <- object$sigma_cluster_slope
+    v2 <- object$sigma_cluster_intercept_tx
+    v3 <- object$sigma_cluster_slope_tx
+    v01 <- object$cor_cluster_intercept_slope
+    v02 <- object$cor_cluster_intercept_intercept_tx
+    v03 <- object$cor_cluster_intercept_slope_tx
+    v12 <- object$cor_cluster_slope_intercept_tx
+    v13 <- object$cor_cluster_slope_slope_tx
+    v23 <- object$cor_cluster_intercept_tx_slope_tx
+
+    f0 <- "y ~ time*treatment"
+    lvl2 <- make_random_formula(u0, u01, u1, term = "subject")
+    lvl3 <- make_random_formula_crossed(v0, v1, v2, v3, v01, v02, v03, v12, v13, v23)
+    f <-  paste(f0, lvl2, lvl3, sep  = " + ")
 
     f
 }
@@ -306,6 +334,53 @@ make_random_formula_pn <- function(x0, x01, x1) {
     f
 }
 
+## separate crossed slopes that should be correlated or independent
+make_re_term <- function(v_i, corr, term) {
+    cors <- NULL
+    indep <- NULL
+
+    if(!is.na(v_i)) {
+        if(corr) cors <- term else indep <- term
+    }
+    list(cors = cors,
+         indep = indep
+         )
+}
+make_cor_formula <- function(terms, subset = "cors") {
+    terms <- unlist(terms[,c(subset)])
+    if(all(is.na(terms))) return(NULL)
+    if(!"1" %in% terms) terms <- c("0", terms)
+
+    slopes <- paste(terms, collapse = " + ")
+
+    if(subset == "cors" | length(terms) == 1) {
+        paste("(", slopes, " | cluster)", sep = "")
+    } else {
+        paste("(", slopes, " || cluster)", sep = "")
+    }
+
+}
+
+make_random_formula_crossed <- function(v0, v1, v2, v3, v01, v02, v03, v12, v13, v23) {
+
+    # which cors to include
+    # only remove cor when all term involving term is NA
+    cor0 <- !all(is.na(c(v01, v02, v03)))
+    cor1 <- !all(is.na(c(v01, v12, v13)))
+    cor2 <- !all(is.na(c(v02, v12, v23)))
+    cor3 <- !all(is.na(c(v03, v13, v23)))
+
+    terms <- mapply(make_re_term,
+                    v_i = c(v0, v1, v2, v3),
+                    corr = c(cor0, cor1, cor2, cor3),
+                    term = c("1", "time", "treatment", "time:treatment"),
+                    SIMPLIFY = FALSE)
+    terms <- do.call(rbind, terms)
+
+    f <- paste(c(make_cor_formula(terms),
+               make_cor_formula(terms, "indep")), collapse = " + ")
+    f
+}
 
 
 
