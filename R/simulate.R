@@ -1106,6 +1106,7 @@ rename_rr_ <- function(.x, match, new) {
     .x
 }
 rename_random_effects <- function(.x, crossed = FALSE) {
+
     if(crossed) {
         .x <- rename_rr_(
             .x,
@@ -1120,7 +1121,8 @@ rename_random_effects <- function(.x, crossed = FALSE) {
             match = c(
                 "cluster_time:treatment",
                 "cluster_treatment:time",
-                "cluster.1_treatment:time"
+                "cluster.1_treatment:time",
+                "cluster.1_time:treatment"
             ),
             new = "cluster_slope_tx"
         )

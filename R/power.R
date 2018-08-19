@@ -419,8 +419,6 @@ make_theta_vec <- function(x0sq, x01, x1sq) {
     #x01 <- ifelse(x01 < 0, abs(x01), x01)
     x1sq <- ifelse(x1sq < 0, abs(x1sq), x1sq)
 
-
-
     if((NA_or_zero(x0sq) | NA_or_zero(x1sq)) & is.na(x01)) {
         x <- c(x0sq, x01, x1sq)
         x <- x[!is.na(x)]
@@ -507,7 +505,7 @@ setup_power_calc.plcp_nested <- function(object, d, f) {
 
 }
 setup_power_calc.plcp_crossed <- function(object, d, f) {
-    browser()
+
     tmp <- get_pars_short_name(object)
     tmp$sigma <- object$sigma_error
     tmp$sigma2 <- sigma^2
