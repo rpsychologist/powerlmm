@@ -449,13 +449,41 @@ make_theta <- function(pars) {
     lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
     c(lvl2, lvl3)
 }
-varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
+make_theta_crossed <- function(pars) {
+    #p <- make_pars(pars)
+    p <- as.list(pars)
+    sigma <- sqrt(p$sigma)
+    lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+
+    # x <- with(p, matrix(c(v0, v01, v02,  v03,
+    #                       v01, v1,  v12, v13,
+    #                       v02, v12, v2,   v23,
+    #                       v03, v13, v23,  v3), ncol = 4))
+
+
+    # TODO
+    # use full vcov matrix
+    x <- with(p, diag(c(v0, v1, v2, v3)))
+    x[is.na(x)] <- 0
+    diag(x) <- sqrt(diag(x))
+    m <- t(x/sigma)
+
+    lvl3 <- m[lower.tri(m, diag = TRUE)]
+
+    c(lvl2, lvl3)
+}
+varb_func <- function(para, X, Zt, L0, Lambdat, Lind, crossed = FALSE) {
     ## adapted from lme4PureR
     ind <- which(!is.na(para))
     pars <- as.list(para)
     function(x = NULL, Lc) {
         if(!is.null(x)) pars[ind] <- x
-        theta <- make_theta(pars)
+        if(crossed) {
+            theta <- make_theta_crossed(pars)
+        } else {
+            theta <- make_theta(pars)
+        }
+
         sigma2 <- pars$sigma
         Lambdat@x <- theta[Lind]
         L0 <- Matrix::update(L0, Lambdat %*% Zt, mult = 1)
@@ -506,16 +534,25 @@ setup_power_calc.plcp_nested <- function(object, d, f) {
 }
 setup_power_calc.plcp_crossed <- function(object, d, f) {
 
-    tmp <- get_pars_short_name(object)
-    tmp$sigma <- object$sigma_error
-    tmp$sigma2 <- sigma^2
+    pars <- get_pars_short_name(object)
+    pars <- with(pars,
+                 list(u0 = u0^2,
+                 u1 = u1^2,
+                 u01 = u0 * u1 * u01,
+                 v0 = v0^2,
+                 v1 = v1^2,
+                 v2 = v2^2,
+                 v3 = v3^2,
+                 v01 = v0 * v1 * v01,
+                 v02 = v0 * v2 * v02,
+                 v03 = v0 * v3 * v03,
+                 v12 = v1 * v2 * v12,
+                 v13 = v1 * v3 * v13,
+                 v23 = v2 * v3 * v23,
+                 sigma = object$sigma_error^2)
+                 )
 
-    pars <- with(tmp,
-                 c("u0" = u0^2, "u01" = u01, "u1" = u1^2,
-                   "v0" = v0^2, "v01" = v01, "v1" = v1^2,
-                   "sigma" = sigma^2)
-    )
-    theta <- make_theta(pars)
+    theta <- make_theta_crossed(pars)
 
     X <- f$X
     Lambdat <- f$reTrms$Lambdat
@@ -535,6 +572,7 @@ setup_power_calc.plcp_crossed <- function(object, d, f) {
 }
 
 power_worker <- function(object, df, alpha, use_satterth) {
+
 
     function(i = NULL) {
         use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
@@ -559,7 +597,8 @@ power_worker <- function(object, df, alpha, use_satterth) {
                               Zt = Zt,
                               L0 = L0,
                               Lambdat = Lambdat,
-                              Lind = Lind)
+                              Lind = Lind,
+                              crossed = crossed)
             Phi <- varb(Lc = diag(4))
             se <- sqrt(Phi[4,4])
             calc_type <- "matrix"

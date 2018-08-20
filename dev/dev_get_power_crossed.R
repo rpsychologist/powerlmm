@@ -36,8 +36,9 @@ sqrt(varb)
 
 
 ## lmer fit
+d <- simulate_data(p)
 fit <- lmer(y ~ time*treatment + (1 + time | subject) + (1  + time * treatment | cluster), data = d )
-
+fit
 getME(fit, "theta")
 
 
@@ -53,3 +54,7 @@ L <- L[, order(attr(L, "pivot"))]
 L/getME(fit, "sigma")
 
 getME(fit, "theta")[-c(1:3)]
+
+
+round(L/getME(fit, "sigma"), 3)
+round(getME(fit, "theta")[-c(1:3)], 3)
