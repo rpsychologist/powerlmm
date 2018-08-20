@@ -1,4 +1,7 @@
-
+des <- study_design(nested = FALSE)
+library(lme4)
+library(dplyr)
+library(Matrix)
 p <- study_parameters(design = des,
                       n1 = 3,
                       n2 = 5,
@@ -49,7 +52,11 @@ p$cor_cluster_slope_slope_tx <- filter(vv, grp == "cluster" & var1 == "time" & v
 p$cor_cluster_intercept_tx_slope_tx <- filter(vv, grp == "cluster" & var1 == "treatment" & var2 == "time:treatment")$sdcor
 p$cor_subject <- 0
 
-
+for(i in seq_along(p)) {
+    x <- p[[i]]
+    if(names(p[i]) == "n2") next
+    p[[i]] <- ifelse(length(x) == 0 || is.nan(x), NA, x)
+}
 
 
 ###
@@ -91,7 +98,7 @@ crossprod(m2 * sigma)
 round(x, 3)
 
 # Same if positive definite
-m <- t(L/sigma)
+m <- t(L/sigma
 m[lower.tri(m, diag = TRUE)]
 round(m[lower.tri(m, diag= TRUE )], 3)
 round(getME(fit, "theta"), 3)[-c(1:2)]
@@ -104,5 +111,5 @@ L2 <- L[, order(pivot)]
 
 m2 <- L2/sigma
 
-round(, 3)
+round(make_theta_crossed(pars)/sigma, 3)
 round(getME(fit, "theta"), 3)[-c(1:2)]

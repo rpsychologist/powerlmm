@@ -412,7 +412,7 @@ gradient <- function (fun, x, delta = 1e-04, ...)
     fsub <- apply(Xsub, 1, fun, ...)
     (fadd - fsub)/(2 * delta)
 }
-make_theta_vec <- function(x0sq, x01, x1sq) {
+make_theta_vec2 <- function(x0sq, x01, x1sq) {
 
     # deal with negative paras in numerical derivative
     x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
@@ -441,12 +441,55 @@ make_theta_vec <- function(x0sq, x01, x1sq) {
     }
     x
 }
+make_theta_vec <- function(x0sq, x01, x1sq) {
+    # deal with negative paras in numerical derivative
+    x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
+    #x01 <- ifelse(x01 < 0, abs(x01), x01)
+    x1sq <- ifelse(x1sq < 0, abs(x1sq), x1sq)
+    x <- matrix(c(x0sq, x01,
+                  x01, x1sq),
+                ncol = 2)
+    x0 <- x
+    if(all(is.na(x))) return(numeric(0))
+    keep <- which(lower.tri(x, diag = TRUE))
+    keep <- keep[!is.na(x[keep])]
+    del <- which(is.na(c(x0sq,  x1sq)))
+    if(length(del) > 0) x <- x[-del, -del, drop = FALSE]
+
+    x[is.na(x)] <- 0
+
+    zeros <- vapply(1:ncol(x), function(i) all(x[i, i] == 0), logical(1))
+
+    x <- x[!zeros, !zeros, drop = FALSE]
+    if(ncol(x) == 1) {
+        m <- sqrt(x)
+    } else {
+        x <- nearPD(x, keepDiag = TRUE)$mat
+        m <- t(chol(x))
+        }
+
+    full <- diag(rep(0, 2))
+
+    m <- m[lower.tri(m, diag = TRUE)]
+    keep_zero <- x0[keep] == 0
+    full[keep[!keep_zero]] <- m[m != 0]
+    full[keep[keep_zero]] <- 0
+    full[keep]
+
+}
+
 make_theta <- function(pars) {
     #p <- make_pars(pars)
     p <- as.list(pars)
     sigma <- sqrt(p$sigma)
-    lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
-    lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
+    if(old_vec) {
+        lvl2 <- make_theta_vec2(p$u0, p$u01, p$u1)/sigma
+        lvl3 <- make_theta_vec2(p$v0, p$v01, p$v1)/sigma
+    } else {
+        lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+        lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
+    }
+
     c(lvl2, lvl3)
 }
 make_theta_crossed <- function(pars) {
@@ -455,22 +498,39 @@ make_theta_crossed <- function(pars) {
     sigma <- sqrt(p$sigma)
     lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
 
-    # x <- with(p, matrix(c(v0, v01, v02,  v03,
-    #                       v01, v1,  v12, v13,
-    #                       v02, v12, v2,   v23,
-    #                       v03, v13, v23,  v3), ncol = 4))
+    x <- with(p, matrix(c(v0, v01, v02,  v03,
+                          v01, v1,  v12, v13,
+                          v02, v12, v2,   v23,
+                          v03, v13, v23,  v3), ncol = 4))
 
+    x0 <- x
+    if(all(is.na(x))) return(numeric(0))
+    keep <- which(lower.tri(x, diag = TRUE))
+    keep <- keep[!is.na(x[keep])]
+    del <- with(p,
+                which(is.na(c(v0, v1, v2, v3)))
+    )
+    if(length(del) > 0) x <- x[-del, -del, drop = FALSE]
 
-    # TODO
-    # use full vcov matrix
-    x <- with(p, diag(c(v0, v1, v2, v3)))
     x[is.na(x)] <- 0
-    diag(x) <- sqrt(diag(x))
-    m <- t(x/sigma)
 
-    lvl3 <- m[lower.tri(m, diag = TRUE)]
+    zeros <- vapply(1:ncol(x), function(i) all(x[i, i] == 0), logical(1))
 
-    c(lvl2, lvl3)
+    x <- x[!zeros, !zeros, drop = FALSE]
+    if(ncol(x) == 1) {
+        m <- sqrt(x)
+    } else {
+        x <- nearPD(x, keepDiag = TRUE)$mat
+        m <- t(chol(x))
+    }
+
+    full <- diag(rep(0, 2))
+
+    m <- m[lower.tri(m, diag = TRUE)]
+    keep_zero <- x0[keep] == 0
+    full[keep[!keep_zero]] <- m[m != 0]
+    full[keep[keep_zero]] <- 0
+    full[keep]
 }
 varb_func <- function(para, X, Zt, L0, Lambdat, Lind, crossed = FALSE) {
     ## adapted from lme4PureR
@@ -573,7 +633,7 @@ setup_power_calc.plcp_crossed <- function(object, d, f) {
 
 power_worker <- function(object, df, alpha, use_satterth) {
 
-
+    crossed <- inherits(object, "plcp_crossed")
     function(i = NULL) {
         use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
         prepped <- prepare_paras(object)

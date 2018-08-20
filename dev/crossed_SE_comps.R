@@ -1,8 +1,7 @@
 
 p <- study_parameters(design = des,
                       n1 = 3,
-                      n2 = 2,
-                      n3 = 2,
+                      n2 = unequal_clusters(5,5,15,50),
                       T_end = 2,
                       fixed_intercept = 4,
                       fixed_tx = 0,
@@ -16,9 +15,9 @@ p <- study_parameters(design = des,
                       cor_cluster_intercept_slope = 0,
                       cor_cluster_intercept_intercept_tx = 0,
                       cor_cluster_intercept_slope_tx = 0,
-                      cor_cluster_slope_intercept_tx = 0,
-                      cor_cluster_slope_slope_tx = 0,
-                      cor_cluster_intercept_tx_slope_tx = 0,
+                      cor_cluster_slope_intercept_tx = 0.5,
+                      cor_cluster_slope_slope_tx = 0.5,
+                      cor_cluster_intercept_tx_slope_tx = 0.5,
                       sigma_error = 10,
                       cor_subject = 0,
                       effect_size = -1
@@ -26,7 +25,8 @@ p <- study_parameters(design = des,
 
 
 d <- simulate_data(p)
-fit <- lmer(y ~ time*treatment + (1 + time | subject) + (1 + time + treatment + time:treatment | cluster), data = d)
+f <- "y ~ time*treatment + (1 + time | subject) + (1 + time + treatment + treatment:time | cluster)"
+fit <- lmer(f, data = d)
 
 vv <- as.data.frame(VarCorr(fit))
 
@@ -51,13 +51,14 @@ p$cor_subject <- 0
 
 for(i in seq_along(p)) {
    x <- p[[i]]
-   p[[i]] <- ifelse(length(x) == 0, 0, x)
+   if(names(p[i]) == "n2") next
+   p[[i]] <- ifelse(length(x) == 0 || is.nan(x), NA, x)
 }
 
 prepped <- prepare_paras(p)
 
 d <- simulate_data(prepped)
-f <- lme4::lFormula(formula = "y ~ time*treatment + (1 + time | subject) + (1 + time + treatment + time:treatment | cluster)",
+f <- lme4::lFormula(formula = f,
                     data = d)
 
 pc <- setup_power_calc(object = p,
