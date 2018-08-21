@@ -530,7 +530,8 @@ make_theta_crossed <- function(pars) {
     keep_zero <- x0[keep] == 0
     full[keep[!keep_zero]] <- m[m != 0]
     full[keep[keep_zero]] <- 0
-    full[keep]
+    c(lvl2,
+      full[keep]/sigma)
 }
 varb_func <- function(para, X, Zt, L0, Lambdat, Lind, crossed = FALSE) {
     ## adapted from lme4PureR

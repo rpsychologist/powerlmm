@@ -1,4 +1,7 @@
+library(lme4)
+library(dplyr)
 
+des <- study_design(nested = FALSE)
 p <- study_parameters(design = des,
                       n1 = 3,
                       n2 = unequal_clusters(5,5,15,50),
@@ -30,30 +33,36 @@ fit <- lmer(f, data = d)
 
 vv <- as.data.frame(VarCorr(fit))
 
-vv$grp <- gsub("^subject.*", "subject", vv$grp)
-vv$grp <- gsub("^cluster.*", "cluster", vv$grp)
+get_lme4_sd <- function(x, grp, var1, var2 = NA) {
+    x$grp <- gsub("^subject.*", "subject", x$grp)
+    x$grp <- gsub("^cluster.*", "cluster", x$grp)
 
-
-p$sigma_subject_intercept <- filter(vv, grp == "subject" & var1 == "(Intercept)" & is.na(var2))$sdcor
-p$sigma_subject_slope <- filter(vv, grp == "subject" & var1 == "time" & is.na(var2))$sdcor
-p$sigma_cluster_intercept <- filter(vv, grp == "cluster" & var1 == "(Intercept)" & is.na(var2))$sdcor
-p$sigma_cluster_slope <- filter(vv, grp == "cluster" & var1 == "time" & is.na(var2))$sdcor
-p$sigma_cluster_intercept_tx <- filter(vv, grp == "cluster" & var1 == "treatment" & is.na(var2))$sdcor
-p$sigma_cluster_slope_tx <- filter(vv, grp == "cluster" & var1 == "time:treatment" & is.na(var2))$sdcor
-p$sigma_error <- filter(vv, grp == "Residual" & is.na(var1) & is.na(var2))$sdcor
-p$cor_cluster_intercept_slope <- filter(vv, grp == "cluster" & var1 == "(Intercept)" & var2 == "time")$sdcor
-p$cor_cluster_intercept_intercept_tx <- filter(vv, grp == "cluster" & var1 == "(Intercept)" & var2 == "treatment")$sdcor
-p$cor_cluster_intercept_slope_tx <- filter(vv, grp == "cluster" & var1 == "(Intercept)" & var2 == "time:treatment")$sdcor
-p$cor_cluster_slope_intercept_tx <- filter(vv, grp == "cluster" & var1 == "time" & var2 == "treatment")$sdcor
-p$cor_cluster_slope_slope_tx <- filter(vv, grp == "cluster" & var1 == "time" & var2 == "time:treatment")$sdcor
-p$cor_cluster_intercept_tx_slope_tx <- filter(vv, grp == "cluster" & var1 == "treatment" & var2 == "time:treatment")$sdcor
-p$cor_subject <- 0
-
-for(i in seq_along(p)) {
-   x <- p[[i]]
-   if(names(p[i]) == "n2") next
-   p[[i]] <- ifelse(length(x) == 0 || is.nan(x), NA, x)
+    if(is.na(var2)) {
+        sdcor <- dplyr::filter(x, grp == !!grp & var1 == !!var1 & is.na(var2))$sdcor
+    } else {
+        sdcor <- dplyr::filter(x, grp == !!grp & var1 == !!var1 & var2 == !!var2)$sdcor
+    }
+    sdcor <- ifelse(length(sdcor) == 0, NA, sdcor)
+    ifelse(is.nan(sdcor), 0, sdcor)
 }
+
+vv <- as.data.frame(VarCorr(fit))
+p$sigma_subject_intercept <- get_lme4_sd(vv, grp = "subject", var1 = "(Intercept)")
+p$sigma_subject_slope <- get_lme4_sd(vv, grp = "subject" , var1 = "time")
+p$cor_subject <- get_lme4_sd(vv, grp = "subject" , var1 = "(Intercept)", var2 = "time")
+p$sigma_cluster_intercept <- get_lme4_sd(vv, grp = "cluster" , var1 = "(Intercept)")
+p$sigma_cluster_slope <- get_lme4_sd(vv, grp = "cluster" , var1 = "time")
+p$sigma_cluster_intercept_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "treatment")
+p$sigma_cluster_slope_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "time:treatment")
+p$sigma_error <- vv[vv$grp == "Residual" & is.na(vv$var1) & is.na(vv$var2), "sdcor"]
+p$cor_cluster_intercept_slope <- get_lme4_sd(vv, grp = "cluster" , var1 = "(Intercept)", var2 = "time")
+p$cor_cluster_intercept_intercept_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "(Intercept)", var2 = "treatment")
+p$cor_cluster_intercept_slope_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "(Intercept)", var2 = "time:treatment")
+p$cor_cluster_slope_intercept_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "time", var2 = "treatment")
+p$cor_cluster_slope_slope_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "time", var2 = "time:treatment")
+p$cor_cluster_intercept_tx_slope_tx <- get_lme4_sd(vv, grp = "cluster" , var1 = "treatment", var2 = "time:treatment")
+
+
 
 prepped <- prepare_paras(p)
 
@@ -80,16 +89,19 @@ varb <- varb_func(para = pars,
                   crossed = TRUE)
 Phi <- varb(Lc = diag(4))
 
-sqrt(Phi)
 
-sqrt(vcov(fit))
 
 # closed
 x <- get_pars_short_name(p)
 sx <- var_T(p$n1, p$T_end)
 
+
 varb2 <- with(p, 2*(sigma_error^2 +n1 * sigma_subject_slope^2*sx + 1/2 * n1 * n2 * sigma_cluster_slope_tx^2*sx)/(n1*n2*n3*sx) )
 
-c(sqrt(Phi[4,4]), sqrt(varb2), sqrt(vcov(fit)[4,4]))
+c(sqrt(Phi[4,4]),  sqrt(vcov(fit)[4,4]))
 
 
+
+# Comp theta
+data.frame("make_theta" = round(pc$theta, 4),
+           "lme4" = round(getME(fit, "theta"), 4))
