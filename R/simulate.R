@@ -1797,6 +1797,19 @@ get_RE_thetas.plcp_crossed <- function(paras) {
         )
     )
 }
+
+## extract fixed effect thetas
+get_FE_thetas <- function(paras) {
+    UseMethod("get_FE_thetas")
+}
+get_FE_thetas.default <- function(paras) {
+    list(
+        "(Intercept)" = paras$fixed_intercept,
+        "treatment" = 0,
+        "time" = paras$fixed_slope,
+        "time:treatment" = get_slope_diff(paras) / paras$T_end
+    )
+}
 summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
     RE_params <- get_RE_thetas(paras)
 
@@ -1808,12 +1821,7 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
     false_conv <- mean(is_approx(false_conv, 0))
 
 
-    theta = list(
-        "(Intercept)" = paras$fixed_intercept,
-        "treatment" = 0,
-        "time" = paras$fixed_slope,
-        "time:treatment" = get_slope_diff(paras) / paras$T_end
-    )
+    theta <- get_FE_thetas(paras)
 
     # support both variants of time * treatment
     t_b_t <- res$FE$parameter

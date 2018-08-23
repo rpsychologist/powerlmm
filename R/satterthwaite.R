@@ -166,8 +166,10 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     }
 }
 
-
 get_balanced_df <- function(object) {
+    UseMethod("get_balanced_df")
+}
+get_balanced_df.default <- function(object) {
 
     if(is.null(object$prepared)) {
         pp <- prepare_paras(object)

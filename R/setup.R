@@ -1147,6 +1147,9 @@ eval_n2 <- function(n2) {
 }
 
 prepare_paras <- function(paras) {
+    UseMethod("prepare_paras")
+}
+prepare_paras.default <- function(paras) {
     paras_tx <- paras
 
     per_tx_n2 <- FALSE
