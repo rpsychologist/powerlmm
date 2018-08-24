@@ -74,12 +74,15 @@ create_dropout_indicator <- function(paras) {
 #'                  data_transform = transform_to_posttest,
 #'                  test = "treatment")
 #'
-sim_formula <- function(formula, data_transform = NULL, test = "time:treatment") {
+sim_formula <- function(formula, data_transform = NULL,  test = "time:treatment", ...) {
+    UseMethod("sim_formula")
+}
+sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", ...) {
 
      x <- list("formula" = formula,
               "data_transform" = data_transform,
               "data_transform_lab" = substitute(data_transform),
-              "test" = test)
+              "test" = test, ...)
 
     class(x) <- append(class(x), "plcp_sim_formula")
     x
@@ -845,6 +848,25 @@ check_formula_terms <- function(f) {
 
 
 # analyze -----------------------------------------------------------------
+
+fit_model <- function(formula, data, ...) {
+    UseMethod("fit_model")
+}
+fit_model.default <- function(formula, data, ...) {
+    # LMM or OLS
+    if(is.null(lme4::findbars(formula))) {
+        fit <- tryCatch(
+            #do.call(lme4::lmer, list(formula=f, data=d))
+            fit <- stats::lm(formula = formula, data = data)
+        )
+    } else {
+        fit <- tryCatch(
+            #do.call(lme4::lmer, list(formula=f, data=d))
+            fit <- lme4::lmer(formula = formula, data = data)
+        )
+    }
+}
+
 analyze_data <- function(formula, d) {
     fit <-
         lapply(formula, function(f) {
@@ -852,20 +874,10 @@ analyze_data <- function(formula, d) {
                 if(is.function(f$data_transform))
                     d <- f$data_transform(d)
                 lmmf <- as.formula(f$formula)
-            }
+            } else lmmf <- f
 
-           # LMM or OLS
-           if(is.null(lme4::findbars(lmmf))) {
-               fit <- tryCatch(
-                   #do.call(lme4::lmer, list(formula=f, data=d))
-                   fit <- stats::lm(formula = lmmf, data = d)
-               )
-           } else {
-               fit <- tryCatch(
-                   #do.call(lme4::lmer, list(formula=f, data=d))
-                   fit <- lme4::lmer(formula = lmmf, data = d)
-               )
-           }
+            fit <- fit_model(lmmf,
+                             data = d)
 
            list("fit" = fit,
                 "test" = f$test)
