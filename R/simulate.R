@@ -792,6 +792,8 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
 # Checks ------------------------------------------------------------------
 
 # checks
+
+
 check_formula <- function(formula) {
     if(!inherits(formula, "plcp_sim_formula") & !inherits(formula, "plcp_compare_sim_formula")) {
         stop("`formula` should be created using `sim_formula` or `sim_formula_compare`", call. = FALSE)
@@ -854,6 +856,8 @@ fit_model <- function(formula, data, ...) {
 }
 fit_model.default <- function(formula, data, ...) {
     # LMM or OLS
+
+    formula <- as.formula(formula$formula)
     if(is.null(lme4::findbars(formula))) {
         fit <- tryCatch(
             #do.call(lme4::lmer, list(formula=f, data=d))
@@ -870,13 +874,12 @@ fit_model.default <- function(formula, data, ...) {
 analyze_data <- function(formula, d) {
     fit <-
         lapply(formula, function(f) {
-            if(inherits(f, "plcp_sim_formula")) {
+            #if(inherits(f, "plcp_sim_formula")) {
                 if(is.function(f$data_transform))
                     d <- f$data_transform(d)
-                lmmf <- as.formula(f$formula)
-            } else lmmf <- f
 
-            fit <- fit_model(lmmf,
+            #}
+            fit <- fit_model(f,
                              data = d)
 
            list("fit" = fit,
@@ -1017,13 +1020,51 @@ fix_sath_NA_pval <- function(x, df) {
     x
 }
 
-get_fixef <- function(fit) {
+get_fixef <- function(fit, ...) {
     UseMethod("get_fixef")
 }
-get_fixef.lmerMod <- function(fit) {
+get_fixef.default <- function(fit, test, df_bw, satterthwaite) {
+
+    FE_coefs <- get_fixef_coef(fit)
+    rnames <- names(FE_coefs)
+    TbT <- c("time:treatment", "treatment:time")
+    ind <- TbT %in% rnames
+    if(any(ind) & any(test %in% TbT)) {
+        TbT_model <- TbT[TbT %in% rnames]
+        test[test %in% TbT] <- TbT_model
+    }
+
+    if(any(!test %in% rnames)) stop("At least of the values in 'test' do no match the model's parameters: ", paste(rnames, collapse = ", "), call. = FALSE)
+
+    se <- sqrt(diag(vcov(fit)))
+    tmp_p <- add_p_value(fit = fit,
+                         test = test,
+                         satterthwaite = satterthwaite,
+                         df_bw = df_bw)
+    FE <- data.frame(
+        "estimate" = FE_coefs,
+        "se" = se,
+        "pval" = tmp_p$p,
+        "df" = tmp_p$df
+    )
+
+    rownames(FE) <- NULL
+    FE <- cbind(data.frame(parameter = rnames,
+                           stringsAsFactors = FALSE),
+                FE)
+
+    FE[FE$parameter %in% test, "df_bw"] <- df_bw
+
+    FE
+}
+get_fixef_coef <- function(fit) {
+    UseMethod("get_fixef_coef")
+}
+
+get_fixef_coef.lmerMod <- function(fit) {
     lme4::fixef(fit)
 }
-get_fixef.lm <- function(fit) {
+get_fixef_coef.lm <- function(fit) {
     stats::coef(fit)
 }
 get_converged_bool <- function(fit) {
@@ -1040,36 +1081,10 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
     # need to know in which order time and treatment was entered
     # then adjust 'fit$test' to match
-    ff <- get_fixef(fit$fit)
-    rnames <- names(ff)
-    TbT <- c("time:treatment", "treatment:time")
-    ind <- TbT %in% rnames
-    if(any(ind) & any(fit$test %in% TbT)) {
-        TbT_model <- TbT[TbT %in% rnames]
-        fit$test[fit$test %in% TbT] <- TbT_model
-    }
-
-    if(any(!fit$test %in% rnames)) stop("At least of the values in 'test' do no match the model's parameters: ", paste(rnames, collapse = ", "), call. = FALSE)
-
-    se <- sqrt(diag(vcov(fit$fit)))
-    tmp_p <- add_p_value(fit = fit$fit,
-                         test = fit$test,
-                         satterthwaite = satterthwaite,
-                         df_bw = df_bw)
-    FE <- data.frame(
-        "estimate" = ff,
-        "se" = se,
-        "pval" = tmp_p$p,
-        "df" = tmp_p$df
-    )
-
-    rownames(FE) <- NULL
-    FE <- cbind(data.frame(parameter = rnames,
-                           stringsAsFactors = FALSE),
-                FE)
-
-    FE[FE$parameter %in% fit$test, "df_bw"] <- df_bw
-
+    FE <- get_fixef(fit = fit$fit,
+                    test = fit$test,
+                    satterthwaite = satterthwaite,
+                    df_bw = df_bw)
 
     if (CI) {
         CI <- tryCatch(confint(fit$fit, parm = fit$test),
@@ -1103,13 +1118,15 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     RE$sim <- sim
     FE$sim <- sim
 
-
-    list("RE" = RE,
+    out <- list("RE" = RE,
          "FE" = FE,
          "logLik" = as.numeric(ll),
          "df" = df,
          "tot_n" = tot_n,
          "conv" = conv)
+    class(out) <- append(class(out), class(fit$fit))
+
+    out
 }
 
 rename_rr_ <- function(.x, match, new) {
@@ -1118,7 +1135,9 @@ rename_rr_ <- function(.x, match, new) {
     .x
 }
 rename_random_effects <- function(.x, crossed = FALSE) {
-
+    UseMethod("rename_random_effects")
+}
+rename_random_effects.default <- function(.x, crossed = FALSE) {
     if(crossed) {
         .x <- rename_rr_(
             .x,
@@ -1267,8 +1286,10 @@ munge_results <- function(res) {
 }
 munge_results_ <- function(model, res, effect) {
     res <- lapply(seq_along(res), function(i) {
-        x <- res[[i]][[model]][[effect]]
 
+        x <- res[[i]][[model]][[effect]]
+        browser()
+        class(x) <- append(class(x), class(res[[i]][[model]]))
         x
     })
     res <- do.call(rbind, res)
