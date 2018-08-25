@@ -1025,6 +1025,8 @@ get_fixef <- function(fit, ...) {
 }
 get_fixef.default <- function(fit, test, df_bw, satterthwaite) {
 
+    # need to know in which order time and treatment was entered
+    # then adjust 'fit$test' to match
     FE_coefs <- get_fixef_coef(fit)
     rnames <- names(FE_coefs)
     TbT <- c("time:treatment", "treatment:time")
@@ -1077,36 +1079,44 @@ get_converged_bool.lm <- function(fit) {
     TRUE
 }
 
+get_CI <- function(fit, test, FE, ...) {
+    UseMethod("get_CI")
+}
+get_CI.default <- function(fit, test, FE, ...) {
+    CI <- tryCatch(confint(fit, parm = test),
+                   error = function(e) NA)
+    CI_wald <-
+        tryCatch(confint(fit, method = "Wald", parm = test),
+                 error = function(e) NA)
+    CIs <- test
+    if(all(is.na(CI))) {
+        FE[FE$parameter %in% CIs, "CI_lwr"] <- NA
+        FE[FE$parameter %in% CIs, "CI_upr"] <- NA
+    } else {
+        FE[FE$parameter %in% CIs, "CI_lwr"] <- CI[CIs, 1]
+        FE[FE$parameter %in% CIs, "CI_upr"] <- CI[CIs, 2]
+    }
+    if(all(is.na(CI_wald))) {
+        FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- NA
+        FE[FE$parameter %in% CIs, "CI_wald_upr"] <- NA
+    } else {
+        FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- CI_wald[CIs, 1]
+        FE[FE$parameter %in% CIs, "CI_wald_upr"] <- CI_wald[CIs, 2]
+    }
+    FE
+}
+
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
-    # need to know in which order time and treatment was entered
-    # then adjust 'fit$test' to match
     FE <- get_fixef(fit = fit$fit,
                     test = fit$test,
                     satterthwaite = satterthwaite,
                     df_bw = df_bw)
 
     if (CI) {
-        CI <- tryCatch(confint(fit$fit, parm = fit$test),
-                       error = function(e) NA)
-        CI_wald <-
-            tryCatch(confint(fit$fit, method = "Wald", parm = fit$test),
-                     error = function(e) NA)
-        CIs <- fit$test
-        if(all(is.na(CI))) {
-            FE[FE$parameter %in% CIs, "CI_lwr"] <- NA
-            FE[FE$parameter %in% CIs, "CI_upr"] <- NA
-        } else {
-            FE[FE$parameter %in% CIs, "CI_lwr"] <- CI[CIs, 1]
-            FE[FE$parameter %in% CIs, "CI_upr"] <- CI[CIs, 2]
-        }
-        if(all(is.na(CI_wald))) {
-            FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- NA
-            FE[FE$parameter %in% CIs, "CI_wald_upr"] <- NA
-        } else {
-            FE[FE$parameter %in% CIs, "CI_wald_lwr"] <- CI_wald[CIs, 1]
-            FE[FE$parameter %in% CIs, "CI_wald_upr"] <- CI_wald[CIs, 2]
-        }
+        FE <- get_CI(fit = fit$fit,
+                     test = fit$test,
+                     FE = FE)
     }
     RE <- extract_random_effects(fit$fit)
 
@@ -1268,6 +1278,13 @@ munge_results <- function(res) {
     convergence <- lapply(models, munge_results_, x, "conv")
     tot_n <- lapply(models, munge_results_, x, "tot_n")
     crossed <- inherits(res$paras, "plcp_crossed")
+
+
+    for(i in seq_along(RE)) {
+        tmp <- RE[[i]]
+        class(tmp) <- append(class(tmp), grep("plcp", class(res$formula[[i]]), value = TRUE))
+        RE[[i]] <- tmp
+    }
     RE <- lapply(RE, rename_random_effects, crossed = crossed)
     ll <- lapply(models, munge_results_, x, "logLik")
     df <- lapply(models, munge_results_, x, "df")
@@ -1286,9 +1303,7 @@ munge_results <- function(res) {
 }
 munge_results_ <- function(model, res, effect) {
     res <- lapply(seq_along(res), function(i) {
-
         x <- res[[i]][[model]][[effect]]
-        class(x) <- append(class(x), class(res[[i]][[model]]))
         x
     })
     res <- do.call(rbind, res)
@@ -1660,6 +1675,7 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
 
 
 summarize_RE <- function(res, theta) {
+
     d <- res$RE
     parms <- unique(d$parameter)
     tmp <- vector("list", length(parms))
