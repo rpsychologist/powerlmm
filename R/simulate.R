@@ -1288,7 +1288,6 @@ munge_results_ <- function(model, res, effect) {
     res <- lapply(seq_along(res), function(i) {
 
         x <- res[[i]][[model]][[effect]]
-        browser()
         class(x) <- append(class(x), class(res[[i]][[model]]))
         x
     })
