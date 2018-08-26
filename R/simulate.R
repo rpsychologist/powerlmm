@@ -1069,13 +1069,13 @@ get_fixef_coef.lmerMod <- function(fit) {
 get_fixef_coef.lm <- function(fit) {
     stats::coef(fit)
 }
-get_converged_bool <- function(fit) {
-    UseMethod("get_converged_bool")
+get_convergence <- function(fit) {
+    UseMethod("get_convergence")
 }
-get_converged_bool.lmerMod <- function(fit) {
+get_convergence.lmerMod <- function(fit) {
     is.null(fit@optinfo$conv$lme4$code)
 }
-get_converged_bool.lm <- function(fit) {
+get_convergence.lm <- function(fit) {
     TRUE
 }
 
@@ -1120,7 +1120,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     }
     RE <- extract_random_effects(fit$fit)
 
-    conv <- get_converged_bool(fit$fit)
+    conv <- get_convergence(fit$fit)
 
     # save for postprocess LRT test
     ll <- stats::logLik(fit$fit, REML = TRUE)
@@ -1682,7 +1682,9 @@ summarize_RE <- function(res, theta) {
     for(i in seq_along(parms)) {
         para <- parms[[i]]
         vcov <- d[d$parameter == para, "vcov"]
-        theta_i <- theta[theta$parameter == para, "theta"]
+        if(para %in% names(theta)) {
+            theta_i <- theta[[para]]
+        } else theta_i <- NA
         theta_i[is.na(theta_i)] <- 0 # for when para is NA
         if(length(theta_i) == 0) theta_i <- 0 # for when para does not exist
         est <- mean(vcov, na.rm=TRUE)
@@ -1755,16 +1757,17 @@ summarize_CI <- function(res, theta = NULL) {
     ## TODO: fix so theta matches fit$tests
     d <- res$FE
     parms <- unique(res$FE$parameter)
+
     tmp <- vector("list", length(parms))
-    thetas <- theta
+    #thetas <- theta
     for(i in seq_along(parms)) {
+
         para <- parms[[i]]
         ind <- d$parameter == para
-        if(is.null(thetas)) {
-            theta <- mean(d[ind, "estimate"])
-        }  else if(length(thetas) > 1) {
-            theta <- thetas[[para]]
-        } else theta <- thetas
+        theta_i <- theta[[para]]
+        if(is.null(theta_i)) {
+            theta_i <- mean(d[ind, "estimate"])
+        }
         CI_lwr <- d[ind, "CI_lwr"]
         CI_upr <- d[ind, "CI_upr"]
         CI_wald_lwr <- d[ind, "CI_wald_lwr"]
@@ -1772,10 +1775,10 @@ summarize_CI <- function(res, theta = NULL) {
 
         tmp[[i]] <- data.frame(
                     parameter = para,
-                    CI_cover = mean(CI_lwr < theta &
-                                         CI_upr > theta, na.rm = TRUE),
-                    CI_Wald_cover = mean(CI_wald_lwr < theta &
-                                             CI_wald_upr > theta, na.rm=TRUE),
+                    CI_cover = mean(CI_lwr < theta_i &
+                                         CI_upr > theta_i, na.rm = TRUE),
+                    CI_Wald_cover = mean(CI_wald_lwr < theta_i &
+                                             CI_wald_upr > theta_i, na.rm=TRUE),
                     CI_NA = mean(is.na(CI_lwr)))
     }
     CI_cov <- do.call(rbind, tmp)
@@ -1784,66 +1787,38 @@ summarize_CI <- function(res, theta = NULL) {
 }
 
 ## Extract random effect thetas
-get_RE_thetas <- function(paras) {
+get_RE_thetas <- function(paras, ...) {
     UseMethod("get_RE_thetas")
 }
-get_RE_thetas.plcp_nested <- function(paras) {
-    data.frame(
-        parameter = c(
-            "subject_intercept",
-            "subject_slope",
-            "cluster_intercept",
-            "cluster_slope",
-            "error",
-            "cor_subject",
-            "cor_cluster"
-        ),
-        theta = c(
-            paras$sigma_subject_intercept ^ 2,
-            paras$sigma_subject_slope ^ 2,
-            paras$sigma_cluster_intercept ^ 2,
-            paras$sigma_cluster_slope ^ 2,
-            paras$sigma_error ^ 2,
-            paras$cor_subject,
-            paras$cor_cluster
-        )
+get_RE_thetas.plcp_nested <- function(paras, ...) {
+    list(
+            "subject_intercept" = paras$sigma_subject_intercept^2,
+            "subject_slope" = paras$sigma_subject_slope^2,
+            "cluster_intercept" = paras$sigma_cluster_intercept^2,
+            "cluster_slope" = paras$sigma_cluster_slope^2,
+            "error" = paras$sigma_error^2,
+            "cor_subject" = paras$cor_subject,
+            "cor_cluster" = paras$cor_cluster
     )
 }
-get_RE_thetas.plcp_crossed <- function(paras) {
-    data.frame(
-        parameter = c(
-            "subject_intercept",
-            "subject_slope",
-            "cluster_intercept",
-            "cluster_intercept_tx",
-            "cluster_slope",
-            "cluster_slope_tx",
-            "error",
-            "cor_subject",
-            "cor_cluster_intercept_slope",
-            "cor_cluster_intercept_intercept_tx",
-            "cor_cluster_intercept_slope_tx",
-            "cor_cluster_intercept_tx_slope_tx",
-            "cor_cluster_slope_intercept_tx",
-            "cor_cluster_slope_slope_tx"
-        ),
-        theta = c(
-            paras$sigma_subject_intercept ^ 2,
-            paras$sigma_subject_slope ^ 2,
-            paras$sigma_cluster_intercept ^ 2,
-            paras$sigma_cluster_intercept_tx ^ 2,
-            paras$sigma_cluster_slope ^ 2,
-            paras$sigma_cluster_slope_tx^2,
-            paras$sigma_error ^ 2,
-            paras$cor_subject,
-            paras$cor_cluster_intercept_slope,
-            paras$cor_cluster_intercept_intercept_tx,
-            paras$cor_cluster_intercept_slope_tx,
-            paras$cor_cluster_intercept_tx_slope_tx,
-            paras$cor_cluster_slope_intercept_tx,
-            paras$cor_cluster_slope_slope_tx
+get_RE_thetas.plcp_crossed <- function(paras, ...) {
+    list(
+        "subject_intercept" = paras$sigma_subject_intercept^2,
+            "subject_slope" = paras$sigma_subject_slope^2,
+            "cluster_intercept" = paras$sigma_cluster_intercept^2,
+            "cluster_intercept_tx" = paras$sigma_cluster_intercept_tx^2,
+            "cluster_slope" = paras$sigma_cluster_slope^2,
+            "cluster_slope_tx" = paras$sigma_cluster_slope_tx^2,
+            "error" = paras$sigma_error^2,
+            "cor_subject" = paras$cor_subject,
+            "cor_cluster_intercept_slope" = paras$cor_cluster_intercept_slope,
+            "cor_cluster_intercept_intercept_tx" = paras$cor_cluster_intercept_intercept_tx,
+            "cor_cluster_intercept_slope_tx" = paras$cor_cluster_intercept_slope_tx,
+            "cor_cluster_intercept_tx_slope_tx" = paras$cor_cluster_intercept_tx_slope_tx,
+            "cor_cluster_slope_intercept_tx" = paras$cor_cluster_slope_intercept_tx,
+            "cor_cluster_slope_slope_tx" = paras$cor_cluster_slope_slope_tx
         )
-    )
+
 }
 
 ## extract fixed effect thetas
@@ -1857,6 +1832,12 @@ get_FE_thetas.default <- function(paras) {
         "time" = paras$fixed_slope,
         "time:treatment" = get_slope_diff(paras) / paras$T_end
     )
+}
+summarize_convergence <- function(paras, convergence) {
+    UseMethod("summarize_convergence")
+}
+summarize_convergence.default <- function(paras, convergence) {
+    mean(convergence)
 }
 summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
     RE_params <- get_RE_thetas(paras)
@@ -1915,7 +1896,7 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
     #                     which(FE$parameter == i), numeric(1))
     # FE <- FE[ind,]
 
-    convergence <- mean(res$convergence)
+    convergence <- summarize_convergence(paras, res$convergence)
 
     list("RE" = RE,
          "FE" = FE,
