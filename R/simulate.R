@@ -77,6 +77,7 @@ create_dropout_indicator <- function(paras) {
 sim_formula <- function(formula, data_transform = NULL,  test = "time:treatment", ...) {
     UseMethod("sim_formula")
 }
+#' @export
 sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", ...) {
 
      x <- list("formula" = formula,
@@ -883,7 +884,8 @@ analyze_data <- function(formula, d) {
                              data = d)
 
            list("fit" = fit,
-                "test" = f$test)
+                "test" = f$test,
+                "formula" = f)
         })
 
     fit
@@ -926,7 +928,7 @@ extract_random_effects.lmerMod <- function(fit) {
     rbind(vcovs, correlations)
 }
 
-
+#' @export
 add_p_value <- function(fit, test, ...) {
     UseMethod("add_p_value")
 }
@@ -1020,14 +1022,15 @@ fix_sath_NA_pval <- function(x, df) {
     x
 }
 
+#' @export
 get_fixef <- function(fit, ...) {
     UseMethod("get_fixef")
 }
-get_fixef.default <- function(fit, test, df_bw, satterthwaite) {
+get_fixef.default <- function(fit, test, df_bw, satterthwaite, ...) {
 
     # need to know in which order time and treatment was entered
     # then adjust 'fit$test' to match
-    FE_coefs <- get_fixef_coef(fit)
+    FE_coefs <- get_fixef_coef(fit, ...)
     rnames <- names(FE_coefs)
     TbT <- c("time:treatment", "treatment:time")
     ind <- TbT %in% rnames
@@ -1059,16 +1062,20 @@ get_fixef.default <- function(fit, test, df_bw, satterthwaite) {
 
     FE
 }
-get_fixef_coef <- function(fit) {
+
+#' @export
+get_fixef_coef <- function(fit, ...) {
     UseMethod("get_fixef_coef")
 }
 
-get_fixef_coef.lmerMod <- function(fit) {
+get_fixef_coef.lmerMod <- function(fit, ...) {
     lme4::fixef(fit)
 }
-get_fixef_coef.lm <- function(fit) {
+get_fixef_coef.lm <- function(fit, ...) {
     stats::coef(fit)
 }
+
+#' @export
 get_convergence <- function(fit) {
     UseMethod("get_convergence")
 }
@@ -1079,6 +1086,7 @@ get_convergence.lm <- function(fit) {
     TRUE
 }
 
+#' @export
 get_CI <- function(fit, test, FE, ...) {
     UseMethod("get_CI")
 }
@@ -1106,12 +1114,23 @@ get_CI.default <- function(fit, test, FE, ...) {
     FE
 }
 
+#' @export
+get_LL <- function(fit) {
+    UseMethod("get_LL")
+}
+get_LL.default <- function(fit) {
+    ll <- stats::logLik(fit$fit, REML = TRUE)
+    df <- attr(ll, "df")
+    list(ll, df)
+}
+
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
     FE <- get_fixef(fit = fit$fit,
                     test = fit$test,
                     satterthwaite = satterthwaite,
-                    df_bw = df_bw)
+                    df_bw = df_bw,
+                    formula = fit$formula)
 
     if (CI) {
         FE <- get_CI(fit = fit$fit,
@@ -1123,15 +1142,14 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
     conv <- get_convergence(fit$fit)
 
     # save for postprocess LRT test
-    ll <- stats::logLik(fit$fit, REML = TRUE)
-    df <- attr(ll, "df")
+    ll <- get_LL(fit$fit)
     RE$sim <- sim
     FE$sim <- sim
 
     out <- list("RE" = RE,
          "FE" = FE,
-         "logLik" = as.numeric(ll),
-         "df" = df,
+         "logLik" = as.numeric(ll$ll),
+         "df" = ll$df,
          "tot_n" = tot_n,
          "conv" = conv)
     class(out) <- append(class(out), class(fit$fit))
@@ -1144,9 +1162,12 @@ rename_rr_ <- function(.x, match, new) {
 
     .x
 }
+
+#' @export
 rename_random_effects <- function(.x, crossed = FALSE) {
     UseMethod("rename_random_effects")
 }
+#' @export
 rename_random_effects.default <- function(.x, crossed = FALSE) {
     if(crossed) {
         .x <- rename_rr_(
@@ -1787,6 +1808,8 @@ summarize_CI <- function(res, theta = NULL) {
 }
 
 ## Extract random effect thetas
+
+#' @export
 get_RE_thetas <- function(paras, ...) {
     UseMethod("get_RE_thetas")
 }
@@ -1822,10 +1845,11 @@ get_RE_thetas.plcp_crossed <- function(paras, ...) {
 }
 
 ## extract fixed effect thetas
-get_FE_thetas <- function(paras) {
+#' @export
+get_FE_thetas <- function(paras, ...) {
     UseMethod("get_FE_thetas")
 }
-get_FE_thetas.default <- function(paras) {
+get_FE_thetas.default <- function(paras, ...) {
     list(
         "(Intercept)" = paras$fixed_intercept,
         "treatment" = 0,
@@ -1839,7 +1863,7 @@ summarize_convergence <- function(paras, convergence) {
 summarize_convergence.default <- function(paras, convergence) {
     mean(convergence)
 }
-summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
+summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
     RE_params <- get_RE_thetas(paras)
 
     RE <- summarize_RE(res, theta = RE_params)
@@ -1849,8 +1873,7 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL) {
         res$RE[res$RE$parameter == "cluster_slope", "vcov"]
     false_conv <- mean(is_approx(false_conv, 0))
 
-
-    theta <- get_FE_thetas(paras)
+    theta <- get_FE_thetas(paras, ...)
 
     # support both variants of time * treatment
     t_b_t <- res$FE$parameter

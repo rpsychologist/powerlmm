@@ -24,6 +24,7 @@ study_design <- function(nested = TRUE,
     args
 }
 
+#' @export
 study_parameters <- function(design = study_design(nested = TRUE,
                                                    levels = 3,
                                                    groups = 2,
@@ -1146,6 +1147,7 @@ eval_n2 <- function(n2) {
     n2
 }
 
+#' @export
 prepare_paras <- function(paras) {
     UseMethod("prepare_paras")
 }
@@ -1474,6 +1476,7 @@ check_new_argument <- function(args, new) {
    names(x)
 }
 
+#' @export
 get_n2 <- function(paras, n1 = 1) {
     UseMethod("get_n2")
 }
@@ -1509,6 +1512,7 @@ get_n2_ <- function(paras) {
 }
 
 
+#' @export
 get_n3 <- function(paras, n1 = 1) {
     UseMethod("get_n3")
 }
@@ -1535,6 +1539,7 @@ get_n3_ <- function(paras) {
     unlist(n3)
 }
 
+#' @export
 get_tot_n <- function(paras, n = 1) {
     UseMethod("get_tot_n")
 }

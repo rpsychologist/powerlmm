@@ -4,7 +4,8 @@
 \alias{sim_formula}
 \title{Create a simulation formula}
 \usage{
-sim_formula(formula, data_transform = NULL, test = "time:treatment")
+sim_formula(formula, data_transform = NULL, test = "time:treatment",
+  ...)
 }
 \arguments{
 \item{formula}{A \code{character} containing a \pkg{lme4} formula.}

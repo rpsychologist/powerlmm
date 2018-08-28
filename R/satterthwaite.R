@@ -166,6 +166,7 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     }
 }
 
+#' @export
 get_balanced_df <- function(object) {
     UseMethod("get_balanced_df")
 }

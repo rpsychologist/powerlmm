@@ -6,7 +6,7 @@
 \alias{get_slope_diff.plcp_multi}
 \title{Return the raw difference between the groups at posttest}
 \usage{
-get_slope_diff(object)
+get_slope_diff(object, ...)
 
 \method{get_slope_diff}{plcp}(object)
 
