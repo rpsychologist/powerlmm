@@ -1119,7 +1119,7 @@ get_LL <- function(fit) {
     UseMethod("get_LL")
 }
 get_LL.default <- function(fit) {
-    ll <- stats::logLik(fit$fit, REML = TRUE)
+    ll <- stats::logLik(fit, REML = TRUE)
     df <- attr(ll, "df")
     list(ll, df)
 }
