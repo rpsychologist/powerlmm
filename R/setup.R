@@ -474,7 +474,7 @@ study_parameters.plcp_design_nested <- function(design,
                                        "icc_pre_subject"))
     cols <- colnames(tmp)[cols]
     paras <- tmp[, !(names(tmp) %in% cols)]
-
+    paras$custom_model <- FALSE
 
     # Single or multi?
     if((is.data.frame(paras) & nrow(paras) == 1)) {

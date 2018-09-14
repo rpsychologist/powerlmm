@@ -1,6 +1,6 @@
-simulate_3lvl_data <- function(paras) {
-     UseMethod("simulate_3lvl_data")
-}
+# simulate_3lvl_data <- function(paras) {
+#      UseMethod(".simulate_3lvl_data")
+# }
 
 # simulate_3lvl_data.list <- function(paras) {
 #      do.call(.simulate_3lvl_data, paras)
@@ -40,7 +40,8 @@ create_cluster_index <- function(n2, n3) {
                            cor_cluster = 0,
                            cor_within = 0,
                            dropout = NULL,
-                           deterministic_dropout = NULL) {
+                           deterministic_dropout = NULL,
+                           ...) {
 
      # errors
      #if(!"MASS" %in% installed.packages()) stop("Package 'MASS' is not installed")
