@@ -28,7 +28,8 @@ study_parameters.plcp_design_crossed <- function(design,
                                      effect_size = 0L,
                                      cohend = NULL,
                                      dropout = 0L,
-                                     deterministic_dropout = TRUE) {
+                                     deterministic_dropout = TRUE,
+                                     ...) {
 
 
     # deprecated Cohen's d
@@ -196,6 +197,7 @@ study_parameters.plcp_design_crossed <- function(design,
         paras <- as.list(paras)
     }
 
+    paras$design <- "plcp_design_crossed"
     # avoid problems with prepare_paras()
     paras$partially_nested <- FALSE
     # if(is.data.frame(paras)) {

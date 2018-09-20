@@ -36,6 +36,26 @@ study_parameters.default <- function(...) {
     study_parameters.plcp_design_crossed(...)
 }
 
+# checks
+.check_dropout_arg <- function(dropout) {
+    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+    if(is.per_treatment(dropout)) {
+        tx <- dropout[[1]]$treatment
+        cc <- dropout[[1]]$control
+        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+    }
+}
+.make_single_or_multi <- function(paras) {
+    if((is.data.frame(paras) & nrow(paras) == 1)) {
+        paras <- as.list(paras)
+    }
+    if(is.data.frame(paras)) {
+        class(paras) <- append(c("plcp_multi"), class(paras))
+    } else class(paras) <- append(c("plcp"), class(paras))
+
+    paras
+}
 
 
 #' Setup study parameters
@@ -278,14 +298,8 @@ study_parameters.plcp_design_nested <- function(design,
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
-    # drop out checks
-    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    if(is.per_treatment(dropout)) {
-        tx <- dropout[[1]]$treatment
-        cc <- dropout[[1]]$control
-        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    }
+    # dropout checks
+    .check_dropout_arg(dropout)
 
     # warn n3 is ignored
     if(is.unequal_clusters(n2) & !is.per_treatment(n2) & is.per_treatment(n3)) {
@@ -475,15 +489,11 @@ study_parameters.plcp_design_nested <- function(design,
     cols <- colnames(tmp)[cols]
     paras <- tmp[, !(names(tmp) %in% cols)]
 
+    # save design tyåe
+    paras$design <- "plcp_design_nested"
 
     # Single or multi?
-    if((is.data.frame(paras) & nrow(paras) == 1)) {
-        paras <- as.list(paras)
-    }
-    if(is.data.frame(paras)) {
-        class(paras) <- append(c("plcp_multi"), class(paras))
-    } else class(paras) <- append(c("plcp"), class(paras))
-
+    paras <- .make_single_or_multi(paras)
     # Default cor_*
     if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
     if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
@@ -1408,8 +1418,9 @@ is.per_treatment <- function(x) {
 as.plcp <- function(.p) {
     paras <- .p
     if(is.data.frame(paras)) {
-        paras <- as.list(paras)
-        paras <- do.call(study_parameters, paras)
+        tmp <- as.list(paras)
+        func <- paste0("study_parameters.", tmp$design)
+        paras <- do.call(func, tmp)
         #class(paras) <- append(c("plcp"), class(paras))
     }
     paras

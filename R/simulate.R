@@ -323,7 +323,6 @@ simulate_data.plcp_crossed <- function(paras, n = NULL) {
         paras <- paras$control
     }
 
-
     # doesn't matter if tmp$control or tx
     slope_diff <- get_slope_diff(tmp$control) / paras$T_end
     paras$effect_size <- NULL
