@@ -251,6 +251,15 @@ add_NA_values_from_indicator <- function(d, missing) {
 #' @rdname simulate_data
 #' @export
 simulate_data.plcp_nested <- function(paras, n = NULL) {
+
+    # get sim data func
+    if(paras$custom_model) {
+        message("custom")
+    } else {
+        .sim_data_func <- .simulate_3lvl_data
+    }
+
+
     if (is.data.frame(paras))
         paras <- as.list(paras)
     if(is.null(paras$prepared)) {
@@ -260,22 +269,14 @@ simulate_data.plcp_nested <- function(paras, n = NULL) {
     paras_tx <- tmp$treatment
 
     slope_diff <- get_slope_diff(paras) / paras$T_end
-    paras$effect_size <- NULL
-    paras_tx$effect_size <- NULL
-
     paras_tx$fixed_slope <- paras_tx$fixed_slope + slope_diff
-
-    paras_tx$partially_nested <- NULL
-    paras$partially_nested <- NULL
-    paras$allocation_ratio <- NULL
-    paras_tx$allocation_ratio <- NULL
 
     # replace NA
     paras[is.na(paras)] <- 0
     paras_tx[is.na(paras_tx)] <- 0
 
-    d_tx <- simulate_3lvl_data(paras_tx)
-    d_c <- simulate_3lvl_data(paras)
+    d_tx <- do.call(.sim_data_func, paras_tx)
+    d_c <- do.call(.sim_data_func, paras)
 
     # drop outs
     if (is.list(paras$dropout) |

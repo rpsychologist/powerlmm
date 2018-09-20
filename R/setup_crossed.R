@@ -200,6 +200,7 @@ study_parameters.plcp_design_crossed <- function(design,
     paras$design <- "plcp_design_crossed"
     # avoid problems with prepare_paras()
     paras$partially_nested <- FALSE
+    paras$custom_model <- FALSE
     # if(is.data.frame(paras)) {
     #     class(paras) <- append(c("plcp_multi"), class(paras))
     # } else class(paras) <- append(c("plcp"), class(paras))
