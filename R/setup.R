@@ -24,6 +24,86 @@ study_design <- function(nested = TRUE,
     args
 }
 
+#' Setup study parameters
+#'
+#' @details
+#' \bold{Comparing a combination of parameter values}
+#'
+#' It is possible to setup a grid of parameter combinations by entering the values
+#' as vectors. All unique combinations of the inputs will be returned. This is
+#' useful if you want see how different values of the parameters affect power.
+#' See also the convenience function \code{\link{get_power_table}}.
+#'
+#' \bold{Two- or three-level models}
+#'
+#' If either \code{sigma_cluster_slope} or \code{icc_slope} and
+#'  \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
+#' \code{NULL} it will be assumed a two-level design is wanted.
+#'
+#' \bold{Standardized and unstandardized inputs}
+#'
+#' All parameters of the models can be specified. However, many of the raw
+#' parameter values in a multilevel/LMM do no directly affect the power of the
+#' test of the \code{treatment:time}-coefficient. Power will depend greatly on the relative
+#' size of the parameters, therefore, it is possible to setup your calculations
+#' using only standardized inputs, or by a combination of raw inputs and
+#' standardized inputs. For instance, if \code{sigma_subject_slope} and
+#' \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
+#' solved for. Only the cluster-level parameters can be solved when standardized and
+#' raw values are mixed. \code{sigma_error} is 10 by default. More information regarding
+#' the standardized inputs are available in the two-level and three-level vignettes.
+#'
+#' \bold{Difference between 0 and NA}
+#'
+#' For the variance components \code{0} and \code{NA/NULL} have different meanings.
+#' A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
+#' a random intercept is estimated at the cluster level, but the true value is 0.
+#' If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
+#' This choice will matter when running simulations, or if Satterthwaite \emph{dfs} are used.
+#'
+#' The default behavior if a parameters is not specified is that \code{cor_subject} and
+#' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
+#'
+#' \bold{Effect size and Cohen's d}
+#'
+#' The argument \code{effect_size} let's you specify the average difference in change
+#' between the treatment groups. You can either pass a \code{numeric} value to define
+#' the raw difference in means at posttest, or use a standardized effect size, see
+#' \code{\link{cohend}} for more details on the standardized effects.
+#'
+#' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
+#' \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
+#'
+#' \bold{Unequal cluster sizes and unbalanced allocation}
+#'
+#' It is possible to specify different cluster sizes using
+#' \code{\link{unequal_clusters}}. Cluster sizes can vary between treatment arms
+#' by also using \code{\link{per_treatment}}. The number of clusters per treatment can
+#' also be set by using \code{\link{per_treatment}}. Moreover, cluster
+#' sizes can be sampled from a distribution, and treated as a random variable.
+#' See \code{\link{per_treatment}} and \code{\link{unequal_clusters}} for examples of their use.
+#'
+#' \bold{Missing data and dropout}
+#'
+#' Accounting for missing data in the power calculations is possible. Currently,
+#' \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
+#' \code{\link{dropout_manual}}. It is possible to have different dropout
+#' patterns per treatment group using \code{\link{per_treatment}}. See their
+#' respective help pages for examples of their use.
+#'
+#' If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
+#' However, exactly which subjects dropout is randomly sampled within treatments. Thus,
+#' clusters can become slightly unbalanced, but generally power varies little over realizations.
+#'
+#' For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
+#' of dropout is converted to the probability of having exactly \emph{i} measurements,
+#' and the actual dropout is sampled from a multinomial distribution. In this case, the proportion of
+#' dropout varies over the realizations from the multinomial distribution, but will
+#' match the dropout proportions in expectation. The random dropout in
+#' each treatment group is sampled from independent multinomial distributions.
+#'
+#' Generally, power based on fixed dropout is a good approximation of random dropout.
+#'
 #' @export
 study_parameters <- function(design = study_design(nested = TRUE,
                                                    levels = 3,
@@ -32,13 +112,7 @@ study_parameters <- function(design = study_design(nested = TRUE,
     UseMethod("study_parameters")
 }
 
-study_parameters.default <- function(...) {
-    study_parameters.plcp_design_crossed(...)
-}
-
-
-
-#' Setup study parameters
+#' Setup nested study parameters
 #'
 #' Setup the parameters for calculating power for longitudinal multilevel studies
 #' comparing two groups. Ordinary two-level models (subjects with repeated measures),
@@ -94,84 +168,7 @@ study_parameters.default <- function(...) {
 #' @return A \code{list} or \code{data.frame} of parameters values, either of
 #' class \code{plcp} or \code{plcp_multi} if multiple parameters are compared.
 #'
-#' @details
-#'
-#' \bold{Comparing a combination of parameter values}
-#'
-#' It is possible to setup a grid of parameter combinations by entering the values
-#' as vectors. All unique combinations of the inputs will be returned. This is
-#' useful if you want see how different values of the parameters affect power.
-#' See also the convenience function \code{\link{get_power_table}}.
-#'
-#' \bold{Standardized and unstandardized inputs}
-#'
-#' All parameters of the models can be specified. However, many of the raw
-#' parameter values in a multilevel/LMM do no directly affect the power of the
-#' test of the \code{treatment:time}-coefficient. Power will depend greatly on the relative
-#' size of the parameters, therefore, it is possible to setup your calculations
-#' using only standardized inputs, or by a combination of raw inputs and
-#' standardized inputs. For instance, if \code{sigma_subject_slope} and
-#' \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
-#' solved for. Only the cluster-level parameters can be solved when standardized and
-#' raw values are mixed. \code{sigma_error} is 10 by default. More information regarding
-#' the standardized inputs are available in the two-level and three-level vignettes.
-#'
-#' \bold{Difference between 0 and NA}
-#'
-#' For the variance components \code{0} and \code{NA/NULL} have different meanings.
-#' A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
-#' a random intercept is estimated at the cluster level, but the true value is 0.
-#' If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
-#' This choice will matter when running simulations, or if Satterthwaite \emph{dfs} are used.
-#'
-#' The default behavior if a parameters is not specified is that \code{cor_subject} and
-#' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
-#'
-#' \bold{Effect size and Cohen's d}
-#'
-#' The argument \code{effect_size} let's you specify the average difference in change
-#' between the treatment groups. You can either pass a \code{numeric} value to define
-#' the raw difference in means at posttest, or use a standardized effect size, see
-#' \code{\link{cohend}} for more details on the standardized effects.
-#'
-#' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
-#' \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
-#'
-#' \bold{Two- or three-level models}
-#'
-#' If either \code{sigma_cluster_slope} or \code{icc_slope} and
-#'  \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
-#' \code{NULL} it will be assumed a two-level design is wanted.
-#'
-#' \bold{Unequal cluster sizes and unbalanced allocation}
-#'
-#' It is possible to specify different cluster sizes using
-#' \code{\link{unequal_clusters}}. Cluster sizes can vary between treatment arms
-#' by also using \code{\link{per_treatment}}. The number of clusters per treatment can
-#' also be set by using \code{\link{per_treatment}}. Moreover, cluster
-#' sizes can be sampled from a distribution, and treated as a random variable.
-#' See \code{\link{per_treatment}} and \code{\link{unequal_clusters}} for examples of their use.
-#'
-#' \bold{Missing data and dropout}
-#'
-#' Accounting for missing data in the power calculations is possible. Currently,
-#' \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
-#' \code{\link{dropout_manual}}. It is possible to have different dropout
-#' patterns per treatment group using \code{\link{per_treatment}}. See their
-#' respective help pages for examples of their use.
-#'
-#' If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-#' However, exactly which subjects dropout is randomly sampled within treatments. Thus,
-#' clusters can become slightly unbalanced, but generally power varies little over realizations.
-#'
-#' For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
-#' of dropout is converted to the probability of having exactly \emph{i} measurements,
-#' and the actual dropout is sampled from a multinomial distribution. In this case, the proportion of
-#' dropout varies over the realizations from the multinomial distribution, but will
-#' match the dropout proportions in expectation. The random dropout in
-#' each treatment group is sampled from independent multinomial distributions.
-#'
-#' Generally, power based on fixed dropout is a good approximation of random dropout.
+#' @inherit study_parameters details
 #'
 #'
 #' @seealso \code{\link{cohend}}, \code{\link{get_power}}, \code{\link{simulate.plcp}}
@@ -504,6 +501,9 @@ study_parameters.plcp_design_nested <- function(design,
     paras
 
 }
+
+study_parameters.default <- study_parameters.plcp_design_nested
+
 
 sim_parameters <- function(...) {
     dots <- list(...)

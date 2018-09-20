@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup.R
 \name{study_parameters.plcp_design_nested}
 \alias{study_parameters.plcp_design_nested}
-\title{Setup study parameters}
+\title{Setup nested study parameters}
 \usage{
 \method{study_parameters}{plcp_design_nested}(design, n1, n2, n3 = 1,
   T_end = NULL, fixed_intercept = 0L, fixed_slope = 0L,
@@ -102,6 +102,12 @@ as vectors. All unique combinations of the inputs will be returned. This is
 useful if you want see how different values of the parameters affect power.
 See also the convenience function \code{\link{get_power_table}}.
 
+\bold{Two- or three-level models}
+
+If either \code{sigma_cluster_slope} or \code{icc_slope} and
+ \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
+\code{NULL} it will be assumed a two-level design is wanted.
+
 \bold{Standardized and unstandardized inputs}
 
 All parameters of the models can be specified. However, many of the raw
@@ -135,12 +141,6 @@ the raw difference in means at posttest, or use a standardized effect size, see
 
 The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
 \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
-
-\bold{Two- or three-level models}
-
-If either \code{sigma_cluster_slope} or \code{icc_slope} and
- \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
-\code{NULL} it will be assumed a two-level design is wanted.
 
 \bold{Unequal cluster sizes and unbalanced allocation}
 
