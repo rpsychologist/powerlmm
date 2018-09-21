@@ -251,14 +251,7 @@ add_NA_values_from_indicator <- function(d, missing) {
 #' @rdname simulate_data
 #' @export
 simulate_data.plcp_nested <- function(paras, n = NULL) {
-
-    # get sim data func
-    if(paras$custom_model) {
-        message("custom")
-    } else {
-        .sim_data_func <- .simulate_3lvl_data
-    }
-
+    .sim_data_func <- .simulate_3lvl_data
 
     if (is.data.frame(paras))
         paras <- as.list(paras)
@@ -1596,7 +1589,8 @@ print.plcp_sim_formula_compare <- function(x, ...) {
 #' @export
 summary.plcp_sim <- function(object, model = NULL, alpha = 0.05, para = NULL, ...) {
     res <- object
-    x <- lapply(res$res, summary_.plcp_sim,
+    x <- lapply(res$res,
+                summary_.plcp_sim,
                 paras = res$paras,
                 alpha = alpha,
                 ...)
@@ -1863,6 +1857,10 @@ summarize_convergence <- function(paras, convergence) {
 summarize_convergence.default <- function(paras, convergence) {
     mean(convergence)
 }
+summarize_convergence.plcp_brmsformula <- function(paras, convergence) {
+    # no divergent transition per sim
+    mean(unlist(convergence))
+}
 summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
     RE_params <- get_RE_thetas(paras)
 
@@ -1908,6 +1906,12 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
         CI_NA <- CI_cov[i, "CI_NA"]
         FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
     }
+    if(inherits(res$FE, "plcp_brmsformula")) {
+        # remove unused columns
+        FE$Power_bw <- NULL
+        FE$Power_satt <- NULL
+        FE$CI_Wald_cover <- NULL
+    }
 
     # FE_eff <- c("(Intercept)",
     #             "treatment",
@@ -1919,7 +1923,7 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
     #                     which(FE$parameter == i), numeric(1))
     # FE <- FE[ind,]
 
-    convergence <- summarize_convergence(paras, res$convergence)
+    convergence <- summarize_convergence(res$FE, res$convergence)
 
     list("RE" = RE,
          "FE" = FE,
@@ -2028,8 +2032,6 @@ summary.plcp_multi_sim <- function(object,
         }
 
     }
-
-
 
     # model selection
     if(!is.null(model_selection)) {
