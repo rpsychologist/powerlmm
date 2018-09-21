@@ -76,3 +76,5 @@ pm <- study_parameters(
     family = "gamma")
 
 pm
+class(pm)
+
