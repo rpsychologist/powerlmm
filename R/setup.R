@@ -606,7 +606,7 @@ prepare_print_n2 <- function(x) {
 
     n2
 }
-prepare_print_plcp <- function(x, two_level = FALSE) {
+prepare_print_plcp <- function(x, two_level = FALSE, hanging = 19) {
     n1 <- x$n1
     n2 <- prepare_print_n2(x)
     n3 <- get_n3(x)
@@ -615,10 +615,17 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                  nchar(print_per_treatment_(2, n2, n2 = TRUE)$lab),
                  nchar(print_per_treatment_(3, tot_n)$lab))
     if(two_level) width <- max(vapply(tot_n, nchar, numeric(1)))
-    n2 <- print_per_treatment(n2, width = width, n2 = TRUE)
-    n3 <- print_per_treatment(n3, width = width)
+    n2 <- print_per_treatment(n2,
+                              width = width,
+                              n2 = TRUE,
+                              hanging = hanging)
+    n3 <- print_per_treatment(n3,
+                              width = width,
+                              hanging = hanging)
 
-    tot_n <- print_per_treatment(tot_n, width = width)
+    tot_n <- print_per_treatment(tot_n,
+                                 width = width,
+                                 hanging = hanging)
 
     icc_slope <- round(get_ICC_slope(x), 2)
     var_ratio <- round(get_var_ratio(x), 2)
@@ -645,7 +652,8 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     gd$control <-  format(gd$control*100, nsmall = 0, digits = 0, width = 2)
     gd$treatment <- format(gd$treatment*100, nsmall = 0, digits = 0, width = 2)
     colnames(gd) <- c("time", "%, control", "%, treatment")
-    gd <- print_per_treatment(gd)
+    gd <- print_per_treatment(gd,
+                              hanging = hanging)
 
     res <- structure(list(n1 = n1,
                           n2 = n2,
@@ -674,6 +682,46 @@ prepare_print_plcp_2lvl <- function(x) {
 
     res
 }
+prepare_print_plcp_hurdle_2lvl <- function(x) {
+    res <- prepare_print_plcp(x, two_level = TRUE, hanging = 18)
+    if(!is.list(x$dropout)) res$dropout <- "No missing data"
+    marginal <- ifelse(x$marginal, " marginal", NULL)
+    res$method <- paste0("Study setup (two-level,", marginal, " hurdle ", x$family, ")")
+    res$icc_slope <- NULL
+    res$icc_pre_clusters <- NULL
+    res$n2 <- res$total_n
+    res$n3 <- NULL
+    res$total_n <- NULL
+    res$icc_pre_subjects <- NULL
+    res$var_ratio <- NULL
+
+
+    ES_cont <- paste0("Continuous (multiplicative): ", x$RR_cont)
+    res$effect_size <- paste0("Zeros (OR): ", x$OR_hu,
+                              "\n", paste0(rep(" ", 18), collapse = ""),
+                              ES_cont)
+
+    names(res)[names(res) == "effect_size_2"] <- ""
+
+    # attrs <- attributes(res)
+    #
+    # # reorder
+    # res <- structure(res[c("n1", "n2", "dropout", "family", "effect_size", "method")],
+    #                  class = "power.htest")
+    # attr(res, "width") <- attrs$width
+    #
+
+
+
+    res
+
+}
+
+
+
+
+
+
 prepare_print_plcp_3lvl <- function(x) {
     res <- prepare_print_plcp(x)
 
@@ -730,6 +778,16 @@ print.plcp_2lvl <- function(x, ...) {
     print(res, digits = 2, ...)
 }
 
+#' Print method for two-part/hurdle \code{study_parameters}-objects
+#' @param x An object of class \code{plcp_hurdle}.
+#' @param ... Optional arguments.
+#' @method print plcp_2lvl
+#' @export
+print.plcp_hurdle <- function(x, ...) {
+    res <- prepare_print_plcp_hurdle_2lvl(x)
+
+    print(res, digits = 2, ...)
+}
 
 #' Return the raw difference between the groups at posttest
 #'
