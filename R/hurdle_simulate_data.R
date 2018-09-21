@@ -246,8 +246,6 @@ sim_hurdle_EMA <- function(n1_obs,
 #' @export
 simulate_data.plcp_hurdle <- function(paras,
                                       gen_fake = "sim_hurdle") {
-    if(paras$EMA) gen_fake <- "sim_hurdle_EMA"
-
     if (is.data.frame(paras))
         paras <- as.list(paras)
     if(is.null(paras$prepared)) {
@@ -256,6 +254,7 @@ simulate_data.plcp_hurdle <- function(paras,
     paras <- tmp$control
     paras_tx <- tmp$treatment
 
+    if(paras$EMA) gen_fake <- "sim_hurdle_EMA"
 
     d_c <- do.call(gen_fake, paras)
     d_c$treatment <- 0
