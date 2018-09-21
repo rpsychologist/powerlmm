@@ -62,10 +62,9 @@ study_parameters.plcp_hurdle <- function(design = NULL,
     if(is.null(args$T_end)) pars$T_end <- pars$n1 - 1
 
     # Single or multi?
-    pars <- .make_single_or_multi(pars)
+    pars <- .make_single_or_multi(pars, model = "hurdle")
 
     attr(pars, "call") <- save_call
-    class(pars) <- append("plcp_hurdle", c(class(pars), "plcp"))
 
     pars
 }
