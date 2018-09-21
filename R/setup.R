@@ -46,13 +46,30 @@ study_parameters.default <- function(...) {
         if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
     }
 }
-.make_single_or_multi <- function(paras) {
+.make_single_or_multi <- function(paras, model = NULL) {
     if((is.data.frame(paras) & nrow(paras) == 1)) {
         paras <- as.list(paras)
     }
     if(is.data.frame(paras)) {
-        class(paras) <- append(c("plcp_multi"), class(paras))
-    } else class(paras) <- append(c("plcp"), class(paras))
+        if(is.null(model)) {
+            multi <- "plcp_multi"
+        } else {
+            multi <- c(paste0(c("plcp_multi", model), collapse = "_"),
+                        "plcp_multi")
+        }
+        class(paras) <- append(multi,
+                               class(paras))
+    } else {
+        if(is.null(model)) {
+            single <- "plcp"
+        } else {
+            single <- c(paste0(c("plcp", model), collapse = "_"),
+                        "plcp")
+        }
+
+        class(paras) <- append(single,
+                               class(paras))
+        }
 
     paras
 }
@@ -1053,6 +1070,7 @@ get_effect_size.plcp_multi <- function(object) {
     x$standardizer <- as.character(x$standardizer)
     x
 }
+
 # print multi-sim ---------------------------------------------------------
 
 replace_repeating <- function(x, empty) {
@@ -1066,6 +1084,29 @@ get_dropout_post <- function(object) {
     x <- get_dropout(object)
     x[nrow(x),]
 }
+
+.add_ES_multi <- function(object, out, out_dense, ...) {
+    UseMethod(".add_ES_multi")
+}
+.add_ES_multi.plcp_multi <- function(object, out, out_dense, ..) {
+    ES <- get_effect_size(object)
+    out_dense$effect_size <- ES$ES
+    out_dense$ES_sd <- paste(ES$standardizer, ES$treatment, sep = "_")
+    out$effect_size <- ES$ES
+
+    list(out = out,
+         out_dense = out_dense)
+}
+.add_ES_multi.plcp_multi_hurdle <- function(object, out, out_dense, ..) {
+    #ES <- get_effect_size(object)
+    out_dense$effect_size <- 0
+    out_dense$ES_sd <- 0
+    out$effect_size <- 0
+
+    list(out = out,
+         out_dense = out_dense)
+}
+
 prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     paras <- object
 
@@ -1091,7 +1132,6 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     n3 <- do.call(rbind, n3)
 
 
-
     object$icc_pre_cluster <- get_ICC_pre_clusters(object)
     object$icc_pre_subject <- get_ICC_pre_subjects(object)
     object$icc_slope <- get_ICC_slope(object)
@@ -1107,7 +1147,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     } else {
         out$dropout_tx <- dropout$treatment
         out$dropout_cc <- dropout$control
-        out$dropout <- NA
+        out$dropout <- NULL
     }
 
     per_tx_n2 <- vapply(seq_along(object$n2), function(i) is.per_treatment(object$n2[i]), logical(1))
@@ -1139,15 +1179,17 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         }
     }
 
-    ES <- get_effect_size(object)
+
     out_dense <- out
-    out_dense$effect_size <- ES$ES
-    out_dense$ES_sd <- paste(ES$standardizer, ES$treatment, sep = "_")
+    tmp <- .add_ES_multi(object, out, out_dense)
+    out <- tmp$out
+    out_dense <- tmp$out_dense
+
     out$icc_pre_cluster <- round(object$icc_pre_cluster, digits)
     out$icc_pre_subject <- round(object$icc_pre_subject, digits)
     out$icc_slope <- round(object$icc_slope, digits)
     out$var_ratio <- round(object$var_ratio, digits)
-    out$effect_size <- ES$ES
+
     for(i in 1:ncol(out)) {
         out[,i] <- replace_repeating(out[,i], empty = empty)
     }
@@ -1207,6 +1249,29 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
     invisible(x)
 }
 
+#' Print method for \code{study_parameters}-multiobjects
+#' @rdname print.plcp_multi
+print.plcp_multi_hurdle <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
+    nr <- nrow(x)
+    if(nr <= print_max) rmax <- nr else rmax <- print_max
+    hidden_row <- nr - print_max
+    x <- x[1:rmax, ]
+    family <- unique(as.character(x$family))
+    x$family <- NULL
+    pp <- prepare_multi_setup(x, empty = empty, digits = digits)
+    out <- pp$out
+    out <- as.data.frame(out)
+    cat(paste0("# Multi-study setup (two-level hurdle ", family, ")"), "\n")
+
+    out <- out[, select_setup_cols(out)]
+    colnames(out) <- gsub("_lab", "", colnames(out))
+    print(out)
+    if(hidden_row > 0) {
+        cat("# ...", hidden_row, "setups not shown.")
+    }
+
+    invisible(x)
+}
 
 
 
