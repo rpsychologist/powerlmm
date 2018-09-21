@@ -43,6 +43,7 @@ Suggests: testthat,
     viridis,
     gridExtra,
     shiny (>= 1.0),
-    shinydashboard
+    shinydashboard,
+    brms
 ByteCompile: true
 VignetteBuilder: knitr
