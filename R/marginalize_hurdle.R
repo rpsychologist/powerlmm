@@ -103,6 +103,31 @@ marginalize.plcp_hurdle <- function(object,
          median_cont = median_cont)
 }
 
+# return summaries of marginal ests distribution
+eta_sum <- function(x) {
+    cbind("mean" = mean(x),
+          "sd" = sd(x),
+          "Q2.5" = quantile(x, probs = 0.025),
+          "Q25" = quantile(x, probs = 0.25),
+          "Q50" = median(x),
+          "Q75" = quantile(x, probs = 0.75),
+          "Q97.5" = quantile(x, probs = 0.975)
+    )
+
+}
+
+# helper to display marginal ests
+trans_eta <- function(x, var, d) {
+    out <- do.call(rbind, x[, var])
+    out <- as.data.frame(out)
+    out <- cbind(data.frame(var = var,
+                            treatment = d$treatment,
+                            time = d$time),
+                 out)
+    rownames(out) <- NULL
+    out
+}
+
 .marginalize_sim <- function(d,
                              betas,
                              betas_hu,
@@ -127,26 +152,6 @@ marginalize.plcp_hurdle <- function(object,
                       data = d)
 
     XtX <- crossprod(X)
-
-    eta_sum <- function(x) {
-        cbind("mean" = mean(x),
-              "sd" = sd(x),
-              "Q2.5" = quantile(x, probs = 0.025),
-              "Q25" = quantile(x, probs = 0.25),
-              "Q50" = median(x),
-              "Q75" = quantile(x, probs = 0.75),
-              "Q97.5" = quantile(x, probs = 0.975)
-        )
-
-    }
-    trans_eta <- function(x, var) {
-        out <- do.call(rbind, tmp[, var])
-        out <- as.data.frame(out)
-        out$time <- d$time
-        out$treatment <- d$treatment
-
-        out
-    }
 
     calc_eta <- function(i, full) {
 
@@ -184,9 +189,9 @@ marginalize.plcp_hurdle <- function(object,
                         median_overall = median_overall)
         if(full) {
             out <- c(out,
-                     list(marg_overall = eta_sum(exp(mu_overall)),
-                        p = eta_sum(p),
-                        marg_cont = eta_sum(marg_cont))
+                     list(marg_overall_full = eta_sum(exp_mu_overall),
+                        p_full = eta_sum(p),
+                        marg_cont_full = eta_sum(marg_cont))
                      )
 
         }
@@ -215,46 +220,55 @@ marginalize.plcp_hurdle <- function(object,
     colnames(coefs_median) <- c("median_overall")
 
     coefs <- mapply(function(x, name) {
-        x <- data.frame(t(x), check.names = FALSE)
-        colnames(x) <- paste(name, names(x), sep = "_")
+        x <- x
+        d <- data.frame(var = paste(name, rownames(x), sep = "_"),
+                        est = c(x),
+                        check.names = FALSE)
 
-        x
+
+        d
     },
     list(coef_overall, coefs_median),
     name = c("overall", "median_overall"), SIMPLIFY = FALSE)
     #
-    coefs <- do.call(cbind, coefs)
-    post <- tmp[tmp$time == max(tmp$time), ]
-    marg_post_tx <- mean(post[post$treatment == 1, "marg_overall"])
-    marg_post_cc <- mean(post[post$treatment == 0, "marg_overall"])
-    median_post_tx <- mean(post[post$treatment == 1, "median_overall"])
-    median_post_cc <- mean(post[post$treatment == 0, "median_overall"])
+    coefs <- do.call(rbind, coefs)
+    post <- tmp[tmp$time == max(tmp$time), c("marg_overall", "median_overall", "treatment")]
+    post <- lapply(post, unlist)
+    post <- as.data.frame(do.call(cbind, post))
+    marg_post_tx <- post[post$treatment == 1, "marg_overall"]
+    marg_post_cc <- post[post$treatment == 0, "marg_overall"]
+    median_post_tx <- post[post$treatment == 1, "median_overall"]
+    median_post_cc <- post[post$treatment == 0, "median_overall"]
     marg_RR <- marg_post_tx/marg_post_cc
     median_RR <- median_post_tx/median_post_cc
 
-    out <- cbind(coefs,
-                 marg_post_tx,
-                 marg_post_cc,
-                 marg_post_diff = marg_post_tx - marg_post_cc,
-                 marg_RR,
-                 median_post_tx,
-                 median_post_cc,
-                 median_post_diff = median_post_tx - median_post_cc,
-                 median_RR
+    post <- rbind(marg_post_tx,
+                  marg_post_cc,
+                  marg_post_diff = marg_post_tx - marg_post_cc,
+                  marg_RR,
+                  median_post_tx,
+                  median_post_cc,
+                  median_post_diff = median_post_tx - median_post_cc,
+                  median_RR
     )
-    if(full) {
+    post <- data.frame(var = rownames(post),
+                       est = post, row.names = NULL)
 
-        out <- list(out,
+    out <- rbind(coefs,
+                 post)
+    if(full) {
+        # TODO: add sd of treatment ES as well
+        out <- list(est = out,
                     #time = tmp,
-                    marg_overall = trans_eta(tmp, "marg_overall"),
-                    marg_cont = trans_eta(tmp, "marg_cont"),
-                    hu_prob = trans_eta(tmp, "p")
+                    marg_overall = trans_eta(tmp, "marg_overall_full", d = d),
+                    marg_cont = trans_eta(tmp, "marg_cont_full", d= d),
+                    hu_prob = trans_eta(tmp, "p_full", d = d)
                     #coef_overall_response = coef_overall_response,
                     #coefs_median_response = coefs_median_response,
                     #coefs_median = coefs_median,
                     #coef_overall = coef_overall
                     )
-    }
+    } else out <- list(est = out)
     out
 }
 
