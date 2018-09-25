@@ -170,68 +170,57 @@ trans_eta <- function(x, var, d) {
 
         exp_mu_overall <- exp( mu_overall)
 
-            marg_overall <- mean(exp_mu_overall)
-            marg_overall_log <- log(marg_overall)
-            median_overall <- median(exp_mu_overall)
+        out <- list(hu_prob = eta_sum(p),
+                    marg_y_positive = eta_sum(marg_cont),
+                    marg_y_overall = eta_sum(exp_mu_overall))
 
-            marg_cont_log <- log(marg_cont)
-            marg_binom <- mean(p)
-            marg_binom_logit <- qlogis(marg_binom)
-
-
-            out <- list(marg_binom = marg_binom,
-                        marg_binom_logit = marg_binom_logit,
-                        marg_cont= marg_cont,
-                        marg_cont_log = marg_cont_log,
-                        median_cont = median_cont,
-                        marg_overall = marg_overall,
-                        marg_overall_log = marg_overall_log,
-                        median_overall = median_overall)
-        if(full) {
-            out <- c(out,
-                     list(marg_overall_full = eta_sum(exp_mu_overall),
-                        p_full = eta_sum(p),
-                        marg_cont_full = eta_sum(marg_cont))
-                     )
-
-        }
 
         out
     }
     tmp <- lapply(1:nrow(X), calc_eta, full = full)
     tmp <- as.data.frame(do.call(rbind, tmp))
 
-    tmp$time <- d$time
-    tmp$treatment <- d$treatment
-
+    marg_y_overall <- trans_eta(tmp, "marg_y_overall", d = d)
+    marg_y_positive <- trans_eta(tmp, "marg_y_positive", d= d)
+    hu_prob <- trans_eta(tmp, "hu_prob", d = d)
 
     # Hedeker et al 2018
     # solve(t(X) %*% X) %*% t(X) %*% tmp$marg_overall
 
-    coefs_median_response <- solve(XtX, crossprod(X, unlist(tmp$median_overall)))
-    coefs_median <- solve(XtX, crossprod(X, log(unlist(tmp$median_overall))))
-    coef_overall_response <- solve(XtX, crossprod(X, unlist(tmp$marg_overall)))
-    coef_overall <- solve(XtX, crossprod(X, unlist(tmp$marg_overall_log)))
 
-    coefs <- cbind(coef_overall)
-    colnames(coefs) <- c("overall")
-
-    coefs_median <- cbind(coefs_median)
-    colnames(coefs_median) <- c("median_overall")
+    coef_overall_median_log <- solve(XtX, crossprod(X, log(marg_y_overall[, "Q50"] )))
+    coef_overall_marg_log <- solve(XtX, crossprod(X, log(marg_y_overall[, "mean"])))
+    coef_hu_prob_marg_logit <- solve(XtX, crossprod(X, qlogis(hu_prob[, "mean"])))
+    coef_hu_prob_median_logit <- solve(XtX, crossprod(X, qlogis(hu_prob[, "Q50"])))
 
     coefs <- mapply(function(x, name) {
-        x <- x
-        d <- data.frame(var = paste(name, rownames(x), sep = "_"),
-                        est = c(x),
-                        check.names = FALSE)
-
-
-        d
-    },
-    list(coef_overall, coefs_median),
-    name = c("overall", "median_overall"), SIMPLIFY = FALSE)
+            x <- x
+            d <- data.frame(var = paste("b", name, rownames(x), sep = "_"),
+                            est = c(x),
+                            check.names = FALSE)
+            d
+        },
+        list(coef_overall_marg_log,
+             coef_overall_median_log,
+             coef_hu_prob_marg_logit,
+             coef_hu_prob_median_logit),
+        name = c("overall_marg",
+                 "overall_median",
+                 "hu_prob_marg",
+                 "hu_prob_median"),
+        SIMPLIFY = FALSE)
     #
-    coefs <- do.call(rbind, coefs)
+    names(coefs) <- c("marginal",
+                      "median",
+                      "marginal",
+                      "median")
+
+    coefs <- list("y_overall" = coefs[1:2],
+                  "hu_prob" = coefs[3:4])
+
+    ## TODO: also return post ES with sd and percentiles
+
+    # posttest
     post <- tmp[tmp$time == max(tmp$time), c("marg_overall", "median_overall", "treatment")]
     post <- lapply(post, unlist)
     post <- as.data.frame(do.call(cbind, post))
@@ -256,19 +245,7 @@ trans_eta <- function(x, var, d) {
 
     out <- rbind(coefs,
                  post)
-    if(full) {
-        # TODO: add sd of treatment ES as well
-        out <- list(est = out,
-                    #time = tmp,
-                    marg_overall = trans_eta(tmp, "marg_overall_full", d = d),
-                    marg_cont = trans_eta(tmp, "marg_cont_full", d= d),
-                    hu_prob = trans_eta(tmp, "p_full", d = d)
-                    #coef_overall_response = coef_overall_response,
-                    #coefs_median_response = coefs_median_response,
-                    #coefs_median = coefs_median,
-                    #coef_overall = coef_overall
-                    )
-    } else out <- list(est = out)
+
     out
 }
 
