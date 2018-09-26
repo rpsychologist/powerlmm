@@ -62,21 +62,18 @@ marginalize.plcp_hurdle <- function(object,
 }
 
 .calc_eta_hurdle <- function(mu, p, marginal, family, sd_log) {
+
     if(marginal) {
         if(family == "gamma") {
             # Y
             mu_overall <- mu
             # Y > 0
-            marg_cont <- mean(exp(mu - log(1 - p)))
-            # Median(Y | Y > 0)
-            median_cont <- median(exp(mu - log(1 - p)))
+            mu_positive <- exp(mu - log(1 - p))
         } else if(family == "lognormal") {
             # Y
             mu_overall <- mu
             # Y > 0
-            marg_cont <- mean(exp(mu - log(1 - p) - sd_log^2/2))
-            # Median(Y | Y > 0)
-            median_cont <- median(exp(mu - log(1 - p) - sd_log^2/2))
+            marg_cont <- exp(mu - log(1 - p) - sd_log^2/2)
         }
 
     }  else {
@@ -84,34 +81,34 @@ marginalize.plcp_hurdle <- function(object,
             # Y
             mu_overall <- mu + log(1 - p)
             # Y > 0
-            marg_cont <- mean(exp(mu))
-            # Median(Y | Y > 0)
-            median_cont <- median(exp(mu))
+            mu_positive <- exp(mu)
         } else if(family == "lognormal") {
             # Y
             mu_overall <- mu + log(1 - p) + sd_log^2/2
             # Y > 0
-            marg_cont <- mean(exp(mu + sd_log^2/2))
-            # Median(Y | Y > 0)
-            median_cont <- median(exp(mu + sd_log^2/2))
+            mu_positive <- exp(mu + sd_log^2/2)
         }
 
     }
 
     list(mu_overall = mu_overall,
-         marg_cont = marg_cont,
-         median_cont = median_cont)
+         mu_positive = mu_positive)
 }
 
 # return summaries of marginal ests distribution
 eta_sum <- function(x) {
     cbind("mean" = mean(x),
           "sd" = sd(x),
+          "Q0.5" = quantile(x, probs = 0.005),
           "Q2.5" = quantile(x, probs = 0.025),
+          "Q10" = quantile(x, probs = 0.10),
           "Q25" = quantile(x, probs = 0.25),
           "Q50" = median(x),
           "Q75" = quantile(x, probs = 0.75),
-          "Q97.5" = quantile(x, probs = 0.975)
+          "Q90" = quantile(x, probs = 0.90),
+          "Q97.5" = quantile(x, probs = 0.975),
+          "Q99.5" = quantile(x, probs = 0.995)
+
     )
 
 }
@@ -126,6 +123,30 @@ trans_eta <- function(x, var, d) {
                  out)
     rownames(out) <- NULL
     out
+}
+
+trans_post_ps <- function(x, hu = FALSE) {
+    post_ps <- x[vapply(x, is.data.frame, logical(1))]
+
+    ind <- vapply(post_ps, function(d) all(d$treatment == 0), logical(1))
+    post_ps_c <- post_ps[[which(ind)]]
+    post_ps_tx <- post_ps[[which(!ind)]]
+
+    if(hu) {
+        post_ps <- data.frame(percentile = post_ps_c$percentile,
+                              diff = post_ps_tx$value - post_ps_c$value,
+                              OR = get_OR(post_ps_tx$value, post_ps_c$value)
+                              )
+    } else {
+        post_ps <- data.frame(percentile = post_ps_c$percentile,
+                              diff = post_ps_tx$value - post_ps_c$value,
+                              ratio = post_ps_tx$value / post_ps_c$value)
+    }
+
+
+    list(control = post_ps_c,
+         treatment = post_ps_tx,
+         effect = post_ps)
 }
 
 .marginalize_sim <- function(d,
@@ -165,20 +186,41 @@ trans_eta <- function(x, var, d) {
                                 family = family,
                                 sd_log = sd_log)
         mu_overall <- eta$mu_overall
-        marg_cont <- eta$marg_cont
-        median_cont <- eta$median_cont
+        mu_positive <- eta$mu_positive
 
         exp_mu_overall <- exp( mu_overall)
 
+        if(i %in% which(d$time == max(d$time))) {
+            ps <- 1:99/100
+            post <- data.frame("percentile" = ps,
+                               "value" = quantile(exp_mu_overall, ps),
+                               "treatment" = d[i, "treatment"]
+                               )
+            post_hu <- data.frame("percentile" = ps,
+                               "value" = quantile(p, ps),
+                               "treatment" = d[i, "treatment"]
+            )
+
+        } else {
+            post <- NULL
+            post_hu <- NULL
+            }
+
         out <- list(hu_prob = eta_sum(p),
-                    marg_y_positive = eta_sum(marg_cont),
-                    marg_y_overall = eta_sum(exp_mu_overall))
+                    marg_y_positive = eta_sum(mu_positive),
+                    marg_y_overall = eta_sum(exp_mu_overall),
+                    post = post,
+                    post_hu = post_hu,
+                    exp_mu_overall_vec = exp_mu_overall)
 
 
         out
     }
     tmp <- lapply(1:nrow(X), calc_eta, full = full)
     tmp <- as.data.frame(do.call(rbind, tmp))
+
+    post_ps <- trans_post_ps(tmp$post)
+    post_hu_ps <- trans_post_ps(tmp$post_hu, hu = TRUE)
 
     marg_y_overall <- trans_eta(tmp, "marg_y_overall", d = d)
     marg_y_positive <- trans_eta(tmp, "marg_y_positive", d= d)
@@ -221,13 +263,11 @@ trans_eta <- function(x, var, d) {
     ## TODO: also return post ES with sd and percentiles
 
     # posttest
-    post <- tmp[tmp$time == max(tmp$time), c("marg_overall", "median_overall", "treatment")]
-    post <- lapply(post, unlist)
-    post <- as.data.frame(do.call(cbind, post))
-    marg_post_tx <- post[post$treatment == 1, "marg_overall"]
-    marg_post_cc <- post[post$treatment == 0, "marg_overall"]
-    median_post_tx <- post[post$treatment == 1, "median_overall"]
-    median_post_cc <- post[post$treatment == 0, "median_overall"]
+    post <- marg_y_overall[marg_y_overall$time == max(marg_y_overall$time), c("treatment","mean", "Q50")]
+    marg_post_tx <- post[post$treatment == 1, "mean"]
+    marg_post_cc <- post[post$treatment == 0, "mean"]
+    median_post_tx <- post[post$treatment == 1, "Q50"]
+    median_post_cc <- post[post$treatment == 0, "Q50"]
     marg_RR <- marg_post_tx/marg_post_cc
     median_RR <- median_post_tx/median_post_cc
 
@@ -239,14 +279,45 @@ trans_eta <- function(x, var, d) {
                   median_post_cc,
                   median_post_diff = median_post_tx - median_post_cc,
                   median_RR
-    )
+                  )
     post <- data.frame(var = rownames(post),
                        est = post, row.names = NULL)
 
-    out <- rbind(coefs,
-                 post)
 
-    out
+    ## post hu, y = 0
+    post_hu <- hu_prob[hu_prob$time == max(hu_prob$time), c("treatment","mean", "Q50")]
+    marg_hu_post_tx <- post_hu[post_hu$treatment == 1, "mean"]
+    marg_hu_post_cc <- post_hu[post_hu$treatment == 0, "mean"]
+    median_hu_post_tx <- post_hu[post_hu$treatment == 1, "Q50"]
+    median_hu_post_cc <- post_hu[post_hu$treatment == 0, "Q50"]
+    marg_OR <- get_OR(marg_hu_post_tx, marg_hu_post_cc)
+    median_OR <- get_OR(median_hu_post_tx, median_hu_post_cc)
+
+    post_hu <- rbind(marg_hu_post_tx,
+                  marg_hu_post_cc,
+                  marg_hu_post_diff = marg_hu_post_tx - marg_hu_post_cc,
+                  marg_OR,
+                  median_hu_post_tx,
+                  median_hu_post_cc,
+                  median_hu_post_diff = median_hu_post_tx - median_hu_post_cc,
+                  median_OR
+    )
+    post_hu <- data.frame(var = rownames(post_hu),
+                          est = post_hu,
+                          row.names = NULL)
+
+    list(coefs = coefs,
+         y_overall = marg_y_overall,
+         y_positive = marg_y_positive,
+         hu_prob = hu_prob,
+         post = post,
+         post_hu = post_hu,
+         post_ps = post_ps,
+         post_hu_ps = post_hu_ps,
+         mu_overall_vec = tmp$exp_mu_overall_vec
+         )
+
+
 }
 
 
@@ -316,8 +387,8 @@ trans_eta <- function(x, var, d) {
     median_p_post_cc <-post[post$treatment == 0, "median_p_overall"]
     marg_p_RR <- marg_p_post_tx/marg_p_post_cc
     median_p_RR <- median_p_post_tx/median_p_post_cc
-    marg_p_OR <- (marg_p_post_tx/(1-marg_p_post_tx))/(marg_p_post_cc/(1-marg_p_post_cc))
-    median_p_OR <- (median_p_post_tx/(1-median_p_post_tx))/(median_p_post_cc/(1-median_p_post_cc))
+    marg_p_OR <- get_OR(marg_p_post_tx, marg_p_post_cc)
+    median_p_OR <- get_OR(median_p_post_tx, median_p_post_cc)
 
     out <- cbind(marg_post_tx,
                  marg_post_cc,
