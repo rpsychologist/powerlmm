@@ -1,3 +1,7 @@
+library(ggplot2)
+
+des <- structure(list(), class = "plcp_hurdle")
+
 p1 <- study_parameters(
     design = des,
     n1 = 3,
@@ -23,27 +27,21 @@ p1 <- study_parameters(
     family = "gamma")
 
 
-m <- marginalize(p, R = 1e5)
 m1 <- marginalize(p1, R = 1e5)
 
 
 # time
 ## overall
-plot_hurdle_time(m$y_overall)
-plot_hurdle_time(m$y_positive) + scale_y_log10()
-plot_hurdle_time(m$hu_prob)
+plot_hurdle_time(m1$y_overall)
+plot_hurdle_time(m1$y_positive) + scale_y_log10()
+plot_hurdle_time(m1$hu_prob)
 
 
 # Diff
-plot_hurdle_diff(m)
-plot_hurdle_diff(m, hu = TRUE)
+plot_hurdle_diff(m1)
+plot_hurdle_diff(m1, hu = TRUE)
 
-
-
-
-
-
-plot_hurdle_probs(m)
+plot_hurdle_probs(m1)
 
 
 
