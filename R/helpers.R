@@ -364,8 +364,6 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
      d <- sum_missing_tx_time(d)
      d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
 
-
-
      #theoretical_missing <- get_dropout(update(paras, n1 = 100))
      theoretical_missing <- get_dropout(paras)
 
@@ -392,7 +390,7 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
 
      if(type == "both") {
          check_installed("gridExtra")
-        return(gridExtra::grid.arrange(p1, p2, ncol=2))
+        return(gridExtra::grid.arrange(p1, p2, ncol=1))
      } else if(type == "effect") {
          return(p1)
      } else if(type == "dropout") {
