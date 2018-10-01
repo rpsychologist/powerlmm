@@ -311,6 +311,58 @@ sum_missing_tx_time <- function(.d) {
 
 }
 
+#' Calculate RE intervals
+#'
+#' @param d simulate_data data.frame
+#' @param var variable to summarise
+#' @param treatment treatment group indicator
+#'
+eta_sum_d <- function(d, var, treatment) {
+    x <- lapply(unique(d$time), function(i) {
+        x <- eta_sum(d[d$treatment == treatment & d$time == i, var])
+        x <- as.data.frame(x)
+        x$treatment <- treatment
+        x$time <- i
+
+        x
+    })
+    x <- do.call(rbind, x)
+
+    x
+}
+
+#' Reshape eta_sum output from wide to long
+#'
+#' @param x eta_sum_* data.frame
+#'
+#' @return data.frame in long format
+reshape_eta_sum <- function(x) {
+
+    tmp <- x[, !colnames(x) %in% c("var","mean", "sd", "Q50")]
+    tmp <- lapply(list(c("Q0.5", "Q99.5"),
+                       c("Q2.5", "Q97.5"),
+                       c("Q10", "Q90"),
+                       c("Q25", "Q75")),
+                  function(Q) {
+                      d <- tmp[, c("treatment","time", Q)]
+                      data.frame(treatment = x$treatment,
+                                 time = x$time,
+                                 min = x[, Q[1]],
+                                 max = x[, Q[2]],
+                                 width = switch(Q[1],
+                                                "Q0.5" = 0.99,
+                                                "Q2.5" = 0.95,
+                                                "Q10" = 0.8,
+                                                "Q25" = 0.5)
+                      )
+                  })
+    tmp <- do.call(rbind, tmp)
+    tmp$width <- factor(tmp$width,
+                        levels = rev(c(0.5, 0.8, 0.95, 0.99)))
+
+    tmp
+}
+
 
 # Plot design
 #' Plot method for \code{study_parameters}-objects
