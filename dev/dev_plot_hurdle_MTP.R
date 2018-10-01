@@ -1,5 +1,5 @@
-p <- study_parameters(
-    design = des,
+p_mtp <- study_parameters(
+    design = structure(list(), class = "plcp_hurdle"),
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(300), # median(Y > 0)
@@ -22,7 +22,7 @@ p <- study_parameters(
     marginal = TRUE,
     family = "gamma")
 
-m <- marginalize(p, R = 1e5)
+m <- marginalize(p_mtp, R = 1e5)
 
 
 # time

@@ -364,6 +364,26 @@ reshape_eta_sum <- function(x) {
 }
 
 
+get_y <- function(fixed_intercept, fixed_slope,
+                  sigma_subject_intercept, sigma_cluster_intercept,
+                  sigma_subject_slope, sigma_cluster_slope,
+                  time,
+                  treatment) {
+
+    ps <- c(0.005, 0.025, 0.1, 0.25, 0.5, 0.75, 0.90, 0.975, 0.995)
+    b0 <- fixed_intercept + qnorm(ps, 0, sqrt(sigma_subject_intercept^2 + sigma_cluster_intercept^2))
+    b0 <- rep(1, length(time)) %*% t(b0)
+    b1 <- time %*% t(fixed_slope + qnorm(ps, 0, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2)))
+    qs <- data.frame(b0+b1)
+    colnames(qs) <- paste0("Q", ps * 100)
+    cbind(data.frame(var = "y",
+                     treatment = treatment,
+                     time = time, sd = NA),
+          qs)
+}
+
+
+
 # Plot design
 #' Plot method for \code{study_parameters}-objects
 #' @param x An object of class \code{plcp}.
@@ -416,8 +436,6 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
      d <- sum_missing_tx_time(d)
      d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
 
-
-
      #theoretical_missing <- get_dropout(update(paras, n1 = 100))
      theoretical_missing <- get_dropout(paras)
 
@@ -444,7 +462,7 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
 
      if(type == "both") {
          check_installed("gridExtra")
-        return(gridExtra::grid.arrange(p1, p2, ncol=2))
+        return(gridExtra::grid.arrange(p1, p2, ncol=1))
      } else if(type == "effect") {
          return(p1)
      } else if(type == "dropout") {
