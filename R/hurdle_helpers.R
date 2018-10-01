@@ -132,7 +132,7 @@ plot_hurdle_diff <- function(x, hu = FALSE, fixed_overall = NULL) {
 
     p0 <-  ggplot(tmp, aes(percentile, diff, fill = fill)) +
         geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
-        geom_hline(yintercept = 0, linetype = "solid", size = 0.75) +
+        #geom_hline(yintercept = 0, linetype = "solid", size = 0.75) +
         geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75) +
         geom_hline(yintercept = ES_med, linetype = "dashed", alpha = 0.75, size = 0.75) +
         scale_y_continuous(sec.axis = sec_axis(~ ., breaks = c(ES_med, ES),
@@ -146,7 +146,7 @@ plot_hurdle_diff <- function(x, hu = FALSE, fixed_overall = NULL) {
 
     # Ratio
     if(hu) tmp$ratio <- tmp$OR
-    if(ES_ratio_med == ES_ratio) {
+    if(abs(ES_ratio_med - ES_ratio) < .Machine$double.eps^0.5) {
         breaks <- ES_ratio
         labels <- paste(round(ES_ratio, 2), " \n(mean,\nmedian)")
     } else {
@@ -158,7 +158,7 @@ plot_hurdle_diff <- function(x, hu = FALSE, fixed_overall = NULL) {
 
     p1 <-  ggplot(tmp, aes(percentile, ratio)) +
         geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
-        geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
+        #geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
         geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
         geom_hline(yintercept = ES_ratio_med, linetype = "dashed", size = 0.75) +
         scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,

@@ -120,6 +120,7 @@ create_cluster_index <- function(n2, n3) {
                       cluster = rep(cluster, each = n1),
                       intercept_subject = b0[subject],
                       slope_subject = b1[subject],
+                      intercept_cluster = cluster_b0[subject],
                       slope_cluster = cluster_b1[subject],
                       miss = 0)
 
