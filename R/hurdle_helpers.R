@@ -140,7 +140,7 @@ plot_hurdle_diff <- function(x, hu = FALSE, fixed_overall = NULL) {
                                                           paste(round(ES, 2), " (mean)")
                                                )
         )
-        ) +        theme_minimal() +
+        ) + theme_minimal() +
         theme(legend.position = "none")
 
 
@@ -156,15 +156,14 @@ plot_hurdle_diff <- function(x, hu = FALSE, fixed_overall = NULL) {
                     )
     }
 
-    p1 <-  ggplot(tmp, aes(percentile, ratio)) +
+    p1 <- ggplot(tmp, aes(percentile, ratio)) +
         geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
         #geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
         geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
         geom_hline(yintercept = ES_ratio_med, linetype = "dashed", size = 0.75) +
         scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,
                                                labels = labels
-                                               )
-                           ) +
+                                               )) +
         theme_minimal() +
         theme(legend.position = "none")
 

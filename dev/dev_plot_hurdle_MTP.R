@@ -29,15 +29,14 @@ m <- marginalize(p_mtp, R = 1e5)
 ## overall
 plot_hurdle_time(m$y_overall) + scale_y_log10()
 plot_hurdle_time(m$y_positive) + scale_y_log10()
-plot_hurdle_timem($hu_prob)
+plot_hurdle_time(m$hu_prob)
 
 
 # Diff
 plot_hurdle_diff(m)
-plot_hurdle_diff(m, fixed_overall = get_overall_hurdle(p))
+plot_hurdle_diff(m, fixed_overall = get_overall_hurdle(p_mtp))
 
 plot_hurdle_diff(m, hu = TRUE)
-
 
 plot_hurdle_probs(m1)
 
