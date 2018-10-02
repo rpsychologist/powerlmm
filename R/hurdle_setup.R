@@ -1,6 +1,6 @@
-#' @method study_parameters plcp_hurdle
+#' @method study_parameters plcp_design_hurdle_nested
 #' @export
-study_parameters.plcp_hurdle <- function(design = NULL,
+study_parameters.plcp_design_hurdle_nested <- function(design = NULL,
                                          n1_obs = NULL, # obs per time point (EMA)
                                          n1 = NULL, # time points
                                          n2,

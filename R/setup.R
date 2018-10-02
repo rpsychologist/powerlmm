@@ -1,13 +1,35 @@
 
 study_design <- function(nested = TRUE,
+                         family = "gaussian",
                          levels = 3,
                          groups = 2,
                          time_form = "linear") {
 
+    if(groups != 2) {
+        message("Argument 'groups' is currently ignored.", call. = FALSE)
+        groups <- 2
+    }
+    if(time_form != "linear") {
+        message("Argument 'time_form' is currently ignored.", call. = FALSE)
+        time_form <- "linear"
+    }
+    if(any(family %in% c("hurdle", "two-part"))
+       & !nested) stop("'crossed' designs are not yet implemented for hurdle models", call. = FALSE)
+    if(any(family %in% c("hurdle", "two-part"))
+       & levels != 2) {
+        warning("3 level designs are not yet implemented for hurdle models", call. = FALSE)
+        levels <- 2
+    }
+
+
+
+    families <- c("gaussian", "binomial", "gamma", "lognormal",
+                  "hurdle", "two-part")
+    if(!family %in% families) stop("Not a supported 'family'", call. = FALSE)
+
     # check inputs
     stopifnot(is.logical(nested))
     stopifnot(levels %in% 2:3)
-    stopifnot(groups %in% 1:2)
     stopifnot(time_form == "linear")
 
     args <- list(nested = nested,
@@ -15,10 +37,18 @@ study_design <- function(nested = TRUE,
                  groups = groups,
                  time_form = time_form)
 
+    family_class <- ifelse(family == "two-part", "hurdle", family)
+    if(family == "gaussian") {
+        family_class <- NULL
+    } else family_class <- family
+
+
     if(nested) {
-        class(args) <- append(class(args), "plcp_design_nested")
+        class(args) <- paste(c("plcp_design", family_class, "nested"),
+                                    collapse = "_")
     } else {
-        class(args) <- append(class(args), "plcp_design_crossed")
+        class(args) <- paste(c("plcp_design", family_class, "crossed"),
+                                                 collapse = "_")
     }
 
     args

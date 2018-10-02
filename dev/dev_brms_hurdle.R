@@ -3,7 +3,7 @@ library(brms)
 nsim <- 5
 cores <- 2
 # sim parameters ----------------------------------------------------------
-des <- structure(list(), class = "plcp_hurdle")
+des <- study_design(family = "hurdle")
 
 p <- study_parameters(
     design = des,
