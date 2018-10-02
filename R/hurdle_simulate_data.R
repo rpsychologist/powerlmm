@@ -84,21 +84,18 @@ sim_hurdle <- function(n1, n2,
     ## Logistic part
     id <- rep(1:n2, each = length(time))
 
-    B0_hu <- rep(fixed_hu_intercept, n2)
-    B1_hu <- rep(fixed_hu_slope, n2)
-    logit <- B0_hu[id] + R[,3][id] + (B1_hu[id] + R[,4][id])*time
+    b0_hu <- fixed_hu_intercept + R[,3][id]
+    b1_hu <- fixed_hu_slope + R[,4][id]
+    logit <- b0_hu + b1_hu * time
     yh <- rbinom(n2 * length(time), 1, prob=1/(1 + exp(logit)))
 
     ## lognormal
     nh <- which(yh == 1) # 0 is gambling
 
-    b0 <- rep(fixed_intercept, n2)
-    b1 <- rep(fixed_slope, n2)
+    b0 <- fixed_intercept + R[,1][id]
+    b1 <- fixed_slope + R[,2][id]
 
-
-    mulog <- (b0[id] + (b1[id] + R[,2][id])*time + R[,1][id])
-
-
+    mulog <- b0 + b1 * time
 
     if(family == "lognormal") {
         stopifnot(!is.null(sigma_log))
@@ -124,6 +121,14 @@ sim_hurdle <- function(n1, n2,
                time = time,
                y = y,
                y_c = y,
+               subject_intercept = b0,
+               subject_slope = b1,
+               subject_intercept_hu = b0_hu,
+               subject_slope_hu = b1_hu,
+               cluster_intercept = b0,
+               cluster_slope = b1,
+               cluster_intercept_hu = b0_hu,
+               cluster_slope_hu = b1_hu,
                abst = ifelse(yh == 1, 0, 1))
 
 
