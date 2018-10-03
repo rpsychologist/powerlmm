@@ -41,6 +41,7 @@ create_cluster_index <- function(n2, n3) {
                            cor_within = 0,
                            dropout = NULL,
                            deterministic_dropout = NULL,
+                           family = "gaussian",
                            ...) {
 
      # errors
@@ -101,16 +102,22 @@ create_cluster_index <- function(n2, n3) {
      b0 <- fixed_intercept + subject_lvl[, 1] + cluster_b0
      b1 <- fixed_slope + subject_lvl[, 2] + cluster_b1
 
-     # level-1 model
-     sigma.y <- diag(n1)
-     sigma.y <-
-          sigma_error ^ 2 * cor_within ^ abs(row(sigma.y) - col(sigma.y)) # AR(1)
-
-     # gen level-1 error
-     error_sigma.y <- MASS::mvrnorm(tot_n2, rep(0, n1), sigma.y)
-
      # combine parameters
-     y <- b0[subject] + b1[subject] * time + c(t(error_sigma.y))
+     if(family == "gaussian") {
+
+         # level-1 model
+         sigma.y <- diag(n1)
+         sigma.y <-
+             sigma_error ^ 2 * cor_within ^ abs(row(sigma.y) - col(sigma.y)) # AR(1)
+
+         # gen level-1 error
+         error_sigma.y <- MASS::mvrnorm(tot_n2, rep(0, n1), sigma.y)
+
+         y <- b0[subject] + b1[subject] * time + c(t(error_sigma.y))
+     } else if(family == "binomial") {
+         eta <-  b0[subject] + b1[subject] * time
+         y <- rbinom(tot_n2 * n1, 1, prob = plogis(eta))
+     }
 
      df <-
           data.frame (y,

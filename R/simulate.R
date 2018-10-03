@@ -80,10 +80,14 @@ sim_formula <- function(formula, data_transform = NULL,  test = "time:treatment"
 #' @export
 sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", ...) {
 
+    family <- attr(formula, "family")
+
      x <- list("formula" = formula,
               "data_transform" = data_transform,
               "data_transform_lab" = substitute(data_transform),
-              "test" = test, ...)
+              "test" = test,
+              "family" = family,
+              ...)
 
     class(x) <- append(class(x), "plcp_sim_formula")
     x
@@ -851,6 +855,7 @@ fit_model <- function(formula, data, ...) {
 fit_model.default <- function(formula, data, ...) {
     # LMM or OLS
 
+    family <- formula$family
     formula <- as.formula(formula$formula)
     if(is.null(lme4::findbars(formula))) {
         fit <- tryCatch(
@@ -860,7 +865,12 @@ fit_model.default <- function(formula, data, ...) {
     } else {
         fit <- tryCatch(
             #do.call(lme4::lmer, list(formula=f, data=d))
-            fit <- lme4::lmer(formula = formula, data = data)
+            if(family$family == "gaussian") {
+                fit <- lme4::lmer(formula = formula, data = data)
+            } else {
+                fit <- lme4::glmer(formula = formula, family = family, data = data)
+            }
+
         )
     }
 }
@@ -920,6 +930,7 @@ extract_random_effects.lmerMod <- function(fit) {
 
     rbind(vcovs, correlations)
 }
+extract_random_effects.glmerMod <- extract_random_effects.lmerMod
 
 #' @export
 add_p_value <- function(fit, test, ...) {
@@ -982,6 +993,13 @@ add_p_value.lmerMod <- function(fit, test, satterthwaite, df_bw = NULL, ...) {
 
     res
 }
+add_p_value.glmerMod <- function(...) {
+    dots <- list(...)
+    dots$satterthwaite <- FALSE
+    do.call(add_p_value.lmerMod, dots)
+}
+
+
 add_p_value.lm <- function(fit, test, ...) {
 
     tmp <- summary(fit)
@@ -1064,6 +1082,7 @@ get_fixef_coef <- function(fit, ...) {
 get_fixef_coef.lmerMod <- function(fit, ...) {
     lme4::fixef(fit)
 }
+get_fixef_coef.glmerMod <-get_fixef_coef.lmerMod
 get_fixef_coef.lm <- function(fit, ...) {
     stats::coef(fit)
 }
@@ -1075,6 +1094,7 @@ get_convergence <- function(fit) {
 get_convergence.lmerMod <- function(fit) {
     is.null(fit@optinfo$conv$lme4$code)
 }
+get_convergence.glmerMod <- get_convergence.lmerMod
 get_convergence.lm <- function(fit) {
     TRUE
 }
@@ -1111,10 +1131,13 @@ get_CI.default <- function(fit, test, FE, ...) {
 get_LL <- function(fit) {
     UseMethod("get_LL")
 }
-get_LL.default <- function(fit) {
-    ll <- stats::logLik(fit, REML = TRUE)
+get_LL.default <- function(fit, REML = TRUE) {
+    ll <- stats::logLik(fit, REML = REML)
     df <- attr(ll, "df")
     list(ll, df)
+}
+get_LL.glmerMod <- function(fit) {
+    get_LL.default(fit, REML = FALSE)
 }
 
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {

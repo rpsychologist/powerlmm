@@ -281,6 +281,13 @@ create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
         }
         f <-  paste(f0, lvl2, lvl3, sep  = " + ")
     }
+    if(object$family == "gaussian") {
+        attr(f, "fit_func") <- "lmer"
+
+    } else if(object$family %in% c("binomial")) {
+        attr(f, "fit_func") <- "glmer"
+        attr(f, "family") <- binomial("logit")
+    }
 
     f
 }

@@ -32,16 +32,18 @@ study_design <- function(nested = TRUE,
     stopifnot(levels %in% 2:3)
     stopifnot(time_form == "linear")
 
+
+     if(family %in% c("two-part", "hurdle")) {
+         family_class <- "hurdle"
+     } else {
+         family_class <- NULL
+     }
+
     args <- list(nested = nested,
                  levels = levels,
                  groups = groups,
-                 time_form = time_form)
-
-    family_class <- ifelse(family == "two-part", "hurdle", family)
-    if(family == "gaussian") {
-        family_class <- NULL
-    } else family_class <- family
-
+                 time_form = time_form,
+                 family = family)
 
     if(nested) {
         class(args) <- paste(c("plcp_design", family_class, "nested"),
@@ -324,7 +326,7 @@ study_parameters <- function(design = study_design(nested = TRUE,
 #'
 #' get_power(p)
 #' @export
-study_parameters.plcp_design_nested <- function(design,
+study_parameters.plcp_design_nested <- function(design = study_design(nested = TRUE),
                                     n1,
                              n2,
                              n3 = 1,
@@ -426,7 +428,8 @@ study_parameters.plcp_design_nested <- function(design,
         effect_size = effect_size,
         partially_nested = partially_nested,
         dropout = dropout,
-        deterministic_dropout = deterministic_dropout
+        deterministic_dropout = deterministic_dropout,
+        family = design$family
     )
     save_call <- args
 
