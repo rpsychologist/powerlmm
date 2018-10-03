@@ -7,27 +7,26 @@ ggplot(d, aes(time, subject_intercept + subject_slope * time, group = subject, c
     facet_grid(~treatment)
 
 
-p <- study_parameters(n1 = 5, n2 = 1, n3 = 1e5,
+p <- study_parameters(n1 = 11, n2 = 1, n3 = 1e5,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.03,
-                      icc_slope = 0.05,
+                      icc_slope = 0,
                       icc_pre_cluster = 0.1,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.5))
 
-d <- simulate_data(p)
+prep <- prepare_paras(p)
 
+paras <- prep$treatment
+paras[is.na(paras)] <- 0
 
-ggplot(d, aes(time, cluster_intercept + cluster_slope * time, group = subject, color = treatment)) + geom_line() +
-    facet_grid(~treatment)
+# replace NA
+paras[is.na(paras)] <- 0
+d <- do.call(.simulate_3lvl_data, paras)
 
-
-# 2-level
-d$mu2 <- with(d, subject_intercept + subject_slope * time)
-
-
-# 3-level
-d$mu3 <- with(d, cluster_intercept + cluster_slope * time)
+d_cc <- .calc_mu(d, p, treatment = 0)
+d <- .calc_mu(d, p, treatment = 1)
+d <- rbind(d, d_cc)
 
 # lvl 2
 cc <- eta_sum_d(d = d, var = "mu2", treatment = 0)
@@ -77,25 +76,9 @@ p3 <- ggplot(x, aes(time, mean, group = treatment)) +
 
 gridExtra::grid.arrange(p2,p3)
 
-#
-ggplot(x, aes(time, mean, group = treatment)) +
-    geom_ribbon(data = Q_long, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment), fill = width), alpha = 0.5) +
-    geom_line(data = Q_long, aes(y = max, x = time, group = interaction(width, treatment), alpha = width), fill = NA, color = "#08519C") +
-    geom_line(data = Q_long, aes(y = min, x = time, group = interaction(width, treatment), alpha = width),  fill = NA, color = "#08519C") +
-    geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
-    geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
-    geom_point(aes(y = Q50), color = "red") +
-    scale_color_manual(values = c("median" = "red", "mean" = "red")) +
-    scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
-    labs(linetype = "", color = "") +
-    guides(color = guide_legend(override.aes = list(fill = NA))) +
-    #facet_wrap(~treatment, ncol = 2) +
-    scale_fill_brewer() +
-    theme_minimal()
-
 
 # percentiles
-
+## TODO: plot on similar sclae to baseline SD?
 ps <- 1:99/100
 
 mu <- d[d$treatment == 0 & d$time == max(d$time), "mu2"]

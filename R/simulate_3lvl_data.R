@@ -80,7 +80,7 @@ create_cluster_index <- function(n2, n3) {
      # level 3-model
      cluster_lvl <-
           MASS::mvrnorm(sum(n3),
-                  mu = c(fixed_intercept, fixed_slope),
+                  mu = c(0, 0),
                   Sigma = Sigma_cluster)
 
      if (is.null(dim(cluster_lvl))) {
@@ -98,8 +98,8 @@ create_cluster_index <- function(n2, n3) {
      # level 2- model
      subject_lvl <- MASS::mvrnorm(tot_n2, c(0, 0), Sigma_subject)
 
-     b0 <- subject_lvl[, 1] + cluster_b0
-     b1 <- subject_lvl[, 2] + cluster_b1
+     b0 <- fixed_intercept + subject_lvl[, 1] + cluster_b0
+     b1 <- fixed_slope + subject_lvl[, 2] + cluster_b1
 
      # level-1 model
      sigma.y <- diag(n1)
@@ -118,8 +118,10 @@ create_cluster_index <- function(n2, n3) {
                       time,
                       subject,
                       cluster = rep(cluster, each = n1),
-                      subject_intercept = b0[subject],
-                      subject_slope = b1[subject],
+                      fixed_intercept = fixed_intercept,
+                      fixed_slope = fixed_slope,
+                      subject_intercept = subject_lvl[, 1][subject],
+                      subject_slope = subject_lvl[, 2][subject],
                       cluster_intercept = cluster_b0[subject],
                       cluster_slope = cluster_b1[subject],
                       miss = 0)

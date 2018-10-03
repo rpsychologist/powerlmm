@@ -363,6 +363,33 @@ reshape_eta_sum <- function(x) {
     tmp
 }
 
+#' Calc linera predictor level 2 and 3
+#'
+#' @param d data.frame for tx group
+#' @treatment treatment indicator
+#'
+#' @return a data.frame with the extra cols mu2 and mu3
+.calc_mu <- function(d, p, treatment = 1) {
+    d$treatment <- treatment
+
+    if(treatment == 1) {
+        slope_diff <- get_slope_diff(p)/p$T_end
+    } else slope_diff <- 0
+
+    # partialyl nested
+    if(p$partially_nested & treatment == 0) {
+        d$cluster_intercept <- 0
+        d$cluster_slope <- 0
+    }
+
+    # level 2
+    d$mu2 <- with(d, (p$fixed_intercept + subject_intercept + cluster_intercept) + (p$fixed_slope + slope_diff + subject_slope + cluster_slope) * time)
+
+    # level 3
+    d$mu3 <- with(d, p$fixed_intercept + cluster_intercept + (p$fixed_slope  + slope_diff + cluster_slope) * time)
+
+    d
+}
 
 
 # Plot design
