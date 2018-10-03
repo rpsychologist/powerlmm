@@ -557,6 +557,7 @@ study_parameters.plcp_design_nested <- function(design,
     if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
 
     # Classes
+    class(paras) <- c("plcp","plcp_nested")
     if(all(is.na(paras$sigma_cluster_slope)) &
        all(is.na(paras$sigma_cluster_intercept))) {
         class(paras) <- append(class(paras), c("plcp_2lvl"))
@@ -567,7 +568,7 @@ study_parameters.plcp_design_nested <- function(design,
         class(paras) <- append(class(paras), c("plcp_mixed"))
     }
 
-    class(paras) <- append(class(paras), c("plcp_nested"))
+
     attr(paras, "call") <- save_call
     paras
 
