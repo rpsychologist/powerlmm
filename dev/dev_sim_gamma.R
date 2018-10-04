@@ -26,30 +26,30 @@ fit_brm <- brm(y ~ time * treatment + (1 | subject),
                chains = 1,
                family = Gamma("log"))
 
-f_brm <- sim_formula(fit_brm, iter = 200, silent = FALSE)
+f_brm <- sim_formula(fit_brm, iter = 1000, silent = TRUE)
 
 f_glmer <- sim_formula("y ~ time * treatment + (1 | subject)", family = Gamma("log"))
 # f_glmer <- sim_formula(create_lmer_formula(p))
 
 
-# FIX: Nodes give error for brms
-# need to load brms on nodes?
 res <- simulate(p,
                 formula = sim_formula_compare("brms" = f_brm,
                                               "glmer" = f_glmer),
-                nsim = 2,
-                cores = 2)
+                nsim = 100,
+                cores = 16)
 
-cl <- parallel::makeCluster(2, outfile = "out.txt")
-parallel::clusterEvalQ(cl, expr =
-                           {
-                               suppressPackageStartupMessages(require(powerlmm, quietly = TRUE))
-                               suppressPackageStartupMessages(require(brms, quietly = TRUE))
-                           })
-res <- simulate(p,
-                formula = f_brm,
-                nsim = 2,
-                cores = 2,
-                cl = cl)
 
 summary(res)
+summary(res, model = "brms")
+
+
+#
+f_glmer <- sim_formula("y ~ time * treatment + (1 | subject)", family = Gamma("log"), nAGQ=0)
+
+res2 <- simulate(p,
+                formula = sim_formula_compare("glmer" = f_glmer),
+                nsim = 100,
+                cores = 16)
+
+
+summary(res2)

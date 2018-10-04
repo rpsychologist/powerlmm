@@ -642,7 +642,7 @@ simulate.plcp_list <-
                     mc.cores = cores,
                     ...
                 )
-        } else if (cores > 1) {
+        } else if (cores > 1 | !is.null(cl)) {
             if(.Platform$OS.type == "unix" && !interactive()) {
                 res <- parallel::mclapply(X = 1:nsim,
                                  FUN = simulate_,
@@ -659,6 +659,12 @@ simulate.plcp_list <-
                 }
                 parallel::clusterEvalQ(cl, expr =
                                            suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+                requires_brms <- vapply(formula, inherits, what = "plcp_brmsformula", logical(1))
+                if(any(requires_brms)) {
+                    check_installed("brms")
+                    parallel::clusterEvalQ(cl, expr =
+                                               suppressPackageStartupMessages(require(brms, quietly = TRUE)))
+                }
                 clust_call <- (function(object, satterthwaite, formula, CI) {
                     function(i) {
                         simulate_(i, paras = object,
@@ -858,6 +864,7 @@ fit_model <- function(formula, data, ...) {
 fit_model.default <- function(formula, data, ...) {
     # LMM or OLS
 
+    args <- formula
     family <- formula$family
     formula <- as.formula(formula$formula)
     if(is.null(lme4::findbars(formula))) {
@@ -871,7 +878,11 @@ fit_model.default <- function(formula, data, ...) {
             if(family$family == "gaussian") {
                 fit <- lme4::lmer(formula = formula, data = data)
             } else {
-                fit <- lme4::glmer(formula = formula, family = family, data = data)
+                args$test <- NULL
+                args$data_transform <- NULL
+                args$data_transform_lab <- NULL
+                args$data <- data
+                fit <- do.call(lme4::glmer, args)
             }
 
         )
@@ -1313,6 +1324,7 @@ order_model_lists <- function(models, RE, FE, ll, df, tot_n, convergence) {
 munge_results <- function(res) {
     x <- res$res
     models <- names(x[[1]])
+    classes <- lapply(x[[1]], class)
     RE <- lapply(models, munge_results_, x, "RE")
     FE <- lapply(models, munge_results_, x, "FE")
     convergence <- lapply(models, munge_results_, x, "conv")
@@ -1338,6 +1350,11 @@ munge_results <- function(res) {
                            convergence = convergence)
 
     res$res <- x
+
+    # add fit classes
+    for(i in seq_along(res$res)) {
+        class(res$res[[i]]) <- classes[[names(res$res)[i]]]
+    }
 
     res
 }
@@ -1413,7 +1430,10 @@ print_test_NA <- function(i, x) {
     mod_name <- names(x[i])
     Satt_NA <- x[[i]]$Satt_NA
     CI_NA <- x[[i]]$CI_NA
-    non_convergence <- 1 - x[[i]]$convergence
+    if(inherits(x[[i]], "brmsfit")) {
+        non_convergence <- x[[i]]$convergence
+    } else non_convergence <- 1 - x[[i]]$convergence
+
 
     mess <- NULL
     if(!is.na(Satt_NA) && Satt_NA > 0) {
@@ -1423,7 +1443,13 @@ print_test_NA <- function(i, x) {
         message("[Model: ", mod_name, "] ", round(CI_NA, 4) * 100, "% of the profile likelihood CIs failed")
     }
     if(!is.na(non_convergence) && non_convergence > 0) {
-        message("[Model: ", mod_name, "] ", round(non_convergence, 4) * 100, "% of the models threw convergence warnings")
+        if(inherits(x[[i]], "brmsfit")) {
+            message("[Model: ", mod_name, "] ", round(non_convergence, 4) * 100, "% of the models had >= 1 divergent transition(s)")
+        } else {
+            message("[Model: ", mod_name, "] ", round(non_convergence, 4) * 100, "% of the models threw convergence warnings")
+            }
+
+
     }
 }
 
@@ -1885,7 +1911,7 @@ summarize_convergence.default <- function(paras, convergence) {
 }
 summarize_convergence.plcp_brmsformula <- function(paras, convergence) {
     # no divergent transition per sim
-    mean(unlist(convergence))
+    mean(unlist(convergence) > 0)
 }
 summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
     RE_params <- get_RE_thetas(paras)
@@ -1929,6 +1955,8 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
         CI_cov <- summarize_CI(res, theta)
         FE$CI_Cover <- CI_cov$CI_cover
         i <- which.min(CI_cov$CI_Wald_cover >= 0)
+        # if brms
+        if(length(i) == 0) i <- which.min(CI_cov$CI_cover >= 0)
         CI_NA <- CI_cov[i, "CI_NA"]
         FE$CI_Wald_cover <- CI_cov$CI_Wald_cover
     }
@@ -1951,12 +1979,15 @@ summary_.plcp_sim  <- function(res, paras, alpha, df_bw = NULL, ...) {
 
     convergence <- summarize_convergence(res$FE, res$convergence)
 
-    list("RE" = RE,
-         "FE" = FE,
-         "tot_n" = res$tot_n,
-         "convergence" = convergence,
-         "Satt_NA" = Satt_NA,
-         "CI_NA" = CI_NA)
+    out <- list("RE" = RE,
+                "FE" = FE,
+                "tot_n" = res$tot_n,
+                "convergence" = convergence,
+                "Satt_NA" = Satt_NA,
+                "CI_NA" = CI_NA)
+    class(out) <- class(res)
+
+    out
 }
 
 

@@ -131,7 +131,7 @@ fit_model.plcp_brmsformula <- function(formula,
     } else {
         out <- do.call(update, args)
     }
-    print(class(out))
+
     out
 }
 #' @export
