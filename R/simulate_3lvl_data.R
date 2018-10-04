@@ -36,6 +36,7 @@ create_cluster_index <- function(n2, n3) {
                            sigma_cluster_intercept,
                            sigma_cluster_slope,
                            sigma_error,
+                           shape,
                            cor_subject = 0,
                            cor_cluster = 0,
                            cor_within = 0,
@@ -102,7 +103,10 @@ create_cluster_index <- function(n2, n3) {
      b0 <- fixed_intercept + subject_lvl[, 1] + cluster_b0
      b1 <- fixed_slope + subject_lvl[, 2] + cluster_b1
 
-     # combine parameters
+     # linear predictor
+     eta <-  b0[subject] + b1[subject] * time
+
+     # Sample Y
      if(family == "gaussian") {
 
          # level-1 model
@@ -113,10 +117,16 @@ create_cluster_index <- function(n2, n3) {
          # gen level-1 error
          error_sigma.y <- MASS::mvrnorm(tot_n2, rep(0, n1), sigma.y)
 
-         y <- b0[subject] + b1[subject] * time + c(t(error_sigma.y))
+         y <- eta + c(t(error_sigma.y))
      } else if(family == "binomial") {
-         eta <-  b0[subject] + b1[subject] * time
          y <- rbinom(tot_n2 * n1, 1, prob = plogis(eta))
+     } else if(family == "poisson") {
+         y <- rpois(tot_n2 * n1, lambda = exp(eta))
+     }
+     else if(family == "gamma") {
+         y <- rgamma(tot_n2 * n1,
+                     shape = shape,
+                     rate = shape/exp(eta))
      }
 
      df <-

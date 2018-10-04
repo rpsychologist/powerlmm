@@ -89,7 +89,7 @@ sim_hurdle <- function(n1, n2,
     logit <- b0_hu + b1_hu * time
     yh <- rbinom(n2 * length(time), 1, prob=1/(1 + exp(logit)))
 
-    ## lognormal
+    ## Continuous part
     nh <- which(yh == 1) # 0 is gambling
 
     b0 <- fixed_intercept + R[,1][id]

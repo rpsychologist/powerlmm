@@ -287,6 +287,12 @@ create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
     } else if(object$family %in% c("binomial")) {
         attr(f, "fit_func") <- "glmer"
         attr(f, "family") <- binomial("logit")
+    } else if(object$family %in% c("poisson")) {
+        attr(f, "fit_func") <- "glmer"
+        attr(f, "family") <- poisson("log")
+    } else if(object$family %in% c("gamma")) {
+        attr(f, "fit_func") <- "glmer"
+        attr(f, "family") <- Gamma("log")
     }
 
     f

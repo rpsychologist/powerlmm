@@ -78,9 +78,12 @@ sim_formula <- function(formula, data_transform = NULL,  test = "time:treatment"
     UseMethod("sim_formula")
 }
 #' @export
-sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", ...) {
+sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", family = "gaussian", ...) {
 
-    family <- attr(formula, "family")
+    if(!is.null(attr(formula, "family"))) {
+        family <- attr(formula, "family")
+    }
+
 
      x <- list("formula" = formula,
               "data_transform" = data_transform,

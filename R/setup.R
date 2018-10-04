@@ -23,7 +23,9 @@ study_design <- function(nested = TRUE,
 
 
 
-    families <- c("gaussian", "binomial", "gamma", "lognormal",
+    families <- c("gaussian",
+                  "binomial", "poisson",
+                  "gamma", "lognormal",
                   "hurdle", "two-part")
     if(!family %in% families) stop("Not a supported 'family'", call. = FALSE)
 
@@ -338,6 +340,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
                              sigma_cluster_intercept = NULL,
                              sigma_cluster_slope = NULL,
                              sigma_error = 10,
+                             shape = NULL,
                              cor_subject = 0L,
                              cor_cluster = 0L,
                              cor_within = 0L,
@@ -405,6 +408,10 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
         stop("'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined, use 'icc_pre_cluster'", call. = FALSE)
     }
 
+    # GLMMs
+    if(design$family == "gamma" & is.null(shape)) {
+        stop("'gamma' family requires parameter 'shape'", call. = FALSE)
+    }
 
     args <- list(
         n1 = n1,
@@ -418,6 +425,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
         sigma_cluster_intercept = sigma_cluster_intercept,
         sigma_cluster_slope = sigma_cluster_slope,
         sigma_error = sigma_error,
+        shape = shape,
         cor_subject = cor_subject,
         cor_cluster = cor_cluster,
         cor_within = cor_within,
