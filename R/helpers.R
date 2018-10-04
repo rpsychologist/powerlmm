@@ -311,12 +311,13 @@ sum_missing_tx_time <- function(.d) {
 
 }
 
-#' Calculate RE intervals
-#'
-#' @param d simulate_data data.frame
-#' @param var variable to summarise
-#' @param treatment treatment group indicator
-#'
+# Calculate RE intervals
+#
+# @param d simulate_data data.frame
+# @param var variable to summarise
+# @param treatment treatment group indicator
+#
+# @keywords internal
 eta_sum_d <- function(d, var, treatment) {
     x <- lapply(unique(d$time), function(i) {
         x <- eta_sum(d[d$treatment == treatment & d$time == i, var])
@@ -331,11 +332,12 @@ eta_sum_d <- function(d, var, treatment) {
     x
 }
 
-#' Reshape eta_sum output from wide to long
-#'
-#' @param x eta_sum_* data.frame
-#'
-#' @return data.frame in long format
+# Reshape eta_sum output from wide to long
+#
+# @keywords internal
+# @param x eta_sum_* data.frame
+#
+# @return data.frame in long format
 reshape_eta_sum <- function(x) {
 
     tmp <- x[, !colnames(x) %in% c("var","mean", "sd", "Q50")]
@@ -363,12 +365,13 @@ reshape_eta_sum <- function(x) {
     tmp
 }
 
-#' Calc linera predictor level 2 and 3
-#'
-#' @param d data.frame for tx group
-#' @treatment treatment indicator
-#'
-#' @return a data.frame with the extra cols mu2 and mu3
+# Calc linera predictor level 2 and 3
+#
+# @param d data.frame for tx group
+# @treatment treatment indicator
+#
+# @return a data.frame with the extra cols mu2 and mu3
+# @keywords internal
 .calc_mu <- function(d, p, treatment = 1) {
     d$treatment <- treatment
 

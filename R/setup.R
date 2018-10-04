@@ -1,4 +1,5 @@
 
+#' @export
 study_design <- function(nested = TRUE,
                          family = "gaussian",
                          levels = 3,

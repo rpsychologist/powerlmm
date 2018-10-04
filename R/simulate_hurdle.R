@@ -115,6 +115,7 @@ sim_formula.brmsfit <- function(formula,
     class(x) <- append(class(x), c("plcp_brmsformula", "plcp_sim_formula"))
     x
 }
+
 #' @export
 fit_model.plcp_brmsformula <- function(formula,
                                        data,
@@ -130,13 +131,13 @@ fit_model.plcp_brmsformula <- function(formula,
     } else {
         out <- do.call(update, args)
     }
+    print(class(out))
     out
-
 }
 #' @export
 get_fixef_coef.brmsfit <- function(fit, formula, ...) {
 
-    out <- fixef(fit, robust = TRUE)[, c("Estimate")]
+    out <- brms::fixef(fit, robust = TRUE)[, c("Estimate")]
 
     if(formula$marginalize) {
         marg <- marginalize(fit, R = 1e3)
@@ -188,7 +189,7 @@ add_p_value.brmsfit <- function(fit, ...) {
 
 #' @export
 extract_random_effects.brmsfit <- function(fit) {
-    ss <- posterior_samples(fit, pars =  c("^sd",
+    ss <- brms::posterior_samples(fit, pars =  c("^sd",
                                            "^cor",
                                            "^sigma",
                                            "^shape"))

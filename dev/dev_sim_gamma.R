@@ -11,6 +11,7 @@ p <- study_parameters(design = des,
                       shape = 2)
 
 d <- simulate_data(p)
+
 d$p <- exp(d$fixed_intercept + d$subject_intercept + (d$subject_slope + d$fixed_slope) * d$time)
 
 d %>% group_by(time, treatment) %>%
@@ -19,23 +20,36 @@ d %>% group_by(time, treatment) %>%
 
 ggplot(d, aes(time, p, group = subject, color = treatment)) + geom_line()
 
-fit_brm <- brm(y ~ time*treatment + (1 | subject),
+fit_brm <- brm(y ~ time * treatment + (1 | subject),
                data = d,
                iter = 1,
                chains = 1,
                family = Gamma("log"))
-f_brm <- sim_formula(fit_brm)
 
-f_glmer <- sim_formula("y ~ time*treatment + (1 | subject)", family = Gamma("log"))
+f_brm <- sim_formula(fit_brm, iter = 200, silent = FALSE)
+
+f_glmer <- sim_formula("y ~ time * treatment + (1 | subject)", family = Gamma("log"))
 # f_glmer <- sim_formula(create_lmer_formula(p))
 
 
 # FIX: Nodes give error for brms
+# need to load brms on nodes?
 res <- simulate(p,
                 formula = sim_formula_compare("brms" = f_brm,
                                               "glmer" = f_glmer),
-                nsim = 16,
-                cores = 16)
+                nsim = 2,
+                cores = 2)
 
+cl <- parallel::makeCluster(2, outfile = "out.txt")
+parallel::clusterEvalQ(cl, expr =
+                           {
+                               suppressPackageStartupMessages(require(powerlmm, quietly = TRUE))
+                               suppressPackageStartupMessages(require(brms, quietly = TRUE))
+                           })
+res <- simulate(p,
+                formula = f_brm,
+                nsim = 2,
+                cores = 2,
+                cl = cl)
 
 summary(res)

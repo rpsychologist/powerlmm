@@ -80,6 +80,9 @@ sim_hurdle <- function(n1, n2,
                        mu = c(0,0,0,0),
                        Sigma = R_cov)
 
+    if(n2 == 1) {
+        R <- as.matrix(t(R))
+    }
 
     ## Logistic part
     id <- rep(1:n2, each = length(time))
