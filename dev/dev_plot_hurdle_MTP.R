@@ -1,14 +1,15 @@
+library(ggplot2)
 p_mtp <- study_parameters(
-    design = structure(list(), class = "plcp_hurdle"),
+    design = structure(list(), class = "plcp_design_hurdle_nested"),
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(300), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0.5), # prop == 0
+    fixed_hu_intercept = qlogis(0.8), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
-    sd_hu_intercept = 0.5,
+    sd_hu_intercept = 3,
     sd_hu_slope = 0,
-    sd_intercept = 3,
+    sd_intercept = 2,
     sd_slope = 0.1,
     cor_intercept_slope = -0.15,
     cor_intercept_hu_intercept = -0.66,
@@ -17,7 +18,7 @@ p_mtp <- study_parameters(
     cor_slope_hu_slope = -0.1,
     cor_hu_intercept_hu_slope = 0.15,
     shape = 1.6,
-    RR_cont = 0.8,
+    RR_cont = 0.5,
     OR_hu = 2,
     marginal = TRUE,
     family = "gamma")
