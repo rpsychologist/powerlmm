@@ -353,7 +353,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
                              cohend = NULL,
                              partially_nested = FALSE,
                              dropout = 0L,
-                             deterministic_dropout = TRUE) {
+                             deterministic_dropout = TRUE, ...) {
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
 
@@ -441,6 +441,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
         family = design$family
     )
     save_call <- args
+    save_call$design <- design
 
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
@@ -563,13 +564,13 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
     paras$design <- "plcp_design_nested"
 
     # Single or multi?
-    paras <- .make_single_or_multi(paras)
+    paras <- .make_single_or_multi(paras, model = "nested")
     # Default cor_*
     if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
     if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
 
     # Classes
-    class(paras) <- c("plcp","plcp_nested")
+    #class(paras) <- c("plcp","plcp_nested")
     if(all(is.na(paras$sigma_cluster_slope)) &
        all(is.na(paras$sigma_cluster_intercept))) {
         class(paras) <- append(class(paras), c("plcp_2lvl"))
@@ -1596,11 +1597,12 @@ is.per_treatment <- function(x) {
     } else return(FALSE)
 }
 as.plcp <- function(.p) {
-    paras <- .p
-    if(is.data.frame(paras)) {
-        tmp <- as.list(paras)
-        func <- paste0("study_parameters.", tmp$design)
-        paras <- do.call(func, tmp)
+
+    if(is.data.frame(.p)) {
+        tmp <- as.list(.p)
+        tmp$design <- attr(.p, "call")$design
+        #func <- paste0("study_parameters.", tmp$design)
+        paras <- do.call(study_parameters, tmp)
         #class(paras) <- append(c("plcp"), class(paras))
     }
     paras

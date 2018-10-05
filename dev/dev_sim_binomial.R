@@ -19,10 +19,20 @@ summary(res)
 
 
 
-# gaussian
-p <- study_parameters(n1 = 11,
+# multi -------------------------------------------------------------------
+
+des <- study_design(family = "binomial")
+
+p <- study_parameters(design = des,
+                      n1 = c(5,11),
                       n2 = 25,
+                      T_end = 10,
                       icc_pre_subject = 0.5,
-                      effect_size = log(2),
+                      var_ratio = 0.02,
+                      effect_size = log(1),
                       sigma_error = 1)
-p$family
+
+f <- sim_formula("y ~ time*treatment + (1 + time | subject)", family = binomial("logit"))
+
+res <- simulate(p, formula = f, nsim = 16, cores = 16)
+x <- summary(res)

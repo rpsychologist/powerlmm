@@ -4,7 +4,7 @@ des <- study_design(family = "gamma")
 
 p <- study_parameters(design = des,
                       n1 = 11,
-                      n2 = 50,
+                      n2 = 50:51,
                       fixed_intercept = 5,
                       sigma_subject_intercept = 1,
                       effect_size = log(1),
@@ -53,3 +53,9 @@ res2 <- simulate(p,
 
 
 summary(res2)
+
+
+fit <- glmer(y ~ time * treatment + (1 | subject), data = d, family = Gamma("log"), nAGQ = 0)
+summary(fit)
+
+fit2 <- update(fit_brm, iter = 2000, cores = 4)
