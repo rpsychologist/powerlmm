@@ -5,8 +5,8 @@ p <- study_parameters(n1 = 11,
                       n2 = 100,
                       icc_pre_subject = 0.6,
                       fixed_slope = -2,
-                      var_ratio = 0,
-                      cor_subject = -0.5,
+                      var_ratio = 0.02,
+                      cor_subject = 0,
                       effect_size = 0)
 
 
