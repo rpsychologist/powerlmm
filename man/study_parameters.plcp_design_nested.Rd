@@ -14,7 +14,7 @@
   var_ratio = NULL, icc_slope = NULL, icc_pre_subject = NULL,
   icc_pre_cluster = NULL, effect_size = 0L, cohend = NULL,
   partially_nested = FALSE, dropout = 0L,
-  deterministic_dropout = TRUE)
+  deterministic_dropout = TRUE, ...)
 }
 \arguments{
 \item{n1}{Number of level 1 units, e.g. measurements per subject.}

@@ -8,7 +8,8 @@ des <- study_design(family = "hurdle")
 p <- study_parameters(
     design = des,
     n1 = 3,
-    n2 = 20,
+    n2 = c(20,40),
+    T_end = 10,
     fixed_intercept = log(30), # median(Y > 0)
     fixed_hu_intercept = qlogis(0.8), # prop == 0
     fixed_slope = log(0.99),
@@ -31,7 +32,7 @@ p <- study_parameters(
 
 
 # Models ------------------------------------------------------------------
-d <- simulate_data(p)
+d <- simulate_data(as.plcp(p[1,]))
 bfit_gamma_ctp <- brm(bf(y ~ time * treatment + (1 + time | c | subject),
                          hu ~ time * treatment + (1 + time | c | subject)),
                       data = d,
@@ -51,15 +52,16 @@ bfit_gamma_mtp <- brm(bf(y ~ time * treatment + (1 + time | c | subject),
                       cores = 1,
                       iter = 1)
 
-f0 <- sim_formula(bfit_gamma_ctp, iter = 200, marginalize = FALSE)
+f0 <- sim_formula(bfit_gamma_ctp, iter = 200, marginalize = TRUE)
 
 
 res_gamma <- simulate(p,
                       formula = sim_formula_compare("hurdle_ctp" = f0),
-                      nsim = 2,
-                      cores = 2)
+                      nsim = 100,
+                      cores = 4)
 
-summary(res_gamma)
+summary(res_gamma, marginal = TRUE)
 
-saveRDS(res_gamma, "sim_gamma_hurdle.rds")
-
+# add regexp
+summary(res_gamma[[2]], marginal = TRUE)
+summary(res_gamma[[2]], para ="^marg")

@@ -7,7 +7,8 @@ get_balanced_df.plcp_hurdle <- function(object) {
 #' get_tot_n.plcp_hurdle <- function(paras) {
 #'     paras$n2 * 2
 #' }
-#' @export
+
+
 get_RE_thetas.plcp_hurdle <- function(paras) {
     data.frame(
         parameter = c(
@@ -52,7 +53,7 @@ get_slope_diff.plcp_hurdle <- function(paras, hu = FALSE) {
 #     list(treatment = treatment,
 #          control = control)
 # }
-#' @export
+
 get_FE_thetas.plcp_hurdle <- function(paras, marginalize = FALSE ,... ) {
     out <- list(
         "Intercept" = paras$fixed_intercept,
@@ -67,14 +68,14 @@ get_FE_thetas.plcp_hurdle <- function(paras, marginalize = FALSE ,... ) {
 
     if(marginalize) {
         out <- c(out,
-                 as.list( marginalize(paras, R = 1e5))
+                 as.list( marginalize(paras, R = 1e5, vectorize = TRUE))
         )
     }
 
     out
 }
 
-#' @export
+
 get_RE_thetas.plcp_hurdle <- function(paras) {
     list(
         "sd_subject__Intercept" = paras$sd_intercept,
@@ -116,7 +117,7 @@ sim_formula.brmsfit <- function(formula,
     x
 }
 
-#' @export
+
 fit_model.plcp_brmsformula <- function(formula,
                                        data,
                                        ...) {
@@ -134,7 +135,7 @@ fit_model.plcp_brmsformula <- function(formula,
 
     out
 }
-#' @export
+
 get_fixef_coef.brmsfit <- function(fit, formula, ...) {
 
     out <- brms::fixef(fit, robust = TRUE)[, c("Estimate")]
@@ -146,7 +147,7 @@ get_fixef_coef.brmsfit <- function(fit, formula, ...) {
     }
     out
 }
-#' @export
+
 get_fixef.brmsfit <- function(fit, test, df_bw, satterthwaite, formula) {
 
     # need to know in which order time and treatment was entered
@@ -181,13 +182,11 @@ get_fixef.brmsfit <- function(fit, test, df_bw, satterthwaite, formula) {
 }
 
 
-#' @export
 add_p_value.brmsfit <- function(fit, ...) {
     list("df" = NA,
          "p" = NA)
 }
 
-#' @export
 extract_random_effects.brmsfit <- function(fit) {
     ss <- brms::posterior_samples(fit, pars =  c("^sd",
                                            "^cor",
@@ -202,25 +201,25 @@ extract_random_effects.brmsfit <- function(fit) {
                stringsAsFactors = FALSE)
 
 }
-#' @export
+
 get_convergence.brmsfit <- function(fit) {
     np <- brms::nuts_params(fit)
 
     list("divergent" = sum(subset(np, Parameter == "divergent__")$Value))
 }
-#' @export
+
 rename_random_effects.plcp_brmsformula <- function(.x, ...) {
     # currently not renamed
     .x
 }
 
-#' @export
+
 get_CI.brmsfit <- function(fit, test, FE, ...) {
     # CI included by default; get_fixef.brmsfit()
     FE
 }
 
-#' @export
+
 get_LL.brmsfit <- function(fit) {
     list(ll = NA,
          df = NA)

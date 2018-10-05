@@ -228,8 +228,6 @@ trans_post_ps <- function(x, hu = FALSE) {
 
     # Hedeker et al 2018
     # solve(t(X) %*% X) %*% t(X) %*% tmp$marg_overall
-
-
     coef_overall_median_log <- solve(XtX, crossprod(X, log(marg_y_overall[, "Q50"] )))
     coef_overall_marg_log <- solve(XtX, crossprod(X, log(marg_y_overall[, "mean"])))
     coef_hu_prob_marg_logit <- solve(XtX, crossprod(X, qlogis(hu_prob[, "mean"])))
@@ -494,7 +492,7 @@ marginalize.brmsfit <- function(object,
                      cor_slope_hu_intercept = ss$cor_subject__time__hu_Intercept[j],
                      cor_slope_hu_slope = ss$cor_subject__time__hu_time[j],
                      cor_hu_intercept_hu_slope = ss$cor_subject__hu_Intercept__hu_time[j])
-        R_cov <- create_R_cov(pars)
+        R_cov <- create_R_cov.plcp_hurdle(pars)
 
         out <- .func(d = d,
                      betas = t(beta[j, ]),

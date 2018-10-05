@@ -39,6 +39,7 @@ study_parameters.plcp_design_hurdle_nested <- function(design = NULL,
     # dropout checks
     .check_dropout_arg(args$dropout)
 
+    # defaults
     args$cor_intercept_slope <- cor_intercept_slope
     args$cor_intercept_hu_intercept <- cor_intercept_hu_intercept
     args$cor_intercept_hu_slope <- cor_intercept_hu_slope
@@ -54,6 +55,7 @@ study_parameters.plcp_design_hurdle_nested <- function(design = NULL,
     args$deterministic_dropout <- deterministic_dropout
     args$partially_nested <- FALSE
     save_call <- args
+    save_call$design <- design
 
     pars <- expand.grid(args)
     pars$design <- "plcp_hurdle"
