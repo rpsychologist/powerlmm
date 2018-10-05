@@ -10,7 +10,7 @@ p <- study_parameters(n1 = 11,
                       effect_size = 0)
 
 
-d <- simulate_data(p)
+
 
 add_MAR_missing <- function(data) {
     d <- data
@@ -41,7 +41,8 @@ add_MAR_missing <- function(data) {
     }
     d
 }
-
+d <- simulate_data(p)
+d <- add_MAR_missing(d)
 
 d %>%
     group_by(treatment, time) %>%
@@ -58,6 +59,12 @@ d %>% filter(time == 10) %>%
     facet_grid(~treatment)
 
 
+ d$pre <- rep(d$y[d$time == 0], each = 11)
+ d %>%
+     arrange(pre) %>%
+     mutate(subject = factor(subject, levels = unique(subject))) %>%
+ ggplot(aes(time, subject, fill = is.na(y))) + geom_tile() +
+     facet_wrap(~treatment, scales = "free", drop = TRUE)
 
  p2 <- p
  p2$n2 <- 2000
