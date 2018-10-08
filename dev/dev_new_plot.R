@@ -15,6 +15,7 @@ p <- study_parameters(n1 = 11, n2 = 1, n3 = 1e5,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.5))
 
+p$n2 = 1e5
 prep <- prepare_paras(p)
 
 paras <- prep$treatment
@@ -56,9 +57,6 @@ p2 <- ggplot(x, aes(time, mean, group = treatment)) +
     lims(y = c(ymin, ymax)) +
     scale_fill_brewer() +
     theme_minimal()
-
-
-
 
 p3 <- ggplot(x, aes(time, mean, group = treatment)) +
     geom_ribbon(data = Q_long3, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment), fill = width), alpha = 0.75) +
