@@ -78,12 +78,19 @@ sim_formula <- function(formula, data_transform = NULL,  test = "time:treatment"
     UseMethod("sim_formula")
 }
 #' @export
-sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", family = "gaussian", ...) {
+sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", family = gaussian, ...) {
 
     if(!is.null(attr(formula, "family"))) {
         family <- attr(formula, "family")
-    }
+    } else {
+        if (is.character(family)) {
+            family <- get(family, mode = "function", envir = globalenv())
+        }
 
+        if (is.function(family)) {
+            family <- family()
+        }
+    }
 
      x <- list("formula" = formula,
               "data_transform" = data_transform,
@@ -146,8 +153,34 @@ print.plcp_sim_formula <- function(x, ...) {
     test <- paste(x$test, collapse = "', '")
     if(!is.null(data_transform))
         data_transform <- paste0("\n  data_transform: '", data_transform, "'")
+    if(x$family$family != "gaussian") {
+        family <- paste0("\n          family: '", x$family$family, "'")
+    } else family <- NULL
     cat(paste("         formula: '", f,
               "'\n            test: '", test, "'",
+              family,
+              data_transform,
+              sep = ""), sep = "\n")
+    cat("\n")
+
+}
+
+
+
+print.plcp_brmsformula <- function(x, ...) {
+    cat("# Simulation formula (brms)\n")
+    f <- x$formula
+    data_transform <- x$data_transform_lab
+    family <- f$family$family
+    test <- paste(x$test, collapse = "', '")
+    if(!is.null(data_transform))
+        data_transform <- paste0("\n  data_transform: '", data_transform, "'")
+    if(family != "gaussian") {
+        family <- paste0("\n          family: '", family, "'")
+    } else family <- NULL
+    cat(paste("         formula: 'brmsfit object'",
+              "'\n            test: '", test, "'",
+              family,
               data_transform,
               sep = ""), sep = "\n")
     cat("\n")
@@ -166,6 +199,8 @@ print.plcp_compare_sim_formula <- function(x, ...) {
 .print_plcp_sim_formula <- function(i, x) {
     lab <- names(x)[i]
     f <- x[[i]]$formula
+    if(!is.character(f))
+        f <- paste0(class(f), " object")
     data_transform <- x[[i]]$data_transform_lab
     test <- paste(x[[i]]$test, collapse = "', '")
     if(!is.null(data_transform))
