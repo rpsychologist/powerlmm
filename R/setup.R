@@ -55,8 +55,26 @@ study_design <- function(nested = TRUE,
         class(args) <- paste(c("plcp_design", family_class, "crossed"),
                                                  collapse = "_")
     }
+    class(args) <- append(class(args), "plcp_design")
 
     args
+}
+
+
+print.plcp_design <- function(x, ...) {
+    if(x$levels == 3) {
+        levels <- paste0("3 ", ifelse(x$nested, "(nested)", "(crossed)"))
+    } else if(x$levels == 2) {
+        levels <- 2
+    }
+    res <- structure(list(levels = levels,
+                          groups = x$groups,
+                          family = x$family,
+                          time_form = x$time_form,
+                          method = "Study design"),
+                     class = "power.htest")
+
+    print(res)
 }
 
 #' @export
