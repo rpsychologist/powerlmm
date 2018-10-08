@@ -1,5 +1,5 @@
 p_mtp <- study_parameters(
-    design = structure(list(), class = "plcp_hurdle"),
+    design = study_design(family = "hurdle"),
     n1 = 11,
     n2 = 1e5,
     fixed_intercept = log(300), # median(Y > 0)
