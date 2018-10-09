@@ -127,6 +127,10 @@ create_cluster_index <- function(n2, n3) {
          y <- rgamma(tot_n2 * n1,
                      shape = shape,
                      rate = shape/exp(eta))
+     } else if(family == "lognormal") {
+         y <- rlnorm(tot_n2 * n1,
+                     meanlog = eta,
+                     sdlog = sigma_error)
      }
 
      df <-
