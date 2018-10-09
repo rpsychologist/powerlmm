@@ -25,6 +25,8 @@ get_ICC_slope.plcp_multi_hurdle <- function(object, ...) {
     numeric(nrow(object))
 }
 get_var_ratio.plcp_hurdle  <- function(object, ...) {
+
+    warning("Not yet implemented for 'hurdle' models")
     numeric(0)
 }
 get_var_ratio.plcp_multi_hurdle <- function(object, ...) {

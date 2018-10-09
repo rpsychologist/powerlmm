@@ -62,13 +62,13 @@ create_cluster_index <- function(n2, n3) {
      tot_n2 <- length(cluster)
 
      # level-2 variance matrix
-     Sigma_subject = c(
+     Sigma_subject <- c(
           sigma_subject_intercept^2 ,
           sigma_subject_intercept * sigma_subject_slope * cor_subject,
           sigma_subject_intercept * sigma_subject_slope * cor_subject,
           sigma_subject_slope^2
      )
-     Sigma_subject = matrix(Sigma_subject, 2, 2) # variances
+     Sigma_subject <- matrix(Sigma_subject, 2, 2) # variances
 
      # level-3 variance matrix
      Sigma_cluster <- c(
@@ -77,7 +77,7 @@ create_cluster_index <- function(n2, n3) {
           sigma_cluster_intercept * sigma_cluster_slope * cor_cluster,
           sigma_cluster_slope^2
      )
-     Sigma_cluster <-  matrix(Sigma_cluster, 2, 2)
+     Sigma_cluster <- matrix(Sigma_cluster, 2, 2)
 
      # level 3-model
      cluster_lvl <-

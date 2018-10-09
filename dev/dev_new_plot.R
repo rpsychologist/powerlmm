@@ -1,4 +1,8 @@
-p <- study_parameters(n1 = 5, n2 = 1e5, icc_pre_subject = 0.5, var_ratio = 0.03, cor_subject = -0.8,
+p <- study_parameters(n1 = 5,
+                      n2 = 1e5,
+                      icc_pre_subject = 0.5,
+                      var_ratio = 0.03,
+                      cor_subject = -0.8,
                       effect_size = cohend(-0.5))
 
 d <- simulate_data(p)
@@ -7,7 +11,9 @@ ggplot(d, aes(time, subject_intercept + subject_slope * time, group = subject, c
     facet_grid(~treatment)
 
 
-p <- study_parameters(n1 = 11, n2 = 1, n3 = 1e5,
+p <- study_parameters(n1 = 11,
+                      n2 = 1,
+                      n3 = 1e5,
                       icc_pre_subject = 0.5,
                       var_ratio = 0.03,
                       icc_slope = 0,
@@ -15,7 +21,7 @@ p <- study_parameters(n1 = 11, n2 = 1, n3 = 1e5,
                       partially_nested = TRUE,
                       effect_size = cohend(-0.5))
 
-p$n2 = 1e5
+
 prep <- prepare_paras(p)
 
 paras <- prep$treatment
