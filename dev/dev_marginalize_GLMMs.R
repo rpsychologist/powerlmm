@@ -1,6 +1,4 @@
 
-
-
 # Binomial ----------------------------------------------------------------
 p_bin <- study_parameters(design = study_design(family = "binomial"),
                           n1 = 11,
@@ -82,6 +80,8 @@ p <- study_parameters(
 
 m <- marginalize(p)
 plot_hurdle_time(m$y_overall)
+plot_hurdle_time(m$y_positive)
+
 plot_hurdle_diff(m)
 plot_hurdle_probs(m)
 
