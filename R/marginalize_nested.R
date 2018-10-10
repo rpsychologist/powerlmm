@@ -74,6 +74,7 @@ marginalize.plcp_nested <- function(object,
                                sigma = sigma_error,
                                shape = shape,
                                family = pars$family,
+                               partially_nested = pars$partially_nested,
                                R = R,
                                ...))
 
@@ -123,13 +124,14 @@ marginalize.plcp_nested <- function(object,
 # marginalize hurdle ests over random effects
 .marginalize_nested_sim <- function(d,
                              betas,
-                             betas_hu,
                              R_cov2,
                              R_cov3,
                              sigma,
                              shape,
                              family,
+                             partially_nested,
                              R,
+                             link_scale = FALSE,
                              full = FALSE, ...) {
 
 
@@ -147,15 +149,35 @@ marginalize.plcp_nested <- function(object,
 
     XtX <- crossprod(X)
 
-    calc_eta <- function(i, full) {
+    ln_inv <- function(sigma) {
+        sigma <- sigma
+        function(eta) {
+            exp(eta + sigma^2/2)
+        }
+    }
+    inv_link <- switch(as.character(family),
+           "binomial" = plogis,
+           "poisson" = exp,
+           "gamma" = exp,
+           "lognormal" = ln_inv(sigma)
+           )
 
-        # level 2
+
+    if(link_scale) inv_link <- function(eta) eta
+
+    calc_eta <- function(i, full) {
+        if(partially_nested) {
+            tx <- d[i, "treatment"]
+            sd3 <- sd3 * tx # cc = 0
+            sd0 <- sd2 + sd3
+        }
+        # level 2 (includes lvl 3)
         mu2 <- Xmat[i, ] + c(Z[i, ] %*% t(sd0[, c(1,2)]))
         #level 3 only
         mu3 <- Xmat[i, ] + c(Z[i, ] %*% t(sd3[, c(1,2)]))
 
-        exp_mu2 <- plogis(mu2)
-        exp_mu3 <- plogis(mu3)
+        exp_mu2 <- inv_link(mu2)
+        exp_mu3 <- inv_link(mu3)
 
         if(i %in% which(d$time == max(d$time))) {
             ps <- 1:99/100

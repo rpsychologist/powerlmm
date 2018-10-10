@@ -482,6 +482,68 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
 
 }
 
+plot_link <- function(object) {
+    # To get RE intervals
+    m <- marginalize(object, link_scale = TRUE)
+    p <- plot(m)
+    p2 <- p$subject + labs(y = "Mean (link scale)")
+    p3 <- p$cluster + labs(y = "Mean (link scale)")
+
+    gridExtra::grid.arrange(p2,p3)
+
+    invisible(list("subject" = p2, "cluster" = p3))
+}
+
+plot.plcp_marginal_nested <- function(object) {
+
+    # lvl 2
+    x <- object$y
+    Q_long <- reshape_eta_sum(x)
+
+    # lvl 3
+    x3 <- object$y_lvl3
+    Q_long3 <- reshape_eta_sum(x3)
+
+    ymin <- min(Q_long$min, Q_long3$min)
+    ymax <- max(Q_long$max, Q_long3$max)
+
+    x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    x3$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    Q_long3$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+
+    p2 <- ggplot(x, aes(time, mean, group = treatment)) +
+        geom_ribbon(data = Q_long, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment), fill = width), alpha = 0.75) +
+        geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
+        geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
+        geom_point(aes(y = Q50), color = "red") +
+        scale_color_manual(values = c("median" = "red", "mean" = "red")) +
+        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
+        labs(linetype = "", color = "", title = "Subject level") +
+        guides(color = guide_legend(override.aes = list(fill = NA))) +
+        facet_wrap(~treatment, ncol = 2) +
+        lims(y = c(ymin, ymax)) +
+        scale_fill_brewer() +
+        theme_minimal()
+
+    p3 <- ggplot(x3, aes(time, mean, group = treatment)) +
+        geom_ribbon(data = Q_long3, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment), fill = width), alpha = 0.75) +
+        geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
+        geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
+        geom_point(aes(y = Q50), color = "red") +
+        scale_color_manual(values = c("median" = "red", "mean" = "red")) +
+        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
+        labs(linetype = "", color = "", title = "Cluster level") +
+        guides(color = guide_legend(override.aes = list(fill = NA))) +
+        facet_wrap(~treatment, ncol = 2) +
+        lims(y = c(ymin, ymax)) +
+        scale_fill_brewer() +
+        theme_minimal()
+
+    gridExtra::grid.arrange(p2,p3)
+
+    invisible(list("subject" = p2, "cluster" = p3))
+}
 #' @export
 plot.plcp_multi <- function(x, n = 1, type = "both", ...) {
     plot.plcp(x, n = n, type = type)

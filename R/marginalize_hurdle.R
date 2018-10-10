@@ -42,8 +42,8 @@ marginalize.plcp_hurdle <- function(object,
     }
 
     .func <- ifelse(vectorize,
-                    ".marginalize_hurdle_sim_vec",
-                    ".marginalize_hurdle_sim")
+                    .marginalize_hurdle_sim_vec,
+                    .marginalize_hurdle_sim)
     out <- do.call(.func, list(d = d,
                                betas = betas,
                                Xmat = Xmat,
@@ -57,6 +57,7 @@ marginalize.plcp_hurdle <- function(object,
                                R = R,
                                ...))
 
+    class(out) <- "plcp_marginal_hurdle"
 
     out
 }
