@@ -1,15 +1,34 @@
 
+# TODO
+# * add type = "post_diff" plot type
+
+
+# Gaussian ----------------------------------------------------------------
+p <- study_parameters(design = study_design(),
+                          n1 = 11,
+                          n2 = 25,
+                          icc_pre_subject = 0.5,
+                          var_ratio = 0.02,
+                          effect_size = log(0.5),
+                          sigma_error = 1)
+
+m <- marginalize(p)
+plot(m)
+plot(m , RE = FALSE, type = "trend_dropout", RE_level = c(2))
+
+
 # Binomial ----------------------------------------------------------------
 p_bin <- study_parameters(design = study_design(family = "binomial"),
                           n1 = 11,
                           n2 = 25,
                           icc_pre_subject = 0.5,
                           var_ratio = 0.02,
-                          effect_size = log(1),
+                          effect_size = log(0.5),
                           sigma_error = 1)
 
 m_bin <- marginalize(p_bin)
-plot(m_bin)
+plot(p_bin)
+plot(m_bin , RE = FALSE, type = "trend_dropout", RE_level = c(2))
 
 # Poisson ----------------------------------------------------------------
 p_pois <- study_parameters(design = study_design(family = "poisson"),
@@ -38,6 +57,7 @@ p_ln <- study_parameters(design = study_design(family = "lognormal"),
 
 m_ln <- marginalize(p_ln)
 plot(m_ln)
+plot_link(p_ln)
 # Gamma ----------------------------------------------------------------
 p_gamma <- study_parameters(design = study_design(family = "gamma"),
                          n1 = 11,

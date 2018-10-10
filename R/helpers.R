@@ -394,7 +394,93 @@ reshape_eta_sum <- function(x) {
     d
 }
 
+.plot_dropout <- function(paras) {
+    d <- simulate_data(paras)
+    d <- sum_missing_tx_time(d)
+    d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
 
+    #theoretical_missing <- get_dropout(update(paras, n1 = 100))
+    theoretical_missing <- get_dropout(paras)
+
+    theoretical_missing_tx <- theoretical_missing[ , c("time", "treatment")]
+    colnames(theoretical_missing_tx)[2] <- "missing"
+    theoretical_missing_tx$treatment <- 1
+    theoretical_missing_cc <- theoretical_missing[ , c("time", "control")]
+    theoretical_missing_cc$treatment <- 0
+    colnames(theoretical_missing_cc)[2] <- "missing"
+    theoretical_missing <- rbind(theoretical_missing_cc,
+                                 theoretical_missing_tx)
+    theoretical_missing$treatment <- factor(theoretical_missing$treatment,
+                                            labels = c("Control", "Treatment"))
+
+   ggplot2::ggplot(d, ggplot2::aes_string("time", "missing", color = "treatment", group = "treatment")) +
+        ggplot2::geom_point() +
+        ggplot2::geom_line(data = theoretical_missing,
+                           ggplot2::aes_string("time", "missing",
+                                               color = "treatment", group = "treatment"),
+                           linetype = "dashed") +
+        ggplot2::labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
+        ggplot2::ylim(0,1) +
+       ggplot2::theme_minimal()
+
+
+}
+.plot_trend <- function(paras) {
+    time <- get_time_vector(paras)
+
+    ES <- get_effect_size(paras)
+    subtitle <- paste("The treatment effect at posttest",
+                      ifelse(ES$standardizer == "raw", "", " (Cohen's d)"),
+                      " = ",
+                      ES$ES,
+                      sep = "")
+
+    caption <- ifelse(ES$standardizer == "raw",
+                      "N.B.: The treatment effect is the raw (unstandardized) difference",
+                      paste("N.B.: Cohen's d is calculated using the", ES$standardizer))
+
+    y <- paras$fixed_intercept + paras$fixed_slope * time
+    y1 <-  paras$fixed_intercept + (paras$fixed_slope + get_slope_diff(paras)/paras$T_end) * time
+
+    d <- data.frame(y = c(y, y1),
+                    time = rep(time, 2),
+                    treatment = rep(c(0, 1), each = length(y)))
+    d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
+
+    ggplot2::ggplot(d, ggplot2::aes_string("time", "y", color = "treatment")) +
+        ggplot2::geom_line(show.legend = TRUE) +
+        ggplot2::geom_point(show.legend = FALSE) +
+        ggplot2::labs(title = "Treatment effects", y = "Outcome", x = "Time point",
+                      subtitle = subtitle,
+                      caption = caption) +
+        ggplot2::theme_minimal()
+}
+.plot_link <- function(object, RE_level, show = TRUE) {
+    # To get RE intervals
+    m <- marginalize(object, link_scale = TRUE)
+    p <- plot(m, RE = TRUE, RE_level = RE_level)
+    if(all(c(2,3) %in% RE_level)) {
+        p2 <- p$trend$subject + labs(y = "Mean (link scale)")
+        p3 <- p$trend$cluster + labs(y = "Mean (link scale)")
+        if(show) {
+            gridExtra::grid.arrange(p2, p3)
+        }
+        return(invisible(list("subject" = p2, "cluster" = p3)))
+    } else if(RE_level == 2) {
+        p2 <- p$trend$subject + labs(y = "Mean (link scale)")
+        if(show) {
+            plot(p2)
+        }
+        return(invisible(list("subject" = p2)))
+    } else if(RE_level == 3) {
+        p3 <- p$trend$cluster + labs(y = "Mean (link scale)")
+        if(show) {
+            plot(p3)
+        }
+        return(invisible(list("cluster" = p3)))
+    }
+
+}
 # Plot design
 #' Plot method for \code{study_parameters}-objects
 #' @param x An object of class \code{plcp}.
@@ -406,7 +492,7 @@ reshape_eta_sum <- function(x) {
 #'
 #' @param ... Optional arguments.
 #' @export
-plot.plcp <- function(x, n = 1, type = "both", ...) {
+plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE, ...) {
     check_installed("ggplot2")
     paras <- x
      if(is.data.frame(paras)) {
@@ -415,87 +501,75 @@ plot.plcp <- function(x, n = 1, type = "both", ...) {
           #class(paras) <- append(c("plcp"), class(paras))
      }
 
-     time <- get_time_vector(paras)
+     if(type == "trend") {
+         if(RE) {
+             .plot_link(paras, RE_level = RE_level)
+         } else {
+             .plot_trend(paras)
+         }
 
-     ES <- get_effect_size(paras)
-     subtitle <- paste("The treatment effect at posttest",
-                       ifelse(ES$standardizer == "raw", "", " (Cohen's d)"),
-                       " = ",
-                       ES$ES,
-                       sep = "")
-
-     caption <- ifelse(ES$standardizer == "raw",
-                       "N.B.: The treatment effect is the raw (unstandardized) difference",
-                       paste("N.B.: Cohen's d is calculated using the", ES$standardizer))
-
-     y <- paras$fixed_intercept + paras$fixed_slope * time
-     y1 <-  paras$fixed_intercept + (paras$fixed_slope + get_slope_diff(paras)/paras$T_end) * time
-
-     d <- data.frame(y = c(y, y1),
-                     time = rep(time, 2),
-                     treatment = rep(c(0, 1), each = length(y)))
-     d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
-
-     p1 <- ggplot2::ggplot(d, ggplot2::aes_string("time", "y", color = "treatment")) +
-         ggplot2::geom_line(show.legend = TRUE) +
-         ggplot2::geom_point(show.legend = FALSE) +
-         ggplot2::labs(title = "Treatment effects", y = "Outcome", x = "Time point",
-               subtitle = subtitle,
-               caption = caption)
-
-     d <- simulate_data(paras)
-     d <- sum_missing_tx_time(d)
-     d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
-
-     #theoretical_missing <- get_dropout(update(paras, n1 = 100))
-     theoretical_missing <- get_dropout(paras)
-
-     theoretical_missing_tx <- theoretical_missing[ , c("time", "treatment")]
-     colnames(theoretical_missing_tx)[2] <- "missing"
-     theoretical_missing_tx$treatment <- 1
-     theoretical_missing_cc <- theoretical_missing[ , c("time", "control")]
-     theoretical_missing_cc$treatment <- 0
-     colnames(theoretical_missing_cc)[2] <- "missing"
-     theoretical_missing <- rbind(theoretical_missing_cc,
-                                  theoretical_missing_tx)
-     theoretical_missing$treatment <- factor(theoretical_missing$treatment,
-                                             labels = c("Control", "Treatment"))
-
-
-    p2 <- ggplot2::ggplot(d, ggplot2::aes_string("time", "missing", color = "treatment", group = "treatment")) +
-            ggplot2::geom_point() +
-            ggplot2::geom_line(data = theoretical_missing,
-                        ggplot2::aes_string("time", "missing",
-                          color = "treatment", group = "treatment"),
-                      linetype = "dashed") +
-        ggplot2::labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
-        ggplot2::ylim(0,1)
-
-     if(type == "both") {
-         check_installed("gridExtra")
-        return(gridExtra::grid.arrange(p1, p2, ncol=1))
-     } else if(type == "effect") {
-         return(p1)
      } else if(type == "dropout") {
-         return(p2)
+         .plot_dropout(paras)
+     } else if(type == "trend_dropout") {
+         check_installed("gridExtra")
+         if(RE) {
+             p1 <- .plot_link(paras, RE_level = RE_level, show = FALSE)
+             p2 <- .plot_dropout(paras)
+             if(all(c(2,3) %in% RE_level)) {
+                 gridExtra::grid.arrange(p1$subject, p1$cluster, p2, ncol=1)
+             } else if(RE_level == 2) {
+                 gridExtra::grid.arrange(p1$subject, p2, ncol=1)
+             } else if(RE_level == 3) {
+                 gridExtra::grid.arrange(p1$cluster, p2, ncol=1)
+             }
+             invisible(list("trend" =  p1,
+                            "dropout" = p2))
+         } else {
+             p1 <- .plot_trend(paras)
+             p2 <- .plot_dropout(paras)
+             gridExtra::grid.arrange(p1, p2, ncol=1)
+             invisible(list("trend" =  p1,
+                            "dropout" = p2))
+         }
      }
 
 }
 
-plot_link <- function(object) {
-    # To get RE intervals
-    m <- marginalize(object, link_scale = TRUE)
-    p <- plot(m)
-    p2 <- p$subject + labs(y = "Mean (link scale)")
-    p3 <- p$cluster + labs(y = "Mean (link scale)")
 
-    gridExtra::grid.arrange(p2,p3)
+.plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE) {
 
-    invisible(list("subject" = p2, "cluster" = p3))
+    x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+
+    plot_struct <- list(
+                        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
+                        guides(color = guide_legend(override.aes = list(fill = NA))),
+                        lims(y = c(ymin, ymax)),
+                        scale_fill_brewer(),
+                        theme_minimal())
+
+    if(RE) {
+        ggplot(x, aes(time, mean, group = treatment)) +
+            geom_ribbon(data = Q_long, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment),
+                                           fill = width), alpha = 0.75) +
+            geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
+            geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
+            geom_point(aes(y = Q50), color = "red") +
+            scale_color_manual(values = c("median" = "red", "mean" = "red")) +
+            facet_wrap(~treatment, ncol = 2) +
+            plot_struct
+    } else {
+        ggplot(x, aes(time, mean, group = treatment, color = treatment)) +
+            geom_line(aes(linetype = "mean", fill = NULL), size = 1) +
+            geom_line(aes(y = Q50, linetype = "median", fill = NULL), size = 1) +
+            geom_point(aes(y = Q50)) +
+            plot_struct
+    }
+
+
 }
-
-plot.plcp_marginal_nested <- function(object) {
-
+plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE) {
+    check_installed("ggplot2")
     # lvl 2
     x <- object$y
     Q_long <- reshape_eta_sum(x)
@@ -507,42 +581,77 @@ plot.plcp_marginal_nested <- function(object) {
     ymin <- min(Q_long$min, Q_long3$min)
     ymax <- max(Q_long$max, Q_long3$max)
 
-    x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
-    x3$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
-    Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
-    Q_long3$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+     if(type == "dropout") {
+        .plot_dropout(object$paras)
+    } else if(type %in% c("trend", "trend_dropout")) {
+        if(type == "trend_dropout") {
+            check_installed("gridExtra")
+            pd <- .plot_dropout(object$paras)
+        }
 
-    p2 <- ggplot(x, aes(time, mean, group = treatment)) +
-        geom_ribbon(data = Q_long, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment), fill = width), alpha = 0.75) +
-        geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
-        geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
-        geom_point(aes(y = Q50), color = "red") +
-        scale_color_manual(values = c("median" = "red", "mean" = "red")) +
-        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
-        labs(linetype = "", color = "", title = "Subject level") +
-        guides(color = guide_legend(override.aes = list(fill = NA))) +
-        facet_wrap(~treatment, ncol = 2) +
-        lims(y = c(ymin, ymax)) +
-        scale_fill_brewer() +
-        theme_minimal()
+        if(all(c(2,3) %in% RE_level)) {
+            p2 <- .plot_marg(x = x,
+                             Q_long = Q_long,
+                             RE = RE,
+                             ymin = ymin,
+                             ymax = ymax) +
+                labs(linetype = "", color = "", title = "Subject level")
+            p3 <- .plot_marg(x = x3,
+                             Q_long = Q_long3,
+                             RE = RE,
+                             ymin = ymin,
+                             ymax = ymax) +
+                labs(linetype = "", color = "", title = "Cluster level")
+            if(type == "trend_dropout") {
+                gridExtra::grid.arrange(p2,
+                                        p3,
+                                        pd,
+                                        ncol=1)
+                return(invisible(list("trend" =  list("subject" = p2,
+                                                      "cluster" = p3),
+                                      "dropout" = pd)))
+            } else {
+                gridExtra::grid.arrange(p2,
+                                        p3,
+                                        ncol=1)
+                return(invisible(list("trend" =  list("subject" = p2,
+                                                      "cluster" = p3))))
+            }
 
-    p3 <- ggplot(x3, aes(time, mean, group = treatment)) +
-        geom_ribbon(data = Q_long3, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment), fill = width), alpha = 0.75) +
-        geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
-        geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
-        geom_point(aes(y = Q50), color = "red") +
-        scale_color_manual(values = c("median" = "red", "mean" = "red")) +
-        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
-        labs(linetype = "", color = "", title = "Cluster level") +
-        guides(color = guide_legend(override.aes = list(fill = NA))) +
-        facet_wrap(~treatment, ncol = 2) +
-        lims(y = c(ymin, ymax)) +
-        scale_fill_brewer() +
-        theme_minimal()
+        } else if(RE_level == 2) {
+            p2 <- .plot_marg(x = x,
+                             Q_long = Q_long,
+                             RE = RE,
+                             ymin = ymin,
+                             ymax = ymax) +
+                labs(linetype = "", color = "", title = "Subject level")
+            if(type == "trend_dropout") {
+                gridExtra::grid.arrange(p2, pd, ncol=1)
+                return(invisible(list("trend" =  list("subject" = p2),
+                                      "dropout" = pd)))
+            } else {
+                plot(p2)
+                return(invisible(list("trend" =  list("subject" = p2))))
+            }
+        } else if(RE_level == 3) {
+            p3 <- .plot_marg(x = x3,
+                             Q_long = Q_long3,
+                             RE = RE,
+                             ymin = ymin,
+                             ymax = ymax) +
+                labs(linetype = "", color = "", title = "Cluster level")
 
-    gridExtra::grid.arrange(p2,p3)
+            if(type == "trend_dropout") {
+                gridExtra::grid.arrange(p3, pd, ncol=1)
+                return(invisible(list("trend" =  list("cluster" = p3),
+                                      "dropout" = pd)))
+                } else {
+                    plot(p3)
+                    return(invisible(list("trend" =  list("cluster" = p3))))
+                }
+        }
+    }
 
-    invisible(list("subject" = p2, "cluster" = p3))
 }
 #' @export
 plot.plcp_multi <- function(x, n = 1, type = "both", ...) {

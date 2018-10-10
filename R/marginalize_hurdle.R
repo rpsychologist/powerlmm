@@ -57,6 +57,7 @@ marginalize.plcp_hurdle <- function(object,
                                R = R,
                                ...))
 
+    out$paras <- object
     class(out) <- "plcp_marginal_hurdle"
 
     out

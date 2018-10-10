@@ -78,47 +78,10 @@ marginalize.plcp_nested <- function(object,
                                R = R,
                                ...))
 
-
+    out$paras <- object
     class(out) <- c("plcp_marginal_nested")
     out
 }
-
-
-# linear predictor hurdle models
-# .calc_eta_hurdle <- function(mu, p, marginal, family, sd_log) {
-#
-#     if(marginal) {
-#         if(family == "gamma") {
-#             # Y
-#             mu_overall <- mu
-#             # Y > 0
-#             mu_positive <- exp(mu - log(1 - p))
-#         } else if(family == "lognormal") {
-#             # Y
-#             mu_overall <- mu
-#             # Y > 0
-#             marg_cont <- exp(mu - log(1 - p) - sd_log^2/2)
-#         }
-#
-#     }  else {
-#         if(family == "gamma") {
-#             # Y
-#             mu_overall <- mu + log(1 - p)
-#             # Y > 0
-#             mu_positive <- exp(mu)
-#         } else if(family == "lognormal") {
-#             # Y
-#             mu_overall <- mu + log(1 - p) + sd_log^2/2
-#             # Y > 0
-#             mu_positive <- exp(mu + sd_log^2/2)
-#         }
-#
-#     }
-#
-#     list(mu_overall = mu_overall,
-#          mu_positive = mu_positive)
-# }
-
 
 
 # marginalize hurdle ests over random effects
@@ -149,21 +112,39 @@ marginalize.plcp_nested <- function(object,
 
     XtX <- crossprod(X)
 
+    # log-transformation, but call them links for concistency
     ln_inv <- function(sigma) {
         sigma <- sigma
         function(eta) {
             exp(eta + sigma^2/2)
         }
     }
+    ln_link <- function(sigma) {
+        sigma <- sigma
+        function(y) {
+            log(y) - sigma^2/2
+        }
+    }
     inv_link <- switch(as.character(family),
-           "binomial" = plogis,
-           "poisson" = exp,
-           "gamma" = exp,
-           "lognormal" = ln_inv(sigma)
-           )
+                       "gaussian" = function(eta) eta,
+                       "binomial" = plogis,
+                       "poisson" = exp,
+                       "gamma" = exp,
+                       "lognormal" = ln_inv(sigma)
+    )
 
+    link <- switch(as.character(family),
+                   "gaussian" = function(eta) eta,
+                   "binomial" = qlogis,
+                   "poisson" = log,
+                   "gamma" = log,
+                   "lognormal" = ln_link(sigma)
+    )
 
-    if(link_scale) inv_link <- function(eta) eta
+    if(link_scale) {
+        inv_link <- function(eta) eta
+        link <- function(eta) eta
+    }
 
     calc_eta <- function(i, full) {
         if(partially_nested) {
@@ -209,8 +190,8 @@ marginalize.plcp_nested <- function(object,
 
     # Hedeker et al 2018
     # solve(t(X) %*% X) %*% t(X) %*% tmp$marg_overall
-    coef_median_log <- solve(XtX, crossprod(X, log(marg_y[, "Q50"] )))
-    coef_marg_log <- solve(XtX, crossprod(X, log(marg_y[, "mean"])))
+    coef_median_log <- solve(XtX, crossprod(X, link(marg_y[, "Q50"] )))
+    coef_marg_log <- solve(XtX, crossprod(X, link(marg_y[, "mean"])))
 
     coefs <- mapply(function(x, name) {
         x <- x
