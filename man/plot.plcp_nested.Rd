@@ -5,7 +5,7 @@
 \title{Plot method for \code{study_parameters}-objects}
 \usage{
 \method{plot}{plcp_nested}(x, n = 1, type = "trend", RE = TRUE,
-  RE_level = c(2, 3), hu = FALSE, ...)
+  RE_level = 2, hu = FALSE, ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp}.}

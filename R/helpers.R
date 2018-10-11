@@ -659,7 +659,6 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
     plot_struct <- list(
                         scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
                         guides(color = guide_legend(override.aes = list(fill = NA))),
-                        lims(y = c(ymin, ymax)),
                         scale_fill_brewer(),
                         theme_minimal())
 

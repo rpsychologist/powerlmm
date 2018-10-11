@@ -1,7 +1,8 @@
 
 # TODO
-# allow RE_level arg for post_diff plots
-
+# * allow RE_level arg for post_diff plots
+# * add type = "post_overlay": plot diststribution of outcomes for percentile p
+# * update so plot(p_gamma, RE_level = c(2,3)) use facets instead of grid.arrange
 
 # Gaussian ----------------------------------------------------------------
 p <- study_parameters(design = study_design(),
@@ -13,12 +14,11 @@ p <- study_parameters(design = study_design(),
                           sigma_error = 1)
 
 m <- marginalize(p)
-plot_hurdle_diff(m)
 
 plot(m)
 plot(m , RE = FALSE, type = "trend_dropout", RE_level = c(2))
 plot(m , RE = FALSE, type = "post_diff", RE_level = c(2))
-
+plot(m , RE = FALSE, type = "post_diff", RE_level = c(3))
 
 # Binomial ----------------------------------------------------------------
 p_bin <- study_parameters(design = study_design(family = "binomial"),
@@ -78,6 +78,11 @@ p_gamma <- study_parameters(design = study_design(family = "gamma"),
 
 m_gamma <- marginalize(p_gamma)
 
+plot(p_gamma, RE_level = c(2,3))
+plot(m_gamma)
+
+
+
 # Hurdle models
 
 
@@ -107,9 +112,19 @@ p <- study_parameters(
     family = "gamma")
 
 m <- marginalize(p)
+
+# Done
+plot(m, RE = FALSE)
+plot(m, RE = TRUE)
+
+plot(m, RE = TRUE, type = "trend_dropout")
+plot(m, RE = FALSE, type = "trend_dropout")
+
 plot_hurdle_time(m$y_overall)
 plot_hurdle_time(m$y_positive)
+plot_hurdle_time(m$hu_prob)
 
-plot_hurdle_diff(m)
+.plot_diff_marg(m, type = "post_diff_ratio")
+.plot_diff_marg(m, type = "post_diff_ratio", hu = TRUE)
 plot_hurdle_probs(m)
 
