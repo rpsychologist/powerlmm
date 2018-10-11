@@ -112,71 +112,7 @@ plot_hurdle_time <- function(x) {
         theme_minimal()
 }
 
-plot_hurdle_diff <- function(x, hu = FALSE, fixed_overall = NULL) {
 
-    if(hu) {
-        tmp <- x$post_hu_ps$effect
-        ES <- x$post_hu[x$post_hu$var == "marg_hu_post_diff", "est"]
-        ES_med <- x$post_hu[x$post_hu$var == "median_hu_post_diff", "est"]
-        ES_ratio <- x$post_hu[x$post_hu$var == "marg_OR", "est"]
-        ES_ratio_med <- x$post_hu[x$post_hu$var == "median_OR", "est"]
-    } else {
-        tmp <- x$post_ps$effect
-        ES <- x$post[x$post$var == "marg_post_diff", "est"]
-        ES_med <- x$post[x$post$var == "median_post_diff", "est"]
-        ES_ratio <- x$post[x$post$var == "marg_RR", "est"]
-        ES_ratio_med <- x$post[x$post$var == "median_RR", "est"]
-    }
-
-    tmp$fill <- ifelse(tmp$percentile == 0.5, "median", "other")
-    tmp$fill[which.min(abs(tmp$diff - ES))] <- "mean"
-
-
-    p0 <-  ggplot(tmp, aes(percentile, diff, fill = fill)) +
-        geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
-        #geom_hline(yintercept = 0, linetype = "solid", size = 0.75) +
-        geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75) +
-        geom_hline(yintercept = ES_med, linetype = "dashed", alpha = 0.75, size = 0.75) +
-        scale_y_continuous(sec.axis = sec_axis(~ ., breaks = c(ES_med, ES),
-                                               labels = c(paste(round(ES_med, 2), " (median)"),
-                                                          paste(round(ES, 2), " (mean)")
-                                               )
-        )
-        ) + theme_minimal() +
-        theme(legend.position = "none")
-
-
-    # Ratio
-    if(hu) tmp$ratio <- tmp$OR
-    if(abs(ES_ratio_med - ES_ratio) < .Machine$double.eps^0.5) {
-        breaks <- ES_ratio
-        labels <- paste(round(ES_ratio, 2), " \n(mean,\nmedian)")
-    } else {
-        breaks <- c(ES_ratio_med, ES_ratio)
-        labels <- c(paste(round(ES_ratio_med, 2), " (median)"),
-                    paste(round(ES_ratio, 2), " (mean)")
-                    )
-    }
-
-    p1 <- ggplot(tmp, aes(percentile, ratio)) +
-        geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
-        #geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
-        geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
-        geom_hline(yintercept = ES_ratio_med, linetype = "dashed", size = 0.75) +
-        scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,
-                                               labels = labels
-                                               )) +
-        theme_minimal() +
-        theme(legend.position = "none")
-
-    if(!is.null(fixed_overall)) {
-        p0 <- p0 + geom_hline(yintercept = fixed_overall$diff, color = "#e74c3c")
-        p1 <- p1 + geom_hline(yintercept = fixed_overall$ratio, color = "#e74c3c")
-    }
-
-    gridExtra::grid.arrange(p0, p1)
-
-}
 
 plot_hurdle_probs <- function(x) {
     # cc

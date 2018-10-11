@@ -83,28 +83,13 @@ gridExtra::grid.arrange(p2,p3)
 
 # percentiles
 ## TODO: plot on similar sclae to baseline SD?
-ps <- 1:99/100
 
-mu <- d[d$treatment == 0 & d$time == max(d$time), "mu2"]
-post_cc <- data.frame("percentile" = ps,
-                   "value" = quantile(mu, ps),
-                   "treatment" = 0
-)
 
-mu <- d[d$treatment == 1 & d$time == max(d$time), "mu2"]
-post_tx <- data.frame("percentile" = ps,
-                      "value" = quantile(mu, ps),
-                      "treatment" = 1
-)
 
-post_tx$diff <- post_tx$value - post_cc$value
 
-ES <- get_slope_diff(p)
-
-ggplot(post_tx, aes(percentile, diff)) +
+ggplot(m$post_ps$effect, aes(percentile, ratio)) +
     geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
     geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75)
-
 
 
     geom_hline(yintercept = ES_med, linetype = "dashed", alpha = 0.75, size = 0.75) +

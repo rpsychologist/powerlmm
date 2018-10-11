@@ -182,8 +182,8 @@ marginalize.plcp_nested <- function(object,
     tmp <- lapply(1:nrow(X), calc_eta, full = full)
     tmp <- as.data.frame(do.call(rbind, tmp))
 
-    post_ps <- trans_post_ps(tmp$post)
-    post_hu_ps <- trans_post_ps(tmp$post_hu, hu = TRUE)
+    post_ps <- trans_post_ps(tmp$post, hu = family == "binomial")
+    #post_hu_ps <- trans_post_ps(tmp$post_hu, hu = TRUE)
 
     marg_y <- trans_eta(tmp, "marg_y2", d = d)
     marg_y3 <- trans_eta(tmp, "marg_y3", d = d)
@@ -202,12 +202,12 @@ marginalize.plcp_nested <- function(object,
     },
     list(coef_median_log,
          coef_marg_log),
-    name = c("y_marg",
-             "y_median"),
+    name = c("y_median",
+             "y_marg"),
     SIMPLIFY = FALSE)
     #
-    names(coefs) <- c("marginal",
-                      "median")
+    names(coefs) <- c("median",
+                      "marginal")
 
     coefs <- list("y" = coefs)
 
@@ -229,10 +229,12 @@ marginalize.plcp_nested <- function(object,
                   marg_post_cc,
                   marg_post_diff = marg_post_tx - marg_post_cc,
                   marg_RR,
+                  marg_OR,
                   median_post_tx,
                   median_post_cc,
                   median_post_diff = median_post_tx - median_post_cc,
-                  median_RR
+                  median_RR,
+                  median_OR
     )
     post <- data.frame(var = rownames(post),
                        est = post, row.names = NULL)

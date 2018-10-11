@@ -481,6 +481,113 @@ reshape_eta_sum <- function(x) {
     }
 
 }
+
+.plot_diff <- function(x, ...) {
+    m <- marginalize(x, link_scale = TRUE)
+    .plot_diff_marg(m, ...)
+}
+.plot_diff_marg <- function(x, type = "post_diff", hu = FALSE, fixed_overall = NULL) {
+
+    if(hu) {
+        tmp <- x$post_hu_ps$effect
+        ES <- x$post_hu[x$post_hu$var == "marg_hu_post_diff", "est"]
+        ES_med <- x$post_hu[x$post_hu$var == "median_hu_post_diff", "est"]
+        ES_ratio <- x$post_hu[x$post_hu$var == "marg_OR", "est"]
+        ES_ratio_med <- x$post_hu[x$post_hu$var == "median_OR", "est"]
+    } else {
+        tmp <- x$post_ps$effect
+        ES <- x$post[x$post$var == "marg_post_diff", "est"]
+        ES_med <- x$post[x$post$var == "median_post_diff", "est"]
+        if(x$paras$family == "binomial") {
+            # Use OR
+            ES_ratio <- x$post[x$post$var == "marg_OR", "est"]
+            ES_ratio_med <- x$post[x$post$var == "median_OR", "est"]
+            tmp$ratio <- tmp$OR
+        } else {
+            ES_ratio <- x$post[x$post$var == "marg_RR", "est"]
+            ES_ratio_med <- x$post[x$post$var == "median_RR", "est"]
+        }
+
+    }
+
+    #tmp$fill <- ifelse(tmp$percentile == 0.5, "median", "other")
+    #tmp$fill[which.min(abs(tmp$diff - ES))] <- "mean"
+
+
+    if(type == "post_diff" | type == "post_diff_ratio") {
+
+        if(abs(ES_med - ES) < 0.0001) {
+            breaks <- ES
+            labels <- paste(round(ES, 2), " \n(mean,\nmedian)")
+        } else {
+            breaks <- c(ES_med, ES)
+            labels <- c(paste(round(ES_med, 2), " (median)"),
+                        paste(round(ES, 2), " (mean)")
+            )
+        }
+
+        p0 <- ggplot(tmp, aes(percentile, diff, fill = fill)) +
+            geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
+            #geom_hline(yintercept = 0, linetype = "solid", size = 0.75) +
+            geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75) +
+            geom_hline(yintercept = ES_med, linetype = "dashed", alpha = 0.75, size = 0.75) +
+            scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,
+                                                   labels = labels
+            )
+            ) + theme_minimal() +
+            theme(legend.position = "none")
+
+        if(!is.null(fixed_overall)) {
+            p0 <- p0 + geom_hline(yintercept = fixed_overall$diff, color = "#e74c3c")
+        }
+    }
+
+
+    # Ratio
+    if(type == "post_ratio" | type == "post_diff_ratio") {
+        if(hu) tmp$ratio <- tmp$OR
+        if(abs(ES_ratio_med - ES_ratio) < 0.0001) {
+            breaks <- ES_ratio
+            labels <- paste(round(ES_ratio, 2), " \n(mean,\nmedian)")
+        } else {
+            breaks <- c(ES_ratio_med, ES_ratio)
+            labels <- c(paste(round(ES_ratio_med, 2), " (median)"),
+                        paste(round(ES_ratio, 2), " (mean)")
+            )
+        }
+
+        p1 <- ggplot(tmp, aes(percentile, ratio)) +
+            geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
+            #geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
+            geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
+            geom_hline(yintercept = ES_ratio_med, linetype = "dashed", size = 0.75) +
+            scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,
+                                                   labels = labels
+            )) +
+            theme_minimal() +
+            theme(legend.position = "none")
+
+        if(!is.null(fixed_overall)) {
+            p1 <- p1 + geom_hline(yintercept = fixed_overall$ratio, color = "#e74c3c")
+        }
+
+    }
+
+    # Return
+    if(type == "post_diff") {
+        plot(p0)
+        return(invisible(list("post_diff" = p0)))
+    } else if(type == "post_ratio") {
+        plot(p1)
+        return(invisible(list("post_ratio" = p1)))
+    } else if(type == "post_diff_ratio") {
+        gridExtra::grid.arrange(p0, p1)
+        return(invisible(list("post_diff" = p0,
+                              "post_ratio" = p1)))
+    }
+
+}
+
 # Plot design
 #' Plot method for \code{study_parameters}-objects
 #' @param x An object of class \code{plcp}.
@@ -517,13 +624,19 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
              p2 <- .plot_dropout(paras)
              if(all(c(2,3) %in% RE_level)) {
                  gridExtra::grid.arrange(p1$subject, p1$cluster, p2, ncol=1)
+                 return(invisible(list("trend" =  list("subject" = p2,
+                                                       "cluster" = p3),
+                                       "dropout" = pd)))
              } else if(RE_level == 2) {
                  gridExtra::grid.arrange(p1$subject, p2, ncol=1)
+                 return(invisible(list("trend" =  list("subject" = p2),
+                                       "dropout" = pd)))
              } else if(RE_level == 3) {
                  gridExtra::grid.arrange(p1$cluster, p2, ncol=1)
+                 return(invisible(list("trend" =  list("cluseter" = p3),
+                                       "dropout" = p3)))
              }
-             invisible(list("trend" =  p1,
-                            "dropout" = p2))
+
          } else {
              p1 <- .plot_trend(paras)
              p2 <- .plot_dropout(paras)
@@ -531,6 +644,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
              invisible(list("trend" =  p1,
                             "dropout" = p2))
          }
+     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
+        .plot_diff(x, type = type, hu = hu)
      }
 
 }
@@ -568,7 +683,7 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
 
 }
-plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE) {
+plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE, ...) {
     check_installed("ggplot2")
     # lvl 2
     x <- object$y
@@ -650,6 +765,8 @@ plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_leve
                     return(invisible(list("trend" =  list("cluster" = p3))))
                 }
         }
+    } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
+        .plot_diff_marg(object, type = type, ...)
     }
 
 }

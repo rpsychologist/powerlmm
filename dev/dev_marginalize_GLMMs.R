@@ -1,6 +1,6 @@
 
 # TODO
-# * add type = "post_diff" plot type
+# allow RE_level arg for post_diff plots
 
 
 # Gaussian ----------------------------------------------------------------
@@ -13,22 +13,28 @@ p <- study_parameters(design = study_design(),
                           sigma_error = 1)
 
 m <- marginalize(p)
+plot_hurdle_diff(m)
+
 plot(m)
 plot(m , RE = FALSE, type = "trend_dropout", RE_level = c(2))
+plot(m , RE = FALSE, type = "post_diff", RE_level = c(2))
 
 
 # Binomial ----------------------------------------------------------------
 p_bin <- study_parameters(design = study_design(family = "binomial"),
                           n1 = 11,
                           n2 = 25,
-                          icc_pre_subject = 0.5,
-                          var_ratio = 0.02,
+                          fixed_intercept = qlogis(0.7),
+                          sigma_subject_intercept = 1,
+                          sigma_subject_slope = 0,
+                          cor_subject = -0.5,
                           effect_size = log(0.5),
                           sigma_error = 1)
 
-m_bin <- marginalize(p_bin)
+m_bin <- marginalize(p_bin, hu = TRUE)
 plot(p_bin)
 plot(m_bin , RE = FALSE, type = "trend_dropout", RE_level = c(2))
+plot(m_bin, type = "post_ratio")
 
 # Poisson ----------------------------------------------------------------
 p_pois <- study_parameters(design = study_design(family = "poisson"),
@@ -36,7 +42,8 @@ p_pois <- study_parameters(design = study_design(family = "poisson"),
                           n2 = 25,
                           fixed_intercept = log(10),
                           sigma_subject_intercept = 1,
-                          sigma_subject_slope = 0,
+                          sigma_subject_slope = 0.02,
+                          cor_subject = -0.5,
                           sigma_cluster_intercept = 0.4,
                           effect_size = log(0.5),
                           sigma_error = 1)
@@ -44,6 +51,7 @@ p_pois <- study_parameters(design = study_design(family = "poisson"),
 m_pois <- marginalize(p_pois)
 plot(p_pois)
 plot(m_pois)
+plot(m_pois, type = "post_ratio")
 # lognormal ----------------------------------------------------------------
 p_ln <- study_parameters(design = study_design(family = "lognormal"),
                            n1 = 11,
