@@ -244,7 +244,8 @@ marginalize.plcp_nested <- function(object,
          y_lvl3 = marg_y3,
          post = post,
          post_ps = post_ps,
-         mu_vec = tmp$exp_mu_vec
+         mu2_vec = tmp$exp_mu2_vec,
+         mu3_vec = tmp$exp_mu3_vec
     )
 
 

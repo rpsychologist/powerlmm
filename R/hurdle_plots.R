@@ -19,46 +19,26 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                  "positive" = p_positive,
                  "hurdle" = p_hu)
     args <- args[!vapply(args, is.null, logical(1))]
-    x <- lapply(seq_along(args), function(i) {
-        tmp <- args[[i]]
-        tmp$var <- names(args)[i]
-
-        tmp
-    })
-    x <- do.call(rbind, x)
-
-    Q_long <- lapply(seq_along(args), function(i) {
-        tmp <- reshape_eta_sum(args[[i]])
-        tmp$var <- names(args)[i]
-
-        tmp
-    })
-    Q_long <- do.call(rbind, Q_long)
+    x <- .rbind_lists(args)
+    Q_long <- .rbind_lists(args, func = reshape_eta_sum)
 
     x$var <- factor(x$var, levels = c("overall", "positive", "hurdle"))
 
     # Get limits
     if(RE) {
-        lims <- lapply(names(args), function(x) {
-            tmp <- Q_long[Q_long$var == x, ]
-            data.frame(var = x,
-                       mean = c(min(tmp$min), max(tmp$max)),
-                       treatment = "Treatment",
-                       time = 0)
-        })
+        lims <- .get_facet_lims(d = Q_long,
+                                var_names = names(args),
+                                min_cols = "min",
+                                max_cols = "max")
     } else {
-        lims <- lapply(names(args), function(y) {
-            tmp <- x[x$var == y, ]
-            data.frame(var = y,
-                       mean = c(min(tmp$mean, tmp$Q50), max(tmp$mean, tmp$Q50)),
-                       treatment = "Treatment",
-                       time = 0)
-        })
+        lims <- .get_facet_lims(d = x,
+                                var_names = names(args),
+                                min_cols = c("mean", "Q50"),
+                                max_cols = c("mean", "Q50"))
     }
-    lims <- do.call(rbind, lims)
 
     # use same limits for 'overall' and 'positive'
-    if(all(lims$var %in% c("overall", "positive"))) {
+    if(all(c("overall", "positive") %in% lims$var)) {
         tmp <- lims[lims$var %in% c("overall", "positive"), ]
         lims[lims$var == "overall", "mean"] <- c(min(tmp$mean), max(tmp$mean))
         lims[lims$var == "positive", "mean"] <- c(min(tmp$mean), max(tmp$mean))

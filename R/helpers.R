@@ -365,6 +365,36 @@ reshape_eta_sum <- function(x) {
     tmp
 }
 
+.rbind_lists <- function(args, func = NULL) {
+    x <- lapply(seq_along(args), function(i) {
+        if(is.null(func)) {
+            tmp <- args[[i]]
+        } else {
+            tmp <- func(args[[i]])
+        }
+
+        tmp$var <- names(args)[i]
+
+        tmp
+    })
+    x <- do.call(rbind, x)
+
+    x
+}
+.get_facet_lims <- function(d, var_names, min_cols, max_cols) {
+    lims <- lapply(var_names, function(x) {
+        tmp <- d[d$var == x, ]
+        data.frame(var = x,
+                   mean = c(min(tmp[, min_cols]), max(tmp[, max_cols])),
+                   treatment = "Treatment",
+                   time = 0)
+    })
+    lims <- do.call(rbind, lims)
+
+    lims
+}
+
+
 # Calc linera predictor level 2 and 3
 #
 # @param d data.frame for tx group
@@ -392,6 +422,37 @@ reshape_eta_sum <- function(x) {
     d$mu3 <- with(d, p$fixed_intercept + cluster_intercept + (p$fixed_slope  + slope_diff + cluster_slope) * time)
 
     d
+}
+
+.mu_vec_to_long <- function(x, RE_level) {
+    res2 <- NULL
+    res3 <- NULL
+
+    if(any(RE_level == 2)) {
+        res2 <- lapply(1:nrow(x$y), function(i) {
+            tmp <- data.frame(y = x$mu2_vec[[i]])
+            tmp$treatment <- x$y[i, "treatment"]
+            tmp$time <- x$y[i, "time"]
+            tmp$var <- "subject"
+            tmp
+        })
+        res2 <- do.call(rbind, res2)
+    }
+    if(any(RE_level == 3)) {
+        res3 <- lapply(1:nrow(x$y), function(i) {
+            tmp <- data.frame(y = x$mu3_vec[[i]])
+            tmp$treatment <- x$y[i, "treatment"]
+            tmp$time <- x$y[i, "time"]
+            tmp$var <- "cluster"
+            tmp
+        })
+        res3 <- do.call(rbind, res3)
+    }
+
+    res <- rbind(res2, res3)
+    res$var <- factor(res$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+
+    res
 }
 
 .plot_dropout <- function(paras) {
@@ -455,31 +516,14 @@ reshape_eta_sum <- function(x) {
                       caption = caption) +
         ggplot2::theme_minimal()
 }
-.plot_link <- function(object, RE_level, show = TRUE) {
+.plot_link <- function(object, RE_level, show = TRUE, ...) {
     # To get RE intervals
-    m <- marginalize(object, link_scale = TRUE)
-    p <- plot(m, RE = TRUE, RE_level = RE_level)
-    if(all(c(2,3) %in% RE_level)) {
-        p2 <- p$trend$subject + labs(y = "Mean (link scale)")
-        p3 <- p$trend$cluster + labs(y = "Mean (link scale)")
-        if(show) {
-            gridExtra::grid.arrange(p2, p3)
-        }
-        return(invisible(list("subject" = p2, "cluster" = p3)))
-    } else if(RE_level == 2) {
-        p2 <- p$trend$subject + labs(y = "Mean (link scale)")
-        if(show) {
-            plot(p2)
-        }
-        return(invisible(list("subject" = p2)))
-    } else if(RE_level == 3) {
-        p3 <- p$trend$cluster + labs(y = "Mean (link scale)")
-        if(show) {
-            plot(p3)
-        }
-        return(invisible(list("cluster" = p3)))
+    m <- marginalize(object, link_scale = TRUE, ...)
+    p <- plot.plcp_marginal_nested(m, RE = TRUE, RE_level = RE_level)
+    if(show) {
+        plot(p)
     }
-
+    return(invisible(p))
 }
 
 .plot_diff <- function(x, ...) {
@@ -610,40 +654,14 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
      if(type == "trend") {
          if(RE) {
-             .plot_link(paras, RE_level = RE_level)
+             .plot_link(paras, RE_level = RE_level) +
+                 labs(x = "Mean (link scale)")
          } else {
              .plot_trend(paras)
          }
 
      } else if(type == "dropout") {
          .plot_dropout(paras)
-     } else if(type == "trend_dropout") {
-         check_installed("gridExtra")
-         if(RE) {
-             p1 <- .plot_link(paras, RE_level = RE_level, show = FALSE)
-             p2 <- .plot_dropout(paras)
-             if(all(c(2,3) %in% RE_level)) {
-                 gridExtra::grid.arrange(p1$subject, p1$cluster, p2, ncol=1)
-                 return(invisible(list("trend" =  list("subject" = p2,
-                                                       "cluster" = p3),
-                                       "dropout" = pd)))
-             } else if(RE_level == 2) {
-                 gridExtra::grid.arrange(p1$subject, p2, ncol=1)
-                 return(invisible(list("trend" =  list("subject" = p2),
-                                       "dropout" = pd)))
-             } else if(RE_level == 3) {
-                 gridExtra::grid.arrange(p1$cluster, p2, ncol=1)
-                 return(invisible(list("trend" =  list("cluseter" = p3),
-                                       "dropout" = p3)))
-             }
-
-         } else {
-             p1 <- .plot_trend(paras)
-             p2 <- .plot_dropout(paras)
-             gridExtra::grid.arrange(p1, p2, ncol=1)
-             invisible(list("trend" =  p1,
-                            "dropout" = p2))
-         }
      } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
         .plot_diff(x, type = type, hu = hu)
      }
@@ -682,90 +700,107 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
 
 }
+
+.make_nested_trend <- function(object, RE, RE_level) {
+    y2 <- NULL
+    y3 <- NULL
+    if(any(RE_level == 2)) {
+        y2 <- object$y
+    }
+    if(any(RE_level == 3)) {
+        y3 <- object$y_lvl3
+
+    }
+    args <- list("subject" = y2,
+                 "cluster" = y3)
+    args <- args[!vapply(args, is.null, logical(1))]
+    x <- .rbind_lists(args)
+    Q_long <- .rbind_lists(args, func = reshape_eta_sum)
+
+    # Get limits
+    if(RE) {
+        lims <- .get_facet_lims(d = Q_long,
+                                var_names = names(args),
+                                min_cols = "min",
+                                max_cols = "max")
+    } else {
+        lims <- .get_facet_lims(d = x,
+                                var_names = names(args),
+                                min_cols = c("mean", "Q50"),
+                                max_cols = c("mean", "Q50"))
+    }
+
+    # use same limits for lvl 2 and 3
+    if(all(c("subject", "cluster") %in% lims$var)) {
+        tmp <- lims[lims$var %in% c("subject", "cluster"), ]
+        lims[lims$var == "subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+        lims[lims$var == "cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+    }
+
+    lims$var <- factor(lims$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+    x$var <- factor(x$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+    Q_long$var <- factor(Q_long$var, labels = c("Subject", "Cluster"), levels =  c("subject", "cluster"))
+
+    lims2 <- lims
+    lims2$treatment <- "Control"
+    lims <- rbind(lims, lims2)
+
+    list(x = x,
+         Q_long = Q_long,
+         lims = lims)
+}
+
 plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE, ...) {
     check_installed("ggplot2")
-    # lvl 2
-    x <- object$y
-    Q_long <- reshape_eta_sum(x)
 
-    # lvl 3
-    x3 <- object$y_lvl3
-    Q_long3 <- reshape_eta_sum(x3)
 
-    ymin <- min(Q_long$min, Q_long3$min)
-    ymax <- max(Q_long$max, Q_long3$max)
-
-     if(type == "dropout") {
+    if(type == "dropout") {
         .plot_dropout(object$paras)
-    } else if(type %in% c("trend", "trend_dropout")) {
-        if(type == "trend_dropout") {
-            check_installed("gridExtra")
-            pd <- .plot_dropout(object$paras)
+    } else if(type == "trend") {
+
+
+        trend <- .make_nested_trend(object = object, RE = RE, RE_level = RE_level)
+
+        if(RE) {
+            facets <- list(facet_wrap(var ~ treatment, scales = "free"))
+        } else {
+            facets <- list(facet_wrap(~var, ncol = 1, scales = "free"))
         }
 
-        if(all(c(2,3) %in% RE_level)) {
-            p2 <- .plot_marg(x = x,
-                             Q_long = Q_long,
-                             RE = RE,
-                             ymin = ymin,
-                             ymax = ymax) +
-                labs(linetype = "", color = "", title = "Subject level")
-            p3 <- .plot_marg(x = x3,
-                             Q_long = Q_long3,
-                             RE = RE,
-                             ymin = ymin,
-                             ymax = ymax) +
-                labs(linetype = "", color = "", title = "Cluster level")
-            if(type == "trend_dropout") {
-                gridExtra::grid.arrange(p2,
-                                        p3,
-                                        pd,
-                                        ncol=1)
-                return(invisible(list("trend" =  list("subject" = p2,
-                                                      "cluster" = p3),
-                                      "dropout" = pd)))
-            } else {
-                gridExtra::grid.arrange(p2,
-                                        p3,
-                                        ncol=1)
-                return(invisible(list("trend" =  list("subject" = p2,
-                                                      "cluster" = p3))))
-            }
 
-        } else if(RE_level == 2) {
-            p2 <- .plot_marg(x = x,
-                             Q_long = Q_long,
-                             RE = RE,
-                             ymin = ymin,
-                             ymax = ymax) +
-                labs(linetype = "", color = "", title = "Subject level")
-            if(type == "trend_dropout") {
-                gridExtra::grid.arrange(p2, pd, ncol=1)
-                return(invisible(list("trend" =  list("subject" = p2),
-                                      "dropout" = pd)))
-            } else {
-                plot(p2)
-                return(invisible(list("trend" =  list("subject" = p2))))
-            }
-        } else if(RE_level == 3) {
-            p3 <- .plot_marg(x = x3,
-                             Q_long = Q_long3,
-                             RE = RE,
-                             ymin = ymin,
-                             ymax = ymax) +
-                labs(linetype = "", color = "", title = "Cluster level")
+        p <- .plot_marg(x = trend$x,
+                        Q_long = trend$Q_long,
+                        RE = RE,
+                        ymin = NA,
+                        ymax = NA) +
+            geom_blank(data = trend$lims) +
+            labs(linetype = "", color = "", y = "Mean", title = "Change over time") +
+            facets
 
-            if(type == "trend_dropout") {
-                gridExtra::grid.arrange(p3, pd, ncol=1)
-                return(invisible(list("trend" =  list("cluster" = p3),
-                                      "dropout" = pd)))
-                } else {
-                    plot(p3)
-                    return(invisible(list("trend" =  list("cluster" = p3))))
-                }
-        }
+
+
+        plot(p)
+        return(invisible(p))
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
         .plot_diff_marg(object, type = type, ...)
+    } else if(type == "trend_ridges") {
+        check_installed("ggridges")
+        res <- .mu_vec_to_long(object, RE_level = RE_level)
+        trend <- .make_nested_trend(object = object, RE = RE, RE_level = RE_level)
+
+        ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment)) +
+            geom_density_ridges(scale = 0.7, stat = "density",
+                                aes(height = ..count..),
+                                rel_min_height = 0.01,
+                                color = alpha("black", 0.5),
+                                alpha = 0.33,
+                                size = 0.3,
+                                trim = TRUE) +
+            geom_line(data = trend$x, aes(x = mean, y = time, linetype = "mean", fill = NULL, group = treatment), size = 1) +
+            geom_line(data = trend$x, aes(x = Q50, y = time, linetype = "median", fill = NULL, group = treatment), size = 1) +
+            coord_flip() +
+            theme_minimal() +
+            facet_wrap(~var, ncol = 2)
     }
 
 }

@@ -3,6 +3,10 @@
 # * allow RE_level arg for post_diff plots
 # * add type = "post_overlay": plot diststribution of outcomes for percentile p
 # * update so plot(p_gamma, RE_level = c(2,3)) use facets instead of grid.arrange
+# * add plote type "trend_dist": plot RE dist at each time point, like ridge plots
+#    - should be possible to overlay tx and cc in same panel?
+# * add some type of level 1 plot of resp distribution, e.g. for different combinations of RE effects?
+# * allow comparing subject at different cluster level RE effects?
 
 # Gaussian ----------------------------------------------------------------
 p <- study_parameters(design = study_design(),
@@ -10,13 +14,23 @@ p <- study_parameters(design = study_design(),
                           n2 = 25,
                           icc_pre_subject = 0.5,
                           var_ratio = 0.02,
+                      cor_subject = -0.5,
                           effect_size = log(0.5),
                           sigma_error = 1)
 
 m <- marginalize(p)
 
 plot(m)
-plot(m , RE = FALSE, type = "trend_dropout", RE_level = c(2))
+plot(p , RE = TRUE, type = "trend", RE_level = c(2))
+plot(p , RE = TRUE, type = "trend", RE_level = c(2,3))
+
+plot(m , RE = TRUE, type = "trend", RE_level = c(2,3))
+
+plot(m, type = "trend_ridges", RE_level = c(2,3))
+
+# TODO: support link scale
+plot(p, type = "trend_ridges", RE_level = c(2,3))
+
 plot(m , RE = FALSE, type = "post_diff", RE_level = c(2))
 plot(m , RE = FALSE, type = "post_diff", RE_level = c(3))
 
@@ -32,9 +46,15 @@ p_bin <- study_parameters(design = study_design(family = "binomial"),
                           sigma_error = 1)
 
 m_bin <- marginalize(p_bin, hu = TRUE)
-plot(p_bin)
-plot(m_bin , RE = FALSE, type = "trend_dropout", RE_level = c(2))
+
+plot(p_bin, RE_level = c(2,3))
+
+
+plot(m_bin, RE = FALSE, type = "trend", RE_level = c(2,3))
+
 plot(m_bin, type = "post_ratio")
+plot(m_bin, type = "post_diff")
+
 
 # Poisson ----------------------------------------------------------------
 p_pois <- study_parameters(design = study_design(family = "poisson"),
@@ -70,10 +90,11 @@ plot_link(p_ln)
 p_gamma <- study_parameters(design = study_design(family = "gamma"),
                          n1 = 11,
                          n2 = 25,
-                         icc_pre_subject = 0.5,
-                         var_ratio = 0.02,
-                         effect_size = log(1),
-                         shape = 1.5,
+                         fixed_intercept = log(500),
+                         sigma_subject_intercept = 1,
+                         sigma_cluster_intercept = 0.2,
+                         effect_size = log(0.5),
+                         shape = 3,
                          sigma_error = 1)
 
 m_gamma <- marginalize(p_gamma)
@@ -81,6 +102,7 @@ m_gamma <- marginalize(p_gamma)
 plot(p_gamma, RE_level = c(2,3))
 plot(m_gamma)
 
+plot(m_gamma, type = "trend_ridges", RE_level = c(2,3)) + xlim(0, 5000)
 
 
 # Hurdle models
