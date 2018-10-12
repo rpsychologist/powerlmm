@@ -36,11 +36,7 @@ marginalize.plcp_nested <- function(object,
     R_cov3 <- matrix(Sigma_cluster, 2, 2)
     R_cov3[is.na(R_cov3)] <- 0
 
-    time <- 0:(pars$n1 - 1)
-
-    d <- expand.grid(time = time,
-                     treatment = 0:1,
-                     subject = 1)
+    d <- .create_dummy_d(pars)
 
     betas <- with(pars, c(fixed_intercept,
                           fixed_slope,
@@ -83,6 +79,55 @@ marginalize.plcp_nested <- function(object,
     out
 }
 
+.create_dummy_d <- function(pars) {
+    time <- 0:(pars$n1 - 1)
+
+    d <- expand.grid(time = time,
+                     treatment = 0:1,
+                     subject = 1)
+
+    d
+}
+
+.get_inv_link <- function(family, sigma = NULL) {
+    # log-transformation, but call links for concistency
+    ln_inv <- function(sigma) {
+        sigma <- sigma
+        function(eta) {
+            exp(eta + sigma^2/2)
+        }
+    }
+
+    inv_link <- switch(as.character(family),
+                       "gaussian" = function(eta) eta,
+                       "binomial" = plogis,
+                       "poisson" = exp,
+                       "gamma" = exp,
+                       "lognormal" = ln_inv(sigma)
+    )
+
+    inv_link
+}
+.get_link <- function(family, sigma = NULL) {
+    ln_link <- function(sigma) {
+        sigma <- sigma
+        function(y) {
+            log(y) - sigma^2/2
+        }
+    }
+
+
+    link <- switch(as.character(family),
+                   "gaussian" = function(eta) eta,
+                   "binomial" = qlogis,
+                   "poisson" = log,
+                   "gamma" = log,
+                   "lognormal" = ln_link(sigma)
+    )
+
+    link
+}
+
 
 # marginalize hurdle ests over random effects
 .marginalize_nested_sim <- function(d,
@@ -98,8 +143,6 @@ marginalize.plcp_nested <- function(object,
                              full = FALSE, ...) {
 
 
-    #d <- d[sample(1:nrow(d), ceiling(0.7 * nrow(d))), ]
-
     sd2 <- MASS::mvrnorm(R, c(0,0), R_cov2)
     sd3 <- MASS::mvrnorm(R, c(0,0), R_cov3)
     sd0 <- sd2 + sd3
@@ -112,41 +155,15 @@ marginalize.plcp_nested <- function(object,
 
     XtX <- crossprod(X)
 
-    # log-transformation, but call them links for concistency
-    ln_inv <- function(sigma) {
-        sigma <- sigma
-        function(eta) {
-            exp(eta + sigma^2/2)
-        }
-    }
-    ln_link <- function(sigma) {
-        sigma <- sigma
-        function(y) {
-            log(y) - sigma^2/2
-        }
-    }
-    inv_link <- switch(as.character(family),
-                       "gaussian" = function(eta) eta,
-                       "binomial" = plogis,
-                       "poisson" = exp,
-                       "gamma" = exp,
-                       "lognormal" = ln_inv(sigma)
-    )
-
-    link <- switch(as.character(family),
-                   "gaussian" = function(eta) eta,
-                   "binomial" = qlogis,
-                   "poisson" = log,
-                   "gamma" = log,
-                   "lognormal" = ln_link(sigma)
-    )
+    inv_link <- .get_inv_link(family, sigma)
+    link <- .get_link(family, sigma)
 
     if(link_scale) {
         inv_link <- function(eta) eta
         link <- function(eta) eta
     }
 
-    calc_eta <- function(i, full) {
+    calc_eta <- function(i) {
         if(partially_nested) {
             tx <- d[i, "treatment"]
             sd3 <- sd3 * tx # cc = 0
@@ -179,7 +196,7 @@ marginalize.plcp_nested <- function(object,
 
         out
     }
-    tmp <- lapply(1:nrow(X), calc_eta, full = full)
+    tmp <- lapply(1:nrow(X), calc_eta)
     tmp <- as.data.frame(do.call(rbind, tmp))
 
     post_ps <- trans_post_ps(tmp$post, hu = family == "binomial")
@@ -210,8 +227,6 @@ marginalize.plcp_nested <- function(object,
                       "marginal")
 
     coefs <- list("y" = coefs)
-
-    ## TODO: also return post ES with sd and percentiles
 
     # posttest
     post <- marg_y[marg_y$time == max(marg_y$time), c("treatment","mean", "Q50")]
@@ -344,3 +359,77 @@ marginalize.plcp_nested <- function(object,
 }
 
 
+## Sample level 1
+.sample_level1_nested <- function(pars,
+                                  sd2_q,
+                                  sd3_q,
+                                  R,
+                                  link_scale = FALSE,
+                                  ...) {
+
+    d <- .create_dummy_d(pars)
+    family <- pars$family
+
+    betas <- with(pars, c(fixed_intercept,
+                          fixed_slope,
+                          0,
+                          get_slope_diff(pars)/pars$T_end))
+
+    X <- model.matrix(~time * treatment,
+                      data = d)
+
+    Xmat <- X %*% betas
+    Z <- model.matrix(~time,
+                      data = d)
+
+    XtX <- crossprod(X)
+
+    inv_link <- .get_inv_link(family, sigma)
+    link <- .get_link(family, sigma)
+
+    if(link_scale) {
+        inv_link <- function(eta) eta
+        link <- function(eta) eta
+    }
+
+    # RE
+    sd3 <- qnorm(sd3_q, 0, with(pars, c(sigma_cluster_intercept,
+                              sigma_cluster_slope)))
+    sd2 <- qnorm(sd2_q, 0, with(pars, c(sigma_subject_intercept,
+                              sigma_subject_slope)))
+    sd0 <- sd2 + sd3
+    sd0[is.na(sd0)] <- 0
+
+    calc_eta <- function(i, full) {
+        if(pars$partially_nested) {
+            tx <- d[i, "treatment"]
+            sd3 <- sd3 * tx # cc = 0
+            sd0 <- sd2 + sd3
+            sd0[is.na(sd0)] <- 0
+        }
+
+
+        # level 2 (includes lvl 3)<
+        mu <- Xmat[i, ] + Z[i, ] %*% sd0
+
+        inv_mu <- inv_link(mu)
+        y <- rnorm(R, inv_mu, pars$sigma_error)
+
+        out <- list(marg_y1 = eta_sum(y),
+                    exp_mu1_vec = y)
+    }
+
+
+    tmp <- lapply(1:nrow(X), calc_eta)
+    tmp <- as.data.frame(do.call(rbind, tmp))
+
+    marg_y <- trans_eta(tmp, "marg_y1", d = d)
+
+    list(coefs = NULL,
+         y = marg_y,
+         post = NULL,
+         post_ps = NULL,
+         mu1_vec = tmp$exp_mu1_vec
+    )
+
+}

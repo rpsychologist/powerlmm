@@ -451,6 +451,7 @@ reshape_eta_sum <- function(x) {
 
     res <- rbind(res2, res3)
     res$var <- factor(res$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+    res$treatment <- factor(res$treatment, labels = c("Control", "Treatment"))
 
     res
 }
@@ -702,8 +703,16 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 }
 
 .make_nested_trend <- function(object, RE, RE_level) {
+    y1 <- NULL
     y2 <- NULL
     y3 <- NULL
+
+
+    # TODO: add so marginalize can also return level 1?
+    # see .sample_level1_nested
+    if(any(RE_level == 1)) {
+        y1 <- object$y
+    }
     if(any(RE_level == 2)) {
         y2 <- object$y
     }
@@ -711,7 +720,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
         y3 <- object$y_lvl3
 
     }
-    args <- list("subject" = y2,
+    args <- list("within-subject" = y1,
+                 "subject" = y2,
                  "cluster" = y3)
     args <- args[!vapply(args, is.null, logical(1))]
     x <- .rbind_lists(args)
@@ -737,13 +747,18 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
         lims[lims$var == "cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
     }
 
-    lims$var <- factor(lims$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
     x$var <- factor(x$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
     Q_long$var <- factor(Q_long$var, labels = c("Subject", "Cluster"), levels =  c("subject", "cluster"))
 
     lims2 <- lims
     lims2$treatment <- "Control"
     lims <- rbind(lims, lims2)
+
+    lims$var <- factor(lims$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+    lims$treatment <- factor(lims$treatment, labels = c("Control", "Treatment"))
+    x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    Q_long$treatment <- factor(Q_long$treatment, labels = c("Control", "Treatment"))
+
 
     list(x = x,
          Q_long = Q_long,
@@ -792,7 +807,7 @@ plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_leve
             geom_density_ridges(scale = 0.7, stat = "density",
                                 aes(height = ..count..),
                                 rel_min_height = 0.01,
-                                color = alpha("black", 0.5),
+                                #color = alpha("black", 0.5),
                                 alpha = 0.33,
                                 size = 0.3,
                                 trim = TRUE) +
