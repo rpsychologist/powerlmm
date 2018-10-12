@@ -424,33 +424,48 @@ reshape_eta_sum <- function(x) {
     d
 }
 
-.mu_vec_to_long <- function(x, RE_level) {
+.mu_vec_to_long <- function(x, RE_level, ...) {
+    res1 <- NULL
     res2 <- NULL
     res3 <- NULL
 
+    if(any(RE_level == 1)) {
+        x1 <- .sample_level1_nested(x$paras,
+                                    R = 1e5,
+                                    ...)
+        res1 <- lapply(1:nrow(x1$y), function(i) {
+            tmp <- data.frame(y = x1$mu1_vec[[i]])
+            tmp$treatment <- x1$y[i, "treatment"]
+            tmp$time <- x1$y[i, "time"]
+            tmp$var <- "within-subject"
+            tmp
+        })
+        res1 <- do.call(rbind, res1)
+    }
     if(any(RE_level == 2)) {
-        res2 <- lapply(1:nrow(x$y), function(i) {
+        res2 <- lapply(1:nrow(x$y2), function(i) {
             tmp <- data.frame(y = x$mu2_vec[[i]])
-            tmp$treatment <- x$y[i, "treatment"]
-            tmp$time <- x$y[i, "time"]
+            tmp$treatment <- x$y2[i, "treatment"]
+            tmp$time <- x$y2[i, "time"]
             tmp$var <- "subject"
             tmp
         })
         res2 <- do.call(rbind, res2)
     }
     if(any(RE_level == 3)) {
-        res3 <- lapply(1:nrow(x$y), function(i) {
+        res3 <- lapply(1:nrow(x$y3), function(i) {
             tmp <- data.frame(y = x$mu3_vec[[i]])
-            tmp$treatment <- x$y[i, "treatment"]
-            tmp$time <- x$y[i, "time"]
+            tmp$treatment <- x$y3[i, "treatment"]
+            tmp$time <- x$y3[i, "time"]
             tmp$var <- "cluster"
             tmp
         })
         res3 <- do.call(rbind, res3)
     }
 
-    res <- rbind(res2, res3)
-    res$var <- factor(res$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+    res <- rbind(res1, res2, res3)
+    res$var <- factor(res$var, labels = c("Within-subject","Subject", "Cluster"),
+                      levels = c("within-subject","subject", "cluster"))
     res$treatment <- factor(res$treatment, labels = c("Control", "Treatment"))
 
     res
@@ -675,6 +690,20 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
     Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
 
+    # Overlay L1 trajectory on L2 panel
+    tmp <- x[x$var == "Within-subject", ]
+    tmp$var <- "Subject"
+    tmp$color <- "L1"
+
+    x$color <- NA
+    x[x$var == "Within-subject", "color"] <- "L1"
+    x[x$var == "Subject", "color"] <- "L2"
+    x[x$var == "Cluster", "color"] <- "L3"
+
+    x <- rbind(x, tmp)
+
+
+
     plot_struct <- list(
                         scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
                         guides(color = guide_legend(override.aes = list(fill = NA))),
@@ -683,12 +712,17 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
     if(RE) {
         ggplot(x, aes(time, mean, group = treatment)) +
-            geom_ribbon(data = Q_long, aes(ymin = min, ymax = max, y = NULL, x = time, group = interaction(width, treatment),
-                                           fill = width), alpha = 0.75) +
-            geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
-            geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
-            geom_point(aes(y = Q50), color = "red") +
-            scale_color_manual(values = c("median" = "red", "mean" = "red")) +
+            geom_ribbon(data = Q_long, aes(ymin = min,
+                                           ymax = max,
+                                           y = NULL,
+                                           x = time,
+                                           group = interaction(width, treatment),
+                                           fill = width),
+                        alpha = 0.75) +
+            geom_line(aes(color = color, linetype = "mean", fill = NULL,  group = interaction(color, var)), size = 1) +
+            geom_line(aes(y = Q50, color = color, linetype = "median", fill = NULL,  group = interaction(color, var)), size = 1) +
+            geom_point(aes(y = Q50, color = color)) +
+            #scale_color_manual(values = c("median" = "red", "mean" = "red")) +
             facet_wrap(~treatment, ncol = 2) +
             plot_struct
     } else {
@@ -702,22 +736,24 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
 }
 
-.make_nested_trend <- function(object, RE, RE_level) {
+.make_nested_trend <- function(object, RE, RE_level, ...) {
     y1 <- NULL
     y2 <- NULL
     y3 <- NULL
 
-
     # TODO: add so marginalize can also return level 1?
     # see .sample_level1_nested
     if(any(RE_level == 1)) {
-        y1 <- object$y
+        x1 <- .sample_level1_nested(object$paras,
+                                    R = 1e5,
+                                    ...)
+        y1 <- x1$y
     }
     if(any(RE_level == 2)) {
-        y2 <- object$y
+        y2 <- object$y2
     }
     if(any(RE_level == 3)) {
-        y3 <- object$y_lvl3
+        y3 <- object$y3
 
     }
     args <- list("within-subject" = y1,
@@ -740,21 +776,25 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
                                 max_cols = c("mean", "Q50"))
     }
 
-    # use same limits for lvl 2 and 3
+    # use same limits for lvl 1, 2 and 3
     if(all(c("subject", "cluster") %in% lims$var)) {
-        tmp <- lims[lims$var %in% c("subject", "cluster"), ]
+        tmp <- lims[lims$var %in% c("within-subject", "subject", "cluster"), ]
+        lims[lims$var == "within-subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
         lims[lims$var == "subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
         lims[lims$var == "cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
     }
 
-    x$var <- factor(x$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
-    Q_long$var <- factor(Q_long$var, labels = c("Subject", "Cluster"), levels =  c("subject", "cluster"))
+    x$var <- factor(x$var, labels = c("Within-subject", "Subject", "Cluster"),
+                    levels = c("within-subject","subject", "cluster"))
+    Q_long$var <- factor(Q_long$var, labels = c("Within-subject", "Subject", "Cluster"),
+                         levels =  c("within-subject","subject", "cluster"))
 
     lims2 <- lims
     lims2$treatment <- "Control"
     lims <- rbind(lims, lims2)
 
-    lims$var <- factor(lims$var, labels = c("Subject", "Cluster"), levels = c("subject", "cluster"))
+    lims$var <- factor(lims$var, labels = c("Within-subject", "Subject", "Cluster"),
+                       levels = c("within-subject","subject", "cluster"))
     lims$treatment <- factor(lims$treatment, labels = c("Control", "Treatment"))
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
     Q_long$treatment <- factor(Q_long$treatment, labels = c("Control", "Treatment"))
@@ -768,16 +808,20 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE, ...) {
     check_installed("ggplot2")
 
-
+    ## DROPOUT
     if(type == "dropout") {
         .plot_dropout(object$paras)
+    ## TREND
     } else if(type == "trend") {
 
 
-        trend <- .make_nested_trend(object = object, RE = RE, RE_level = RE_level)
+        trend <- .make_nested_trend(object = object,
+                                    RE = RE,
+                                    RE_level = RE_level,
+                                    ...)
 
         if(RE) {
-            facets <- list(facet_wrap(var ~ treatment, scales = "free"))
+            facets <- list(facet_wrap(var ~ treatment, scales = "free", ncol = 2))
         } else {
             facets <- list(facet_wrap(~var, ncol = 1, scales = "free"))
         }
@@ -792,19 +836,25 @@ plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_leve
             labs(linetype = "", color = "", y = "Mean", title = "Change over time") +
             facets
 
-
-
         plot(p)
         return(invisible(p))
+    ## POST
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
         .plot_diff_marg(object, type = type, ...)
+
+    ## Ridges
     } else if(type == "trend_ridges") {
         check_installed("ggridges")
-        res <- .mu_vec_to_long(object, RE_level = RE_level)
-        trend <- .make_nested_trend(object = object, RE = RE, RE_level = RE_level)
+        res <- .mu_vec_to_long(object,
+                               RE_level = RE_level,
+                               ...)
+        trend <- .make_nested_trend(object = object,
+                                    RE = RE,
+                                    RE_level = RE_level,
+                                    ...)
 
         ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment)) +
-            geom_density_ridges(scale = 0.7, stat = "density",
+            ggridges::geom_density_ridges(scale = 0.7, stat = "density",
                                 aes(height = ..count..),
                                 rel_min_height = 0.01,
                                 #color = alpha("black", 0.5),

@@ -255,8 +255,8 @@ marginalize.plcp_nested <- function(object,
                        est = post, row.names = NULL)
 
     list(coefs = coefs,
-         y = marg_y,
-         y_lvl3 = marg_y3,
+         y2 = marg_y,
+         y3 = marg_y3,
          post = post,
          post_ps = post_ps,
          mu2_vec = tmp$exp_mu2_vec,
@@ -361,9 +361,9 @@ marginalize.plcp_nested <- function(object,
 
 ## Sample level 1
 .sample_level1_nested <- function(pars,
-                                  sd2_q,
-                                  sd3_q,
-                                  R,
+                                  sd2_p = c(0.5, 0.5),
+                                  sd3_p = c(0.5, 0.5),
+                                  R = 1e4,
                                   link_scale = FALSE,
                                   ...) {
 
@@ -384,8 +384,8 @@ marginalize.plcp_nested <- function(object,
 
     XtX <- crossprod(X)
 
-    inv_link <- .get_inv_link(family, sigma)
-    link <- .get_link(family, sigma)
+    inv_link <- .get_inv_link(family, pars$sigma_error)
+    link <- .get_link(family, pars$sigma_error)
 
     if(link_scale) {
         inv_link <- function(eta) eta
@@ -393,33 +393,48 @@ marginalize.plcp_nested <- function(object,
     }
 
     # RE
-    sd3 <- qnorm(sd3_q, 0, with(pars, c(sigma_cluster_intercept,
+    sd3 <- qnorm(sd3_p, 0, with(pars, c(sigma_cluster_intercept,
                               sigma_cluster_slope)))
-    sd2 <- qnorm(sd2_q, 0, with(pars, c(sigma_subject_intercept,
+    sd2 <- qnorm(sd2_p, 0, with(pars, c(sigma_subject_intercept,
                               sigma_subject_slope)))
+
+    sd3[is.na(sd3)] <- 0
+    sd2[is.na(sd2)] <- 0
     sd0 <- sd2 + sd3
-    sd0[is.na(sd0)] <- 0
 
     calc_eta <- function(i, full) {
         if(pars$partially_nested) {
             tx <- d[i, "treatment"]
             sd3 <- sd3 * tx # cc = 0
             sd0 <- sd2 + sd3
-            sd0[is.na(sd0)] <- 0
         }
 
-
-        # level 2 (includes lvl 3)<
         mu <- Xmat[i, ] + Z[i, ] %*% sd0
 
         inv_mu <- inv_link(mu)
-        y <- rnorm(R, inv_mu, pars$sigma_error)
+        if(family == "gaussian") {
+            y <- rnorm(R, inv_mu, pars$sigma_error)
+        } else if(family == "binomial") {
+            # TODO: fix level 1 binom plot
+            y <- rbinom(R, 1, prob = inv_mu)
+        } else if(family == "poisson") {
+            y <- rpois(R, lambda = inv_mu)
+        }
+        else if(family == "gamma") {
+            shape <- pars$shape
+            y <- rgamma(R,
+                        shape = shape,
+                        rate = shape/inv_mu)
+        } else if(family == "lognormal") {
+            y <- rlnorm(R,
+                        meanlog = mu,
+                        sdlog = pars$sigma_error)
+        }
+
 
         out <- list(marg_y1 = eta_sum(y),
                     exp_mu1_vec = y)
     }
-
-
     tmp <- lapply(1:nrow(X), calc_eta)
     tmp <- as.data.frame(do.call(rbind, tmp))
 

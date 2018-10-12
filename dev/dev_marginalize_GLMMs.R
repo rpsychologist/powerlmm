@@ -21,11 +21,14 @@ p <- study_parameters(design = study_design(),
 m <- marginalize(p)
 
 plot(m)
-plot(p , RE = TRUE, type = "trend", RE_level = c(2))
+plot(p , RE = TRUE, type = "trend", RE_level = c(1,2))
 plot(p , RE = TRUE, type = "trend", RE_level = c(2,3))
 
-plot(m , RE = TRUE, type = "trend", RE_level = c(2,3))
+plot(m , RE = TRUE, type = "trend", RE_level = c(1,2))
 
+
+# Set better limits?
+# trim data to 99%?
 plot(m, type = "trend_ridges", RE_level = c(2,3))
 
 # TODO: support link scale
@@ -47,10 +50,18 @@ p_bin <- study_parameters(design = study_design(family = "binomial"),
 
 m_bin <- marginalize(p_bin, hu = TRUE)
 
-plot(p_bin, RE_level = c(2,3))
+plot(m_bin, RE_level = c(1, 2))
 
 
-plot(m_bin, RE = FALSE, type = "trend", RE_level = c(2,3))
+plot(m_bin,
+     RE = FALSE,
+     type = "trend",
+     RE_level = c(2,3))
+
+plot(m_bin,
+     RE = FALSE,
+     type = "trend_ridges",
+     RE_level = c(2,3))
 
 plot(m_bin, type = "post_ratio")
 plot(m_bin, type = "post_diff")
@@ -72,6 +83,14 @@ m_pois <- marginalize(p_pois)
 plot(p_pois)
 plot(m_pois)
 plot(m_pois, type = "post_ratio")
+
+plot(m_pois, type = "trend", RE_level = c(1,2))
+
+# TODO:
+# * fix lims
+# * use hist for level 1 counts?
+plot(m_pois, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 20)
+
 # lognormal ----------------------------------------------------------------
 p_ln <- study_parameters(design = study_design(family = "lognormal"),
                            n1 = 11,
@@ -86,6 +105,9 @@ p_ln <- study_parameters(design = study_design(family = "lognormal"),
 m_ln <- marginalize(p_ln)
 plot(m_ln)
 plot_link(p_ln)
+plot(m_ln, type = "trend", RE_level = c(1,2))
+plot(m_ln, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 10000) + scale_x_log10()
+
 # Gamma ----------------------------------------------------------------
 p_gamma <- study_parameters(design = study_design(family = "gamma"),
                          n1 = 11,
@@ -94,13 +116,18 @@ p_gamma <- study_parameters(design = study_design(family = "gamma"),
                          sigma_subject_intercept = 1,
                          sigma_cluster_intercept = 0.2,
                          effect_size = log(0.5),
-                         shape = 3,
+                         shape = 2,
                          sigma_error = 1)
 
 m_gamma <- marginalize(p_gamma)
 
 plot(p_gamma, RE_level = c(2,3))
 plot(m_gamma)
+
+plot(m_gamma, type = "trend", RE_level = c(1,2), sd2_p = c(0.5, 0.5)) + ylim(0, 5000) + scale_y_log10()
+
+plot(m_gamma, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 3000) + scale_x_log10()
+
 
 plot(m_gamma, type = "trend_ridges", RE_level = c(2,3)) + xlim(0, 5000)
 
