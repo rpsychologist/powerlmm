@@ -670,10 +670,10 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
      if(type == "trend") {
          if(RE) {
-             .plot_link(paras, RE_level = RE_level) +
+             .plot_link(paras, RE_level = RE_level, ...) +
                  labs(x = "Mean (link scale)")
          } else {
-             .plot_trend(paras)
+             .plot_trend(paras, ...)
          }
 
      } else if(type == "dropout") {
