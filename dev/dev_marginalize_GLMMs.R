@@ -88,7 +88,6 @@ plot(m_pois, type = "trend", RE_level = c(1,2))
 
 # TODO:
 # * fix lims
-# * use hist for level 1 counts?
 plot(m_pois, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 20)
 
 # lognormal ----------------------------------------------------------------
@@ -166,8 +165,18 @@ m <- marginalize(p)
 plot(m, RE = FALSE)
 plot(m, RE = TRUE)
 
-plot(m, RE = TRUE, type = "trend_dropout")
-plot(m, RE = FALSE, type = "trend_dropout")
+plot(m, RE = TRUE, type = "trend")
+plot(m, RE = FALSE, type = "trend")
+
+# TODO: level 1
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1,2))
+
+library(gridExtra)
+
+# TODO: fix so this works. plot should return ggplot objects
+grid.arrange(plot(m, RE = FALSE, type = "post_diff"), plot(m, RE = FALSE, type = "post_ratio"))
+
+
 
 plot_hurdle_time(m$y_overall)
 plot_hurdle_time(m$y_positive)

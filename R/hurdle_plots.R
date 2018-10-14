@@ -23,6 +23,8 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
     Q_long <- .rbind_lists(args, func = reshape_eta_sum)
 
     x$var <- factor(x$var, levels = c("overall", "positive", "hurdle"))
+    x$color <- "Subject"
+    Q_long$color <- "Subject"
 
     # Get limits
     if(RE) {
@@ -61,7 +63,7 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                          ymax = ymax) +
             geom_blank(data = lims) +
             labs(linetype = "", color = "", title = "Subject level") +
-            facet_wrap(~var, scales = "free")
+            facet_wrap(treatment~var, scales = "free")
         if(type == "trend_dropout") {
             gridExtra::grid.arrange(p2, pd, ncol=1)
             return(invisible(list("trend" =  list("subject" = p2),

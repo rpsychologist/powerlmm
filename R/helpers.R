@@ -685,22 +685,26 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 }
 
 
-.plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE) {
+.plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE) {
 
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
     Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
 
-    # Overlay L1 trajectory on L2 panel
-    tmp <- x[x$var == "Within-subject", ]
-    tmp$var <- "Subject"
-    tmp$color <- "L1"
 
-    x$color <- NA
-    x[x$var == "Within-subject", "color"] <- "L1"
-    x[x$var == "Subject", "color"] <- "L2"
-    x[x$var == "Cluster", "color"] <- "L3"
+    if(overlay) {
+        # Overlay L1 trajectory on L2 panel
+        tmp <- x[x$var == "Within-subject", ]
+        tmp$var <- "Subject"
+        tmp$color <- "L1"
 
-    x <- rbind(x, tmp)
+        x$color <- NA
+        x[x$var == "Within-subject", "color"] <- "L1"
+        x[x$var == "Subject", "color"] <- "L2"
+        x[x$var == "Cluster", "color"] <- "L3"
+
+        x <- rbind(x, tmp)
+    }
+
 
 
 
@@ -853,19 +857,38 @@ plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_leve
                                     RE_level = RE_level,
                                     ...)
 
-        ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment)) +
-            ggridges::geom_density_ridges(scale = 0.7, stat = "density",
-                                aes(height = ..count..),
-                                rel_min_height = 0.01,
-                                #color = alpha("black", 0.5),
-                                alpha = 0.33,
-                                size = 0.3,
-                                trim = TRUE) +
-            geom_line(data = trend$x, aes(x = mean, y = time, linetype = "mean", fill = NULL, group = treatment), size = 1) +
-            geom_line(data = trend$x, aes(x = Q50, y = time, linetype = "median", fill = NULL, group = treatment), size = 1) +
-            coord_flip() +
-            theme_minimal() +
-            facet_wrap(~var, ncol = 2)
+        if(object$paras$family == "poisson") {
+            ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment)) +
+                ggridges::geom_density_ridges(scale = 0.7, stat = "binline",
+                                              aes(height = ..count..),
+                                              binwidth = 1,
+                                              #rel_min_height = 0.01,
+                                              #color = alpha("black", 0.5),
+                                              alpha = 0.33,
+                                              size = 0.3,
+                                              trim = TRUE) +
+                geom_line(data = trend$x, aes(x = mean, y = time, linetype = "mean", fill = NULL, group = interaction(treatment, var)), size = 1) +
+                geom_line(data = trend$x, aes(x = Q50, y = time, linetype = "median", fill = NULL, group = interaction(treatment, var)), size = 1) +
+                coord_flip() +
+                theme_minimal() +
+                facet_wrap(~var, ncol = 2)
+        } else {
+            ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment)) +
+                ggridges::geom_density_ridges(scale = 0.7, stat = "density",
+                                              aes(height = ..count..),
+                                              #binwidth = 1,
+                                              #rel_min_height = 0.01,
+                                              #color = alpha("black", 0.5),
+                                              alpha = 0.33,
+                                              size = 0.3,
+                                              trim = TRUE) +
+                geom_line(data = trend$x, aes(x = mean, y = time, linetype = "mean", fill = NULL, group = interaction(treatment, var)), size = 1) +
+                geom_line(data = trend$x, aes(x = Q50, y = time, linetype = "median", fill = NULL, group = interaction(treatment, var)), size = 1) +
+                coord_flip() +
+                theme_minimal() +
+                facet_wrap(~var, ncol = 2)
+        }
+
     }
 
 }
