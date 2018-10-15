@@ -62,26 +62,38 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
             facet_wrap(treatment~var, scales = "free")
     } else if(type == "trend_ridges") {
 
-        # res <- .mu_vec_to_long(object,
-        #                        RE_level = RE_level,
-        #                        ...)
-        # trend <- .make_nested_trend(object = object,
-        #                             RE = RE,
-        #                             RE_level = RE_level,
-        #                             ...)
+         res <- .mu_vec_to_long(object,
+                                RE_level = RE_level,
+                                var1 = "mu1_vec",
+                                var2 = "mu_overall_vec",
+                                tx_var = "y_overall",
+                                level1_func = .sample_level1_nested_hurdle,
+                                ...)
+         trend <- .make_nested_trend(object = object,
+                                     RE = RE,
+                                     RE_level = RE_level,
+                                     var1 = "y_overall",
+                                     var2 = "y_overall",
+                                     level1_func = .sample_level1_nested_hurdle,
+                                     ...)
+
+         #res <- subset(res, y > trend$lims$mean[1] & y < trend$lims$mean[2])
+
 
         ggplot(res, aes(x = y,
                         y = time,
                         group = interaction(time, treatment, var),
                         fill = treatment, color = treatment)) +
-            ggridges::geom_density_ridges(scale = 0.7, stat = "density",
+            ggridges::geom_density_ridges(scale = 1,
+                                          stat = "density",
+                                          binwidth = 1,
                                           aes(height = ..count..),
                                           #binwidth = 1,
                                           #rel_min_height = 0.01,
                                           #color = alpha("black", 0.5),
                                           alpha = 0.33,
                                           size = 0.3,
-                                          trim = TRUE) +
+                                          trim = FALSE) +
             geom_line(data = trend$x,
                       aes(x = mean,
                           y = time,

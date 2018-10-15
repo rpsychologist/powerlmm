@@ -140,12 +140,12 @@ p <- study_parameters(
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(30), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0.8), # prop == 0
+    fixed_hu_intercept = qlogis(0.5), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
-    sd_hu_intercept = 3,
+    sd_hu_intercept = 1,
     sd_hu_slope = 0.2,
-    sd_intercept = 2,
+    sd_intercept = 1,
     sd_slope = 0.05,
     cor_intercept_slope = -0.15,
     cor_intercept_hu_intercept = -0.66,
@@ -165,10 +165,11 @@ m <- marginalize(p)
 plot(m, RE = FALSE)
 plot(m, RE = TRUE)
 
-plot(m, RE = TRUE, type = "trend")
+plot(m, RE = TRUE, type = "trend", RE_level = c(1))
 plot(m, RE = FALSE, type = "trend")
 
 # TODO: level 1
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1,2))
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(2))
 
 library(gridExtra)

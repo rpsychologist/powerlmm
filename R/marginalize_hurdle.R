@@ -75,12 +75,12 @@ marginalize.plcp_hurdle <- function(object,
             # Y
             mu_overall <- mu
             # Y > 0
-            mu_positive <- exp(mu - log(1 - p))
+            mu_positive <- mu - log(1 - p)
         } else if(family == "lognormal") {
             # Y
             mu_overall <- mu
             # Y > 0
-            marg_cont <- exp(mu - log(1 - p) - sd_log^2/2)
+            marg_positive <- mu - log(1 - p) - sd_log^2/2
         }
 
     }  else {
@@ -88,12 +88,12 @@ marginalize.plcp_hurdle <- function(object,
             # Y
             mu_overall <- mu + log(1 - p)
             # Y > 0
-            mu_positive <- exp(mu)
+            mu_positive <- mu
         } else if(family == "lognormal") {
             # Y
             mu_overall <- mu + log(1 - p) + sd_log^2/2
             # Y > 0
-            mu_positive <- exp(mu + sd_log^2/2)
+            mu_positive <- mu + sd_log^2/2
         }
 
     }
@@ -144,7 +144,8 @@ marginalize.plcp_hurdle <- function(object,
         mu_overall <- eta$mu_overall
         mu_positive <- eta$mu_positive
 
-        exp_mu_overall <- exp( mu_overall)
+        exp_mu_overall <- exp(mu_overall)
+        exp_mu_positive <- exp(mu_positive)
 
         if(i %in% which(d$time == max(d$time))) {
             ps <- 1:99/100
@@ -163,7 +164,7 @@ marginalize.plcp_hurdle <- function(object,
             }
 
         out <- list(hu_prob = eta_sum(p),
-                    marg_y_positive = eta_sum(mu_positive),
+                    marg_y_positive = eta_sum(exp_mu_positive),
                     marg_y_overall = eta_sum(exp_mu_overall),
                     post = post,
                     post_hu = post_hu,
@@ -274,6 +275,28 @@ marginalize.plcp_hurdle <- function(object,
 
 }
 
+.calc_mu_overall <- function(mu, p, sd_log, family, marginal) {
+    if(marginal) {
+        if(family == "gamma") {
+            # Y
+            mu_overall <- mu
+        } else if(family == "lognormal") {
+            # Y
+            mu_overall <- mu + sd_log^2/2
+        }
+
+    }  else {
+        if(family == "gamma") {
+            # Y
+            mu_overall <- mu + log(1 - p)
+
+        } else if(family == "lognormal") {
+            # Y
+            mu_overall <- mu + log(1 - p) + sd_log^2/2
+        }
+
+    }
+}
 
 .marginalize_hurdle_sim_vec <- function(d,
                                  betas,
@@ -298,26 +321,13 @@ marginalize.plcp_hurdle <- function(object,
     mu <- c(Xeta) + tcrossprod(Zmat, sd0[, c(1,2)])
     hu <- c(Xeta_hu) + tcrossprod(Zmat, sd0[, c(3,4)])
     p <- plogis(hu)
-    if(marginal) {
-        if(family == "gamma") {
-            # Y
-            mu_overall <- mu
-        } else if(family == "lognormal") {
-            # Y
-            mu_overall <- mu + sd_log^2/2
-        }
 
-    }  else {
-        if(family == "gamma") {
-            # Y
-            mu_overall <- mu + log(1 - p)
+    mu_overall <- .calc_mu_overall(mu = mu,
+                                   sd_log = sd_log,
+                                   p = p,
+                                   family = family,
+                                   marginal = marginal)
 
-        } else if(family == "lognormal") {
-            # Y
-            mu_overall <- mu + log(1 - p) + sd_log^2/2
-        }
-
-    }
     exp_mu_overall <- exp( mu_overall)
     d$marg_overall <- matrixStats::rowMeans2(exp_mu_overall)
     d$median_overall <- matrixStats::rowMedians(exp_mu_overall)
@@ -371,4 +381,104 @@ marginalize.plcp_hurdle <- function(object,
     out
 }
 
+
+.sample_level1_nested_hurdle <- function(pars,
+                                  sd2_p = c(0.5, 0.5),
+                                  sd2_hu_p = c(0.5, 0.5),
+                                  R = 1e4,
+                                  link_scale = FALSE,
+                                  ...) {
+
+    d <- .create_dummy_d(pars)
+    family <- pars$family
+    marginal <- pars$marginal
+    if(family == "gamma") {
+        sd_log <- NULL
+        shape <- pars$shape
+    } else if(family == "lognormal") {
+        sd_log <- pars$sigma_log
+        shape <- NULL
+    }
+
+    betas <- with(pars, c(fixed_intercept,
+                          fixed_slope,
+                          0,
+                          get_slope_diff(pars)/pars$T_end))
+
+    X <- model.matrix(~time * treatment,
+                      data = d)
+
+    Xmat <- X %*% betas
+    Z <- model.matrix(~time,
+                      data = d)
+
+    XtX <- crossprod(X)
+
+    inv_link <- .get_inv_link(family, pars$sigma_error)
+    link <- .get_link(family, pars$sigma_error)
+
+    if(link_scale) {
+        inv_link <- function(eta) eta
+        link <- function(eta) eta
+    }
+
+    # RE
+    sd2 <- qnorm(sd2_p, 0, with(pars, c(sd_intercept,
+                                        sd_slope)))
+    sd2_hu <- qnorm(sd2_hu_p, 0, with(pars, c(sd_hu_intercept,
+                                        sd_hu_slope)))
+
+    sd2[is.na(sd2)] <- 0
+    sd2_hu[is.na(sd2_hu)] <- 0
+
+    calc_eta <- function(i) {
+
+        mu <- Xmat[i, ] + Z[i, ] %*% sd2
+
+        hu <- Xmat[i, ] + Z[i, ] %*% sd2_hu
+
+        eta <- .calc_eta_hurdle(mu = mu,
+                                p = plogis(hu),
+                                marginal = marginal,
+                                family = family,
+                                sd_log = sd_log)
+
+        ## sample
+        if(family == "lognormal") {
+
+            tmp <- rlnorm(R,
+                          meanlog = eta$mu_positive,
+                          sdlog = sd_log)
+        } else if(family == "gamma") {
+            tmp <- rgamma(R,
+                          shape = shape,
+                          rate = shape / exp(eta$mu_positive))
+
+        }
+
+        # hurdle
+        yh <- rbinom(R, 1, prob = plogis(hu))
+
+
+        y <- rep(0, R)
+        nh <- which(yh == 0)
+        y[nh] <- tmp[nh]
+
+
+        out <- list(marg_y1 = eta_sum(y),
+                    exp_mu1_vec = y)
+    }
+    tmp <- lapply(1:nrow(X), calc_eta)
+    tmp <- as.data.frame(do.call(rbind, tmp))
+
+    marg_y <- trans_eta(tmp, "marg_y1", d = d)
+
+    list(coefs = NULL,
+         y_overall = marg_y,
+         post = NULL,
+         post_ps = NULL,
+         mu1_vec = tmp$exp_mu1_vec
+    )
+
+}
 

@@ -385,7 +385,8 @@ reshape_eta_sum <- function(x) {
     lims <- lapply(var_names, function(x) {
         tmp <- d[d$var == x, ]
         data.frame(var = x,
-                   mean = c(min(tmp[, min_cols]), max(tmp[, max_cols])),
+                   #mean = c(min(tmp[, min_cols]), max(tmp[, max_cols])),
+                   mean = c(quantile(tmp[, min_cols], 0.01), quantile(tmp[, max_cols], 0.99)),
                    treatment = "Treatment",
                    time = 0)
     })
@@ -424,39 +425,47 @@ reshape_eta_sum <- function(x) {
     d
 }
 
-.mu_vec_to_long <- function(x, RE_level, ...) {
+.mu_vec_to_long <- function(x, RE_level,
+                            var1 = "mu1_vec",
+                            var2 = "mu2_vec",
+                            var3 = "mu3_vec",
+                            tx_var = "y1",
+                            level1_func = .sample_level1_nested,
+                            ...) {
     res1 <- NULL
     res2 <- NULL
     res3 <- NULL
 
+
+
     if(any(RE_level == 1)) {
-        x1 <- .sample_level1_nested(x$paras,
+        x1 <- level1_func(x$paras,
                                     R = 1e5,
                                     ...)
-        res1 <- lapply(1:nrow(x1$y), function(i) {
-            tmp <- data.frame(y = x1$mu1_vec[[i]])
-            tmp$treatment <- x1$y[i, "treatment"]
-            tmp$time <- x1$y[i, "time"]
+        res1 <- lapply(1:nrow(x1[[tx_var]]), function(i) {
+            tmp <- data.frame(y = x1[[var1]][[i]])
+            tmp$treatment <- x1[[tx_var]][i, "treatment"]
+            tmp$time <- x1[[tx_var]][i, "time"]
             tmp$var <- "within-subject"
             tmp
         })
         res1 <- do.call(rbind, res1)
     }
     if(any(RE_level == 2)) {
-        res2 <- lapply(1:nrow(x$y2), function(i) {
-            tmp <- data.frame(y = x$mu2_vec[[i]])
-            tmp$treatment <- x$y2[i, "treatment"]
-            tmp$time <- x$y2[i, "time"]
+        res2 <- lapply(1:nrow(x[[tx_var]]), function(i) {
+            tmp <- data.frame(y = x[[var2]][[i]])
+            tmp$treatment <- x[[tx_var]][i, "treatment"]
+            tmp$time <- x[[tx_var]][i, "time"]
             tmp$var <- "subject"
             tmp
         })
         res2 <- do.call(rbind, res2)
     }
     if(any(RE_level == 3)) {
-        res3 <- lapply(1:nrow(x$y3), function(i) {
-            tmp <- data.frame(y = x$mu3_vec[[i]])
-            tmp$treatment <- x$y3[i, "treatment"]
-            tmp$time <- x$y3[i, "time"]
+        res3 <- lapply(1:nrow(x[[tx_var]]), function(i) {
+            tmp <- data.frame(y = x[[var3]][[i]])
+            tmp$treatment <- x[[tx_var]][i, "treatment"]
+            tmp$time <- x[[tx_var]][i, "time"]
             tmp$var <- "cluster"
             tmp
         })
@@ -740,7 +749,12 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 
 }
 
-.make_nested_trend <- function(object, RE, RE_level, ...) {
+.make_nested_trend <- function(object, RE, RE_level,
+                               var1 = "y1",
+                               var2 = "y2",
+                               var3 = "y3",
+                               level1_func = .sample_level1_nested,
+                               ...) {
     y1 <- NULL
     y2 <- NULL
     y3 <- NULL
@@ -748,16 +762,16 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
     # TODO: add so marginalize can also return level 1?
     # see .sample_level1_nested
     if(any(RE_level == 1)) {
-        x1 <- .sample_level1_nested(object$paras,
+        x1 <- level1_func(object$paras,
                                     R = 1e5,
                                     ...)
-        y1 <- x1$y
+        y1 <- x1[[var1]]
     }
     if(any(RE_level == 2)) {
-        y2 <- object$y2
+        y2 <- object[[var2]]
     }
     if(any(RE_level == 3)) {
-        y3 <- object$y3
+        y3 <- object[[var3]]
 
     }
     args <- list("within-subject" = y1,
@@ -793,6 +807,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
     Q_long$var <- factor(Q_long$var, labels = c("Within-subject", "Subject", "Cluster"),
                          levels =  c("within-subject","subject", "cluster"))
 
+    x$color <- x$var
+    Q_long$color <- Q_long$var
     lims2 <- lims
     lims2$treatment <- "Control"
     lims <- rbind(lims, lims2)

@@ -90,10 +90,10 @@ sim_hurdle <- function(n1, n2, T_end,
     b0_hu <- fixed_hu_intercept + R[,3][id]
     b1_hu <- fixed_hu_slope + R[,4][id]
     logit <- b0_hu + b1_hu * time
-    yh <- rbinom(n2 * length(time), 1, prob=1/(1 + exp(logit)))
+    yh <- rbinom(n2 * length(time), 1, prob = plogis(logit))
 
     ## Continuous part
-    nh <- which(yh == 1) # 0 is gambling
+    nh <- which(yh == 0) # 0 is gambling
 
     b0 <- fixed_intercept + R[,1][id]
     b1 <- fixed_slope + R[,2][id]
@@ -133,8 +133,6 @@ sim_hurdle <- function(n1, n2, T_end,
                cluster_intercept_hu = b0_hu,
                cluster_slope_hu = b1_hu,
                abst = ifelse(yh == 1, 0, 1))
-
-
 }
 sim_hurdle_EMA <- function(n1_obs,
                            n1,
