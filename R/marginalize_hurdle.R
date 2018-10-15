@@ -42,8 +42,8 @@ marginalize.plcp_hurdle <- function(object,
     }
 
     .func <- ifelse(vectorize,
-                    .marginalize_hurdle_sim_vec,
-                    .marginalize_hurdle_sim)
+                    ".marginalize_hurdle_sim_vec",
+                    ".marginalize_hurdle_sim")
     out <- do.call(.func, list(d = d,
                                betas = betas,
                                Xmat = Xmat,
@@ -57,7 +57,10 @@ marginalize.plcp_hurdle <- function(object,
                                R = R,
                                ...))
 
-    out$paras <- object
+    if(!vectorize) {
+        out$paras <- object
+    }
+
     class(out) <- "plcp_marginal_hurdle"
 
     out
@@ -272,7 +275,7 @@ marginalize.plcp_hurdle <- function(object,
 }
 
 
-.marginalize_sim_hurdle_vec <- function(d,
+.marginalize_hurdle_sim_vec <- function(d,
                                  betas,
                                  betas_hu,
                                  R_cov,
@@ -315,7 +318,6 @@ marginalize.plcp_hurdle <- function(object,
         }
 
     }
-
     exp_mu_overall <- exp( mu_overall)
     d$marg_overall <- matrixStats::rowMeans2(exp_mu_overall)
     d$median_overall <- matrixStats::rowMedians(exp_mu_overall)
@@ -341,6 +343,11 @@ marginalize.plcp_hurdle <- function(object,
     marg_p_OR <- get_OR(marg_p_post_tx, marg_p_post_cc)
     median_p_OR <- get_OR(median_p_post_tx, median_p_post_cc)
 
+    # Coefs
+
+    XtX <- crossprod(Xmat)
+    b_overall <- solve(XtX, crossprod(Xmat, log(d$marg_overall)))[4]
+
     out <- cbind(marg_post_tx,
                  marg_post_cc,
                  marg_post_diff = marg_post_tx - marg_post_cc,
@@ -358,7 +365,8 @@ marginalize.plcp_hurdle <- function(object,
                  median_p_post_cc,
                  median_p_post_diff = median_p_post_tx - median_p_post_cc,
                  median_p_RR,
-                 median_p_OR
+                 median_p_OR,
+                 b_overall = b_overall
     )
     out
 }

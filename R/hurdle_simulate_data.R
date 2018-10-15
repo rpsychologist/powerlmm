@@ -41,7 +41,7 @@ create_R_cov.plcp_hurdle <- function(pars) {
 
     R_cov
 }
-sim_hurdle <- function(n1, n2,
+sim_hurdle <- function(n1, n2, T_end,
                           fixed_intercept, fixed_hu_intercept,
                           fixed_slope, fixed_hu_slope,
                      sd_hu_intercept, sd_hu_slope,
@@ -60,7 +60,7 @@ sim_hurdle <- function(n1, n2,
                      family = "lognormal",
                      ...) {
 
-    time <- 0:(n1-1)
+    time <- seq(0, T_end, length.out = n1)
 
     stopifnot(family %in% c("lognormal", "gamma"))
     # Random effects vcov matrix

@@ -169,7 +169,7 @@ plot(m, RE = TRUE, type = "trend")
 plot(m, RE = FALSE, type = "trend")
 
 # TODO: level 1
-plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1,2))
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(2))
 
 library(gridExtra)
 

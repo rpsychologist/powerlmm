@@ -1,6 +1,6 @@
 marginalize.brmsfit <- function(object,
                                 R = 1e3,
-                                .func = .marginalize_sim_vec,
+                                .func = .marginalize_hurdle_sim_vec,
                                 ...) {
     fit <- object
     stopifnot(fit$family$family %in% c("hurdle_lognormal", "hurdle_gamma", "custom"))
@@ -99,7 +99,7 @@ marginalize.brmsfit <- function(object,
     }
 
     # we only care about posttest ES
-    d <- d[d$time == max(d$time), ]
+    #d <- d[d$time == max(d$time), ]
     Xmat <- model.matrix(~time * treatment,
                          data = d)
     Zmat <- model.matrix(~time,

@@ -9,6 +9,7 @@ p <- study_parameters(
     design = des,
     n1 = 3,
     n2 = 20,
+    T_end = 10,
     fixed_intercept = log(30), # median(Y > 0)
     fixed_hu_intercept = qlogis(0.8), # prop == 0
     fixed_slope = log(0.99),

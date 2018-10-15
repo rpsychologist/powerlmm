@@ -50,28 +50,55 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
 
     if(type == "dropout") {
         .plot_dropout(object$paras)
-    } else if(type %in% c("trend", "trend_dropout")) {
-        if(type == "trend_dropout") {
-            check_installed("gridExtra")
-            pd <- .plot_dropout(object$paras)
-        }
+    } else if(type %in% "trend") {
 
-        p2 <- .plot_marg(x = x,
-                         Q_long = Q_long,
-                         RE = RE,
-                         ymin = ymin,
-                         ymax = ymax) +
+        .plot_marg(x = x,
+                   Q_long = Q_long,
+                   RE = RE,
+                   ymin = ymin,
+                   ymax = ymax) +
             geom_blank(data = lims) +
             labs(linetype = "", color = "", title = "Subject level") +
             facet_wrap(treatment~var, scales = "free")
-        if(type == "trend_dropout") {
-            gridExtra::grid.arrange(p2, pd, ncol=1)
-            return(invisible(list("trend" =  list("subject" = p2),
-                                  "dropout" = pd)))
-        } else {
-            plot(p2)
-            return(invisible(p2))
-        }
+    } else if(type == "trend_ridges") {
+
+        # res <- .mu_vec_to_long(object,
+        #                        RE_level = RE_level,
+        #                        ...)
+        # trend <- .make_nested_trend(object = object,
+        #                             RE = RE,
+        #                             RE_level = RE_level,
+        #                             ...)
+
+        ggplot(res, aes(x = y,
+                        y = time,
+                        group = interaction(time, treatment, var),
+                        fill = treatment, color = treatment)) +
+            ggridges::geom_density_ridges(scale = 0.7, stat = "density",
+                                          aes(height = ..count..),
+                                          #binwidth = 1,
+                                          #rel_min_height = 0.01,
+                                          #color = alpha("black", 0.5),
+                                          alpha = 0.33,
+                                          size = 0.3,
+                                          trim = TRUE) +
+            geom_line(data = trend$x,
+                      aes(x = mean,
+                          y = time,
+                          linetype = "mean",
+                          fill = NULL,
+                          group = interaction(treatment, var)),
+                      size = 1) +
+            geom_line(data = trend$x,
+                      aes(x = Q50,
+                          y = time,
+                          linetype = "median",
+                          fill = NULL,
+                          group = interaction(treatment, var)),
+                      size = 1) +
+            coord_flip() +
+            theme_minimal() +
+            facet_wrap(~var, ncol = 2)
 
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
         .plot_diff_marg(object, type = type, ...)
