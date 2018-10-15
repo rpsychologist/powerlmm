@@ -440,7 +440,6 @@ reshape_eta_sum <- function(x) {
 
     if(any(RE_level == 1)) {
         x1 <- level1_func(x$paras,
-                                    R = 1e5,
                                     ...)
         res1 <- lapply(1:nrow(x1[[tx_var]]), function(i) {
             tmp <- data.frame(y = x1[[var1]][[i]])
@@ -763,7 +762,6 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
     # see .sample_level1_nested
     if(any(RE_level == 1)) {
         x1 <- level1_func(object$paras,
-                                    R = 1e5,
                                     ...)
         y1 <- x1[[var1]]
     }
