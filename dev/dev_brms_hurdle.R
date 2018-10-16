@@ -28,6 +28,7 @@ p <- study_parameters(
     RR_cont = 0.33,
     OR_hu = 2,
     marginal = TRUE,
+    dropout = dropout_weibull(0.4, 1),
     family = "gamma")
 
 

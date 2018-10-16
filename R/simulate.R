@@ -702,7 +702,8 @@ simulate.plcp_list <-
                 }
                 clust_call <- (function(object, satterthwaite, formula, CI) {
                     function(i) {
-                        simulate_(i, paras = object,
+                        simulate_(i,
+                                  paras = object,
                                   satterthwaite = satterthwaite,
                                   formula = formula,
                                   CI = CI)
@@ -818,6 +819,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
 
     #saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
     tot_n <- length(unique(d[d$time == 0,]$subject))
+
     fit <- analyze_data(formula, d)
 
     res <- extract_results(fit = fit,
@@ -898,7 +900,6 @@ fit_model <- function(formula, data, ...) {
 }
 fit_model.default <- function(formula, data, ...) {
     # LMM or OLS
-
     args <- formula
     family <- formula$family
     formula <- as.formula(formula$formula)
@@ -911,6 +912,7 @@ fit_model.default <- function(formula, data, ...) {
         fit <- tryCatch(
             #do.call(lme4::lmer, list(formula=f, data=d))
             if(family$family == "gaussian") {
+
                 fit <- lme4::lmer(formula = formula, data = data)
             } else {
                 args$test <- NULL
