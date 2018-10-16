@@ -67,8 +67,13 @@ get_FE_thetas.plcp_hurdle <- function(paras, marginalize = FALSE ,... ) {
     )
 
     if(marginalize) {
+
+        m <- marginalize(paras, R = 1e5, vectorize = TRUE)
+        par_names <- dimnames(m)[[2]]
+        m <- c(m)
+        names(m) <- par_names
         out <- c(out,
-                 as.list( marginalize(paras, R = 1e5, vectorize = TRUE))
+                 as.list(m)
         )
     }
 

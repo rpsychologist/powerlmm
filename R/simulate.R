@@ -1420,8 +1420,13 @@ munge_results_ <- function(model, res, effect) {
         effect <- effect[, !colnames(effect) %in% c("parameter", "model"), drop = FALSE]
         effect <- signif(effect, digits)
         effect <- cbind(tmp, effect)
+        effect[,-1] <- round(effect[,-1], digits)
+        effect <- format(effect, scientific = FALSE)
         effect[t(do.call(rbind, lapply(effect, is.nan)))] <- "."
         effect[t(do.call(rbind, lapply(effect, is.na)))] <- "."
+        effect[t(do.call(rbind, lapply(effect, function(x) grepl("NA", x))))] <- "."
+
+
         print.data.frame(effect,
                          row.names = FALSE,
                          digits = digits,

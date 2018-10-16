@@ -7,8 +7,8 @@ des <- study_design(family = "hurdle")
 
 p <- study_parameters(
     design = des,
-    n1 = 3,
-    n2 = 20,
+    n1 = 5,
+    n2 = 50,
     T_end = 10,
     fixed_intercept = log(30), # median(Y > 0)
     fixed_hu_intercept = qlogis(0.8), # prop == 0
@@ -52,15 +52,15 @@ bfit_gamma_mtp <- brm(bf(y ~ time * treatment + (1 + time | c | subject),
                       cores = 1,
                       iter = 1)
 
-f0 <- sim_formula(bfit_gamma_ctp, iter = 200, marginalize = FALSE)
+f0 <- sim_formula(bfit_gamma_mtp, iter = 2000, marginalize = TRUE)
 
 
 res_gamma <- simulate(p,
-                      formula = sim_formula_compare("hurdle_ctp" = f0),
-                      nsim = 2,
-                      cores = 2)
+                      formula = sim_formula_compare("hurdle_mtp" = f0),
+                      nsim = 200,
+                      cores = 16)
 
-summary(res_gamma)
+summary(res_gamma, marginalize = TRUE)
 
 saveRDS(res_gamma, "sim_gamma_hurdle.rds")
 
