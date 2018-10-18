@@ -42,26 +42,58 @@ p_bin <- study_parameters(design = study_design(family = "binomial"),
                           n1 = 11,
                           n2 = 25,
                           fixed_intercept = qlogis(0.7),
-                          sigma_subject_intercept = 1,
+                          sigma_subject_intercept = sqrt(pi^2/3),
                           sigma_subject_slope = 0,
                           cor_subject = -0.5,
                           effect_size = log(0.5),
-                          sigma_error = 1)
+                          sigma_error = sqrt(pi^2/3))
 
-m_bin <- marginalize(p_bin, hu = TRUE)
+## link scale
+plot(p_bin, RE_level = c(1, 2))
+
+plot(p_bin,
+     RE = FALSE,
+     type = "trend",
+     RE_level = c(2, 3))
+
+
+plot(p_bin,
+     RE = TRUE,
+     type = "trend",
+     RE_level = c(2, 3))
+
+plot(p_bin,
+     RE = FALSE,
+     type = "trend_ridges",
+     RE_level = c(2, 3))
+
+
+# show warning
+plot(p_bin, type = "post_ratio")
+plot(p_bin, type = "post_diff")
+
+
+## marginalized
+m_bin <- marginalize(p_bin)
 
 plot(m_bin, RE_level = c(1, 2))
 
-
+## TODO: fix level 1
 plot(m_bin,
      RE = FALSE,
      type = "trend",
-     RE_level = c(2,3))
+     RE_level = c(1,2,3))
+
+
+plot(m_bin,
+     RE = TRUE,
+     type = "trend",
+     RE_level = c(1,2,3))
 
 plot(m_bin,
      RE = FALSE,
      type = "trend_ridges",
-     RE_level = c(2,3))
+     RE_level = c(1,2,3))
 
 plot(m_bin, type = "post_ratio")
 plot(m_bin, type = "post_diff")

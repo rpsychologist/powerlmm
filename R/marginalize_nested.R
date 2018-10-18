@@ -416,7 +416,7 @@ marginalize.plcp_nested <- function(object,
             y <- rnorm(R, inv_mu, pars$sigma_error)
         } else if(family == "binomial") {
             # TODO: fix level 1 binom plot
-            y <- rbinom(R, 1, prob = inv_mu)
+            y <- rlogis(R, location = mu)
         } else if(family == "poisson") {
             y <- rpois(R, lambda = inv_mu)
         }
