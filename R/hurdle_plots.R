@@ -79,7 +79,6 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
 
          #res <- subset(res, y > trend$lims$mean[1] & y < trend$lims$mean[2])
 
-
         ggplot(res, aes(x = y,
                         y = time,
                         group = interaction(time, treatment, var),

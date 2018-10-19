@@ -29,10 +29,10 @@ plot(m , RE = TRUE, type = "trend", RE_level = c(1,2))
 
 # Set better limits?
 # trim data to 99%?
-plot(m, type = "trend_ridges", RE_level = c(2,3))
+plot(m, type = "trend_ridges", RE_level = c(1, 2,3))
 
 # TODO: support link scale
-plot(p, type = "trend_ridges", RE_level = c(2,3))
+plot(p, type = "trend_ridges", RE_level = c(1, 2,3))
 
 plot(m , RE = FALSE, type = "post_diff", RE_level = c(2))
 plot(m , RE = FALSE, type = "post_diff", RE_level = c(3))
@@ -152,7 +152,7 @@ p_gamma <- study_parameters(design = study_design(family = "gamma"),
 
 m_gamma <- marginalize(p_gamma)
 
-plot(p_gamma, RE_level = c(2,3))
+plot(p_gamma, RE_level = c(1,2,3))
 plot(m_gamma)
 
 plot(m_gamma, type = "trend", RE_level = c(1,2), sd2_p = c(0.5, 0.5)) + ylim(0, 5000) + scale_y_log10()
@@ -160,7 +160,7 @@ plot(m_gamma, type = "trend", RE_level = c(1,2), sd2_p = c(0.5, 0.5)) + ylim(0, 
 plot(m_gamma, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 3000) + scale_x_log10()
 
 
-plot(m_gamma, type = "trend_ridges", RE_level = c(2,3)) + xlim(0, 5000)
+plot(m_gamma, type = "trend_ridges", RE_level = c(1,2,3)) + xlim(0, 5000)
 
 
 # Hurdle models

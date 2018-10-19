@@ -387,10 +387,10 @@ reshape_eta_sum <- function(x) {
 
         if(is.null(dim(tmp[, min_cols]))) {
             mean <- c(quantile(tmp[, min_cols], 0.01),
-                 quantile(tmp[, min_cols], 0.99))
+                 quantile(tmp[, max_cols], 0.99))
         } else {
             mean <- c(apply(tmp[, min_cols], 2, quantile, probs  = 0.01),
-                     apply(tmp[, min_cols], 2, quantile, probs  = 0.99))
+                     apply(tmp[, max_cols], 2, quantile, probs  = 0.99))
         }
 
         data.frame(var = x,
@@ -550,7 +550,11 @@ reshape_eta_sum <- function(x) {
 .plot_link <- function(object, RE_level, show = TRUE, ...) {
     # To get RE intervals
     m <- marginalize(object, link_scale = TRUE, ...)
-    p <- plot.plcp_marginal_nested(m, RE = TRUE, RE_level = RE_level)
+    p <- plot.plcp_marginal_nested(m,
+                                   RE = TRUE,
+                                   RE_level = RE_level,
+                                   link_scale = TRUE,
+                                   ...)
     if(show) {
         plot(p)
     }
@@ -559,7 +563,12 @@ reshape_eta_sum <- function(x) {
 .plot_link_ridges <- function(object, RE_level, show = TRUE, ...) {
     # To get RE intervals
     m <- marginalize(object, link_scale = TRUE, ...)
-    p <- plot.plcp_marginal_nested(m, type = "trend_ridges", RE = TRUE, RE_level = RE_level)
+    p <- plot.plcp_marginal_nested(m,
+                                   type = "trend_ridges",
+                                   RE = TRUE,
+                                   RE_level = RE_level,
+                                   link_scale = TRUE,
+                                   ...)
     if(show) {
         plot(p)
     }
@@ -683,7 +692,7 @@ reshape_eta_sum <- function(x) {
 #'
 #' @param ... Optional arguments.
 #' @export
-plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE, ...) {
+plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
     check_installed("ggplot2")
     paras <- x
      if(is.data.frame(paras)) {
@@ -694,7 +703,7 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
      if(type == "trend") {
          if(RE) {
              .plot_link(paras, RE_level = RE_level, ...) +
-                 labs(x = "Mean (link scale)")
+                 labs(y = "y (link scale)")
          } else {
              .plot_trend(paras, ...)
          }
@@ -710,7 +719,7 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 }
 
 
-.plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE) {
+.plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
 
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
     Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
@@ -725,6 +734,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
         x[x$var == "Within-subject", "color"] <- "L1"
         x[x$var == "Subject", "color"] <- "L2"
         x[x$var == "Cluster", "color"] <- "L3"
+
+        x$color <- factor(x$color, levels = c("L1", "L2", "L3"))
 
         x <- rbind(x, tmp)
     }
@@ -744,17 +755,18 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
                                            group = interaction(width, treatment),
                                            fill = width),
                         alpha = 0.75) +
-            geom_line(aes(color = color,
-                          linetype = "mean",
-                          fill = NULL,
-                          group = interaction(color, var)),
-                      size = 1) +
             geom_line(aes(y = Q50,
                           color = color,
                           linetype = "median",
                           fill = NULL,
                           group = interaction(color, var)),
                       size = 1) +
+            geom_line(aes(color = color,
+                          linetype = "mean",
+                          fill = NULL,
+                          group = interaction(color, var)),
+                      size = 1) +
+
             geom_point(aes(y = Q50,
                            color =
                                color)) +
@@ -773,7 +785,7 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
 }
 
 .make_nested_trend <- function(object, RE, RE_level,
-                               var1 = "y1",
+                               var1 = "y",
                                var2 = "y2",
                                var3 = "y3",
                                level1_func = .sample_level1_nested,
@@ -783,8 +795,7 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
     y3 <- NULL
 
     if(any(RE_level == 1)) {
-        x1 <- level1_func(object$paras,
-                                    ...)
+        x1 <- do.call(level1_func, list(pars = object$paras, ...))
         y1 <- x1[[var1]]
     }
     if(any(RE_level == 2)) {
@@ -844,26 +855,82 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", RE = TRUE, RE_level = 2, 
          lims = lims)
 }
 
-.plot_nested_trend_ridges <- function(res, trend, RE, RE_level, stat = "density", ...) {
+.plot_nested_trend_ridges <- function(res, trend, RE, RE_level, stat = "density", family, link_scale = FALSE, ...) {
 
-    ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment)) +
-        ggridges::geom_density_ridges(scale = 0.7, stat = stat,
+    lims <- trend$lims
+    tmp <- lims[lims$var %in% c("Within-subject", "Subject", "Cluster"), ]
+    lims[lims$var == "Within-subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+    lims[lims$var == "Subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+    lims[lims$var == "Cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+
+    if(family != "binomial") res <- subset(res, y > lims$mean[1] & y < lims$mean[2])
+
+    p <- ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment))
+
+    if(family == "binomial" & !link_scale) {
+        p <- p +
+            ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
+                                          scale = 0.7, stat = "binline",
+                                          aes(height = ..count..),
+                                          bins = 20,
+                                          rel_min_height = 0.01,
+                                          #color = alpha("black", 0.5),
+                                          alpha = 0.33,
+                                          size = 0.3)
+
+    } else if(family == "poisson") {
+        p <- p +
+            ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
+                                          scale = 0.7, stat = "binline",
+                                          aes(height = ..count..),
+                                          binwidth = 1,
+                                          rel_min_height = 0.01,
+                                          #color = alpha("black", 0.5),
+                                          alpha = 0.33,
+                                          size = 0.3)
+
+    }
+    else {
+        p <- p +
+            ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
+                                          scale = 0.7, stat = stat,
+                                          aes(height = ..count..),
+                                          rel_min_height = 0.01,
+                                          #color = alpha("black", 0.5),
+                                          alpha = 0.33,
+                                          size = 0.3)
+    }
+
+    p + ggridges::geom_density_ridges(data = subset(res, var  %in% c("Subject", "Cluster")), scale = 0.7, stat = stat,
                                       aes(height = ..count..),
-                                      binwidth = 1,
-                                      #rel_min_height = 0.01,
+                                      #binwidth = 1,
+                                      rel_min_height = 0.01,
                                       #color = alpha("black", 0.5),
                                       alpha = 0.33,
-                                      size = 0.3,
-                                      trim = TRUE) +
-        geom_line(data = trend$x, aes(x = mean, y = time, linetype = "mean", fill = NULL, group = interaction(treatment, var)), size = 1) +
-        geom_line(data = trend$x, aes(x = Q50, y = time, linetype = "median", fill = NULL, group = interaction(treatment, var)), size = 1) +
+                                      size = 0.3) +
+        geom_path(data = subset(trend$x, var == "Within-subject"),
+                  aes(x = mean,
+                      y = time,
+                      linetype = "mean",
+                      fill = NULL,
+                      group = interaction(treatment, var)),
+                  size = 1) +
+        geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
+                  aes(x = Q50,
+                      y = time,
+                      linetype = "median",
+                      fill = NULL,
+                      group = interaction(treatment, var)), size = 1) +
+        geom_blank(data = lims, aes(x = mean, y=time)) +
         coord_flip() +
         theme_minimal() +
+        #scale_x_continuous(expand = c(0, 0)) +
+        scale_y_discrete(breaks = unique(sort(res$time))) +
         facet_wrap(~var, ncol = 2)
 
 }
 
-plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_level = 2, hu = FALSE, ...) {
+plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
     check_installed("ggplot2")
 
     ## DROPOUT
@@ -885,7 +952,8 @@ plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_leve
                         Q_long = trend$Q_long,
                         RE = RE,
                         ymin = NA,
-                        ymax = NA) +
+                        ymax = NA,
+                        ...) +
             geom_blank(data = trend$lims) +
             labs(linetype = "",
                  color = "",
@@ -912,6 +980,7 @@ plot.plcp_marginal_nested <- function(object, type = "trend", RE = TRUE, RE_leve
         .plot_nested_trend_ridges(res = res,
                                   trend = trend,
                                   RE_level = RE_level,
+                                  family = object$paras$family,
                                   ...)
     }
 

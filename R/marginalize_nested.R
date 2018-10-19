@@ -140,7 +140,8 @@ marginalize.plcp_nested <- function(object,
                              partially_nested,
                              R,
                              link_scale = FALSE,
-                             full = FALSE, ...) {
+                             full = FALSE,
+                             ...) {
 
 
     sd2 <- MASS::mvrnorm(R, c(0,0), R_cov2)
@@ -387,10 +388,10 @@ marginalize.plcp_nested <- function(object,
     inv_link <- .get_inv_link(family, pars$sigma_error)
     link <- .get_link(family, pars$sigma_error)
 
-    if(link_scale) {
-        inv_link <- function(eta) eta
-        link <- function(eta) eta
-    }
+    #if(link_scale) {
+    #    inv_link <- function(eta) eta
+    #    link <- function(eta) eta
+    #}
 
     # RE
     sd3 <- qnorm(sd3_p, 0, with(pars, c(sigma_cluster_intercept,
@@ -415,22 +416,24 @@ marginalize.plcp_nested <- function(object,
         if(family == "gaussian") {
             y <- rnorm(R, inv_mu, pars$sigma_error)
         } else if(family == "binomial") {
-            # TODO: fix level 1 binom plot
             y <- rlogis(R, location = mu)
+            if(!link_scale) y <- as.numeric(y > 0)
         } else if(family == "poisson") {
             y <- rpois(R, lambda = inv_mu)
+            if(link_scale) y <- log(y)
         }
         else if(family == "gamma") {
             shape <- pars$shape
             y <- rgamma(R,
                         shape = shape,
                         rate = shape/inv_mu)
+            if(link_scale) y <- log(y)
         } else if(family == "lognormal") {
             y <- rlnorm(R,
                         meanlog = mu,
                         sdlog = pars$sigma_error)
+            if(link_scale) y <- log(y)
         }
-
 
         out <- list(marg_y1 = eta_sum(y),
                     exp_mu1_vec = y)
