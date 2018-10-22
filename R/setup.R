@@ -764,8 +764,9 @@ prepare_print_plcp_2lvl <- function(x) {
 prepare_print_plcp_hurdle_2lvl <- function(x) {
     res <- prepare_print_plcp(x, two_level = TRUE, hanging = 18)
     if(!is.list(x$dropout)) res$dropout <- "No missing data"
-    marginal <- ifelse(x$marginal, " marginal", NULL)
-    res$method <- paste0("Study setup (two-level,", marginal, " hurdle ", x$family, ")")
+
+    if(x$marginal) marginal <- " marginal" else marginal <- NULL
+    res$method <- paste0("Study setup (two-level,", marginal, " hurdle-", x$family, ")")
     res$icc_slope <- NULL
     res$icc_pre_clusters <- NULL
     res$n2 <- res$total_n
