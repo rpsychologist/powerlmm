@@ -90,6 +90,8 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
 
          #res <- subset(res, y > trend$lims$mean[1] & y < trend$lims$mean[2])
 
+
+         # TODO: trim per facet, usefull to see range of data
          lims <- lapply(unique(res$var), function(x) {
              tmp <- res[res$var == x, ]
              y <-  quantile(tmp$y, trim)
