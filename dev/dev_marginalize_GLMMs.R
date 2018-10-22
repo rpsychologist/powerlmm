@@ -1,10 +1,7 @@
 
 # TODO
 # * allow RE_level arg for post_diff plots
-# * add type = "post_overlay": plot diststribution of outcomes for percentile p
-# * update so plot(p_gamma, RE_level = c(2,3)) use facets instead of grid.arrange
-# * add plote type "trend_dist": plot RE dist at each time point, like ridge plots
-#    - should be possible to overlay tx and cc in same panel?
+# * add type = "post_overlay": plot distribution of outcomes for percentile p
 # * add some type of level 1 plot of resp distribution, e.g. for different combinations of RE effects?
 # * allow comparing subject at different cluster level RE effects?
 
@@ -188,7 +185,7 @@ p <- study_parameters(
     shape = 1.6,
     RR_cont = 0.33,
     OR_hu = 2,
-    marginal = FALSE,
+    marginal = TRUE,
     family = "gamma")
 
 m <- marginalize(p)
