@@ -81,7 +81,6 @@ plot(m_bin,
      type = "trend",
      RE_level = c(1,2,3))
 
-
 plot(m_bin,
      RE = TRUE,
      type = "trend",
@@ -96,10 +95,14 @@ plot(m_bin, type = "post_ratio")
 plot(m_bin, type = "post_diff")
 
 
+plot(p_bin, type = "post_ratio")
+plot(p_bin, type = "post_diff")
+
 # Poisson ----------------------------------------------------------------
 p_pois <- study_parameters(design = study_design(family = "poisson"),
-                          n1 = 11,
+                          n1 = 4,
                           n2 = 25,
+                          T_end = 10,
                           fixed_intercept = log(10),
                           sigma_subject_intercept = 1,
                           sigma_subject_slope = 0.02,
@@ -198,7 +201,9 @@ plot(m, RE = TRUE, type = "trend", RE_level = c(1))
 plot(m, RE = FALSE, type = "trend")
 
 # TODO: level 1
-plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1,2))
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 0.995)) + scale_x_sqrt()
+
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1)) + scale_x_log10()
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(2))
 
 library(gridExtra)

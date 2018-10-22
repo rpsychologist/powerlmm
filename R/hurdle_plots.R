@@ -1,5 +1,6 @@
 plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overall", "positive", "hurdle"),
-                                      RE = TRUE, RE_level = 2, hu = FALSE, ...) {
+                                      RE = TRUE, RE_level = 2, hu = FALSE, trim = c(0,1),
+                                      ...) {
     check_installed("ggplot2")
     # lvl 2
     p_overall <- NULL
@@ -52,6 +53,16 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
         .plot_dropout(object$paras)
     } else if(type %in% "trend") {
 
+        if(any(RE_level %in% c(1,3))) message("'RE_level' is ignored, level 2 is shown.")
+        # trend <- .make_nested_trend(object = object,
+        #                             RE = RE,
+        #                             RE_level = 2,
+        #                             var1 = "y",
+        #                             var2 = "y_overall",
+        #                             level1_func = .sample_level1_nested_hurdle,
+        #                             ...)
+
+
         .plot_marg(x = x,
                    Q_long = Q_long,
                    RE = RE,
@@ -72,18 +83,28 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
          trend <- .make_nested_trend(object = object,
                                      RE = RE,
                                      RE_level = RE_level,
-                                     var1 = "y_overall",
+                                     var1 = "y",
                                      var2 = "y_overall",
                                      level1_func = .sample_level1_nested_hurdle,
                                      ...)
 
          #res <- subset(res, y > trend$lims$mean[1] & y < trend$lims$mean[2])
 
+         lims <- lapply(unique(res$var), function(x) {
+             tmp <- res[res$var == x, ]
+             y <-  quantile(tmp$y, trim)
+             data.frame(y = y, var = x, treatment = "Treatment", time = 0)
+         })
+         lims <- do.call(rbind, lims)
+
+        res <- subset(res, y >= min(lims$y) & y <= max(lims$y))
         ggplot(res, aes(x = y,
                         y = time,
                         group = interaction(time, treatment, var),
-                        fill = treatment, color = treatment)) +
-            ggridges::geom_density_ridges(scale = 1,
+                        fill = treatment,
+                        color = treatment)) +
+            ggridges::geom_density_ridges(data = subset(res, y >= 0),
+                                          scale = 0.5,
                                           stat = "density",
                                           binwidth = 1,
                                           aes(height = ..count..),
@@ -93,20 +114,32 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                                           alpha = 0.33,
                                           size = 0.3,
                                           trim = FALSE) +
-            geom_line(data = trend$x,
+            # ggridges::geom_density_ridges(data = subset(res, y <= 0),
+            #                               scale = 1,
+            #                               stat = "density",
+            #                               binwidth = 1,
+            #                               aes(height = ..count..),
+            #                               #binwidth = 1,
+            #                               #rel_min_height = 0.01,
+            #                               #color = alpha("black", 0.5),
+            #                               alpha = 0.33,
+            #                               size = 0.3,
+            #                               trim = FALSE) +
+            geom_path(data = trend$x,
                       aes(x = mean,
                           y = time,
                           linetype = "mean",
                           fill = NULL,
                           group = interaction(treatment, var)),
                       size = 1) +
-            geom_line(data = trend$x,
+            geom_path(data = trend$x,
                       aes(x = Q50,
                           y = time,
                           linetype = "median",
                           fill = NULL,
                           group = interaction(treatment, var)),
                       size = 1) +
+            #geom_blank(data = trend$lims, aes(x = mean, y = time)) +
             coord_flip() +
             theme_minimal() +
             facet_wrap(~var, ncol = 2)

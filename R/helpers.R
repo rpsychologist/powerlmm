@@ -381,16 +381,16 @@ reshape_eta_sum <- function(x) {
 
     x
 }
-.get_facet_lims <- function(d, var_names, min_cols, max_cols) {
+.get_facet_lims <- function(d, var_names, min_cols, max_cols, trim = c(0, 1)) {
     lims <- lapply(var_names, function(x) {
         tmp <- d[d$var == x, ]
 
         if(is.null(dim(tmp[, min_cols]))) {
-            mean <- c(quantile(tmp[, min_cols], 0.01),
-                 quantile(tmp[, max_cols], 0.99))
+            mean <- c(quantile(tmp[, min_cols], trim[1]),
+                 quantile(tmp[, max_cols], trim[2]))
         } else {
-            mean <- c(apply(tmp[, min_cols], 2, quantile, probs  = 0.01),
-                     apply(tmp[, max_cols], 2, quantile, probs  = 0.99))
+            mean <- c(apply(tmp[, min_cols], 2, quantile, probs = trim[1]),
+                     apply(tmp[, max_cols], 2, quantile, probs  = trim[2]))
         }
 
         data.frame(var = x,
@@ -833,9 +833,11 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
         lims[lims$var == "cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
     }
 
-    x$var <- factor(x$var, labels = c("Within-subject", "Subject", "Cluster"),
+    x$var <- factor(x$var,
+                    labels = c("Within-subject", "Subject", "Cluster"),
                     levels = c("within-subject","subject", "cluster"))
-    Q_long$var <- factor(Q_long$var, labels = c("Within-subject", "Subject", "Cluster"),
+    Q_long$var <- factor(Q_long$var,
+                         labels = c("Within-subject", "Subject", "Cluster"),
                          levels =  c("within-subject","subject", "cluster"))
 
     x$color <- x$var

@@ -474,7 +474,8 @@ marginalize.plcp_hurdle <- function(object,
     marg_y <- trans_eta(tmp, "marg_y1", d = d)
 
     list(coefs = NULL,
-         y_overall = marg_y,
+         y = marg_y,
+         y_positive = tmp,
          post = NULL,
          post_ps = NULL,
          mu1_vec = tmp$exp_mu1_vec
