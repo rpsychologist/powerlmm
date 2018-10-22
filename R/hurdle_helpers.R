@@ -1,6 +1,6 @@
 
-#' @param p1 prob tx
-#' @param p0 prob control
+# @param p1 prob tx
+# @param p0 prob control
 get_OR <- function(p1, p0) {
     (p1/(1-p1)) / (p0 / (1-p0))
 }
@@ -26,7 +26,6 @@ get_ICC_slope.plcp_multi_hurdle <- function(object, ...) {
 }
 get_var_ratio.plcp_hurdle  <- function(object, ...) {
 
-    warning("Not yet implemented for 'hurdle' models")
     numeric(0)
 }
 get_var_ratio.plcp_multi_hurdle <- function(object, ...) {
