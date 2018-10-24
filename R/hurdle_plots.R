@@ -104,51 +104,52 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
 
         #res <- subset(res, y >= min(lims$y) & y <= max(lims$y))
 
-        ggplot(res, aes(x = y,
-                        y = time,
-                        group = interaction(time, treatment, var),
-                        fill = treatment,
-                        color = treatment)) +
-            ggridges::geom_density_ridges(data = subset(res, y >= 0),
-                                          scale = 0.5,
-                                          stat = "density",
-                                          binwidth = 1,
-                                          aes(height = ..count..),
-                                          #binwidth = 1,
-                                          #rel_min_height = 0.01,
-                                          #color = alpha("black", 0.5),
-                                          alpha = 0.33,
-                                          size = 0.3,
-                                          trim = TRUE) +
-            # ggridges::geom_density_ridges(data = subset(res, y <= 0),
-            #                               scale = 1,
-            #                               stat = "density",
-            #                               binwidth = 1,
-            #                               aes(height = ..count..),
-            #                               #binwidth = 1,
-            #                               #rel_min_height = 0.01,
-            #                               #color = alpha("black", 0.5),
-            #                               alpha = 0.33,
-            #                               size = 0.3,
-            #                               trim = FALSE) +
-            geom_path(data = trend$x,
-                      aes(x = mean,
-                          y = time,
-                          linetype = "mean",
-                          fill = NULL,
-                          group = interaction(treatment, var)),
-                      size = 1) +
-            geom_path(data = trend$x,
-                      aes(x = Q50,
-                          y = time,
-                          linetype = "median",
-                          fill = NULL,
-                          group = interaction(treatment, var)),
-                      size = 1) +
-            #geom_blank(data = trend$lims, aes(x = mean, y = time)) +
-            coord_flip() +
-            theme_minimal() +
-            facet_wrap(~var, ncol = 2, scales = NULL)
+         ggplot(res, aes(x = y,
+                         y = time,
+                         group = interaction(time, treatment, var),
+                         fill = treatment,
+                         color = treatment)) +
+             ggridges::geom_density_ridges(data = subset(res, y > 0),
+                                           scale = 0.95,
+                                           stat = "density",
+                                           aes(height = ..count.., color = NULL),
+                                           #binwidth = 1,
+                                           #rel_min_height = 0.01,
+                                           color = alpha("white", 0.5),
+                                           alpha = 0.75,
+                                           size = 0.5,
+                                           trim = TRUE) +
+             ggridges::geom_density_ridges(data = subset(res, y == 0),
+                                           stat = "binline",
+                                           scale = 0.95,
+                                           binwidth = 1,
+                                           aes(height = ..count.., color = NULL),
+                                           #binwidth = 1,
+                                           #rel_min_height = 0.01,
+                                           color = alpha("white", 0.5),
+                                           alpha = 0.75,
+                                           size = 0.5,
+                                           draw_baseline = FALSE) +
+             geom_path(data = trend$x,
+                       aes(x = mean,
+                           y = time,
+                           linetype = "mean",
+                           fill = NULL,
+                           group = interaction(treatment, var)),
+                       size = 1) +
+             geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
+                       aes(x = Q50,
+                           y = time,
+                           linetype = "median",
+                           fill = NULL,
+                           group = interaction(treatment, var)), size = 1) +
+             #geom_blank(data = trend$lims, aes(x = mean, y = time)) +
+             coord_flip() +
+             theme_minimal() +
+             facet_wrap(~var, ncol = 2, scales = NULL) +
+             scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
+             scale_color_manual(values = c("#30394F", "#c0392b"))
+
 
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
         .plot_diff_marg(object, type = type, ...)

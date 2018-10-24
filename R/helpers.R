@@ -743,7 +743,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
     plot_struct <- list(
                         scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
                         guides(color = guide_legend(override.aes = list(fill = NA))),
-                        scale_fill_brewer(),
+                        scale_fill_brewer(palette = "PuBu"),
+                        scale_color_manual(values = c("#e84118", "#e84118", "#e84118")),
                         theme_minimal())
 
     if(RE) {
@@ -766,7 +767,6 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                           fill = NULL,
                           group = interaction(color, var)),
                       size = 1) +
-
             geom_point(aes(y = Q50,
                            color =
                                color)) +
@@ -876,8 +876,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                                           aes(height = ..count..),
                                           bins = 20,
                                           rel_min_height = 0.01,
-                                          #color = alpha("black", 0.5),
-                                          alpha = 0.33,
+                                          color = alpha("white", 0.33),
+                                          alpha = 0.75,
                                           size = 0.3)
 
     } else if(family == "poisson") {
@@ -887,8 +887,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                                           aes(height = ..count..),
                                           binwidth = 1,
                                           rel_min_height = 0.01,
-                                          #color = alpha("black", 0.5),
-                                          alpha = 0.33,
+                                          color = alpha("white", 0.33),
+                                          alpha = 0.75,
                                           size = 0.3)
 
     }
@@ -898,8 +898,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                                           scale = 0.7, stat = stat,
                                           aes(height = ..count..),
                                           rel_min_height = 0.01,
-                                          #color = alpha("black", 0.5),
-                                          alpha = 0.33,
+                                          color = alpha("white", 0.33),
+                                          alpha = 0.75,
                                           size = 0.3)
     }
 
@@ -907,10 +907,10 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                                       aes(height = ..count..),
                                       #binwidth = 1,
                                       rel_min_height = 0.01,
-                                      #color = alpha("black", 0.5),
-                                      alpha = 0.33,
+                                      color = alpha("white", 0.33),
+                                      alpha = 0.75,
                                       size = 0.3) +
-        geom_path(data = subset(trend$x, var == "Within-subject"),
+        geom_path(data = trend$x,
                   aes(x = mean,
                       y = time,
                       linetype = "mean",
@@ -928,7 +928,9 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
         theme_minimal() +
         #scale_x_continuous(expand = c(0, 0)) +
         scale_y_discrete(breaks = unique(sort(res$time))) +
-        facet_wrap(~var, ncol = 2)
+        facet_wrap(~var, ncol = 2) +
+        scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
+        scale_color_manual(values = c("#30394F", "#c0392b"))
 
 }
 
@@ -959,7 +961,7 @@ plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE
             geom_blank(data = trend$lims) +
             labs(linetype = "",
                  color = "",
-                 y = "Mean",
+                 y = "Y",
                  title = "Change over time") +
             facets
 

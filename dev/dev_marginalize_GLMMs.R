@@ -1,9 +1,7 @@
 
 # TODO
-# * allow RE_level arg for post_diff plots
-# * add type = "post_overlay": plot distribution of outcomes for percentile p
-# * add some type of level 1 plot of resp distribution, e.g. for different combinations of RE effects?
-# * allow comparing subject at different cluster level RE effects?
+
+# * use correct labels based on family type
 
 # Gaussian ----------------------------------------------------------------
 p <- study_parameters(design = study_design(),
@@ -26,7 +24,7 @@ plot(m , RE = TRUE, type = "trend", RE_level = c(1,2))
 
 # Set better limits?
 # trim data to 99%?
-plot(m, type = "trend_ridges", RE_level = c(1, 2,3))
+plot(m, type = "trend_ridges", RE_level = c(1, 2,3)) + facet_wrap(~var, scales = "free_x")
 
 # TODO: support link scale
 plot(p, type = "trend_ridges", RE_level = c(1, 2,3))
@@ -89,7 +87,8 @@ plot(m_bin,
 plot(m_bin,
      RE = FALSE,
      type = "trend_ridges",
-     RE_level = c(1,2,3))
+     RE_level = c(1,2,3)) +
+    facet_wrap(~var, nrow  = 3)
 
 plot(m_bin, type = "post_ratio")
 plot(m_bin, type = "post_diff")
@@ -141,8 +140,9 @@ plot(m_ln, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 10000) + scale_x_
 
 # Gamma ----------------------------------------------------------------
 p_gamma <- study_parameters(design = study_design(family = "gamma"),
-                         n1 = 11,
+                         n1 = 3,
                          n2 = 25,
+                         T_end = 10,
                          fixed_intercept = log(500),
                          sigma_subject_intercept = 1,
                          sigma_cluster_intercept = 0.2,
@@ -155,12 +155,17 @@ m_gamma <- marginalize(p_gamma)
 plot(p_gamma, RE_level = c(1,2,3))
 plot(m_gamma)
 
-plot(m_gamma, type = "trend", RE_level = c(1,2), sd2_p = c(0.5, 0.5)) + ylim(0, 5000) + scale_y_log10()
+plot(m_gamma, type = "trend", RE_level = c(1,2), sd2_p = c(0.5, 0.5)) +
+    ylim(0, 5000) +
+    scale_y_log10() +
+        scale_color_brewer(palette = "Accent")
 
-plot(m_gamma, type = "trend_ridges", RE_level = c(1,2)) + xlim(0, 3000) + scale_x_log10()
+plot(m_gamma, type = "trend_ridges", RE_level = c(1,2)) +
+    xlim(0, 3000) +
+    scale_x_log10()
 
 
-plot(m_gamma, type = "trend_ridges", RE_level = c(1,2,3)) + xlim(0, 5000)
+plot(m_gamma, type = "trend_ridges", RE_level = c(1,2,3))
 
 
 # Hurdle models
@@ -171,8 +176,8 @@ p <- study_parameters(
     design = study_design(family = "hurdle"),
     n1 = 3,
     n2 = 20,
-    fixed_intercept = log(30), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0.5), # prop == 0
+    fixed_intercept = log(100), # median(Y > 0)
+    fixed_hu_intercept = qlogis(0.3), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
     sd_hu_intercept = 1,
@@ -185,37 +190,33 @@ p <- study_parameters(
     cor_slope_hu_intercept = -0.1,
     cor_slope_hu_slope = -0.1,
     cor_hu_intercept_hu_slope = 0.15,
-    shape = 50,
+    shape = 2,
     RR_cont = 0.33,
     OR_hu = 2,
     marginal = TRUE,
     family = "gamma")
 
+plot(p)
+
 m <- marginalize(p)
+
+plot(m, RE = TRUE, type = "trend_ridges",
+     RE_level = c(1,2), trim = c(0, 1),
+     sd2_p = c(0.5), sd2_hu_p = c(0.5)) +
+    scale_x_continuous(trans = "log1p", breaks = c(0, 100, 1000, 10000))
+
 
 # Done
 plot(m, RE = FALSE)
 plot(m, RE = TRUE)
 
-plot(m, RE = TRUE, type = "trend", RE_level = c(1))
+plot(m, RE = TRUE, type = "trend", RE_level = c(1)) + scale_fill_brewer(palette = "PuBu")
 plot(m, RE = FALSE, type = "trend")
 
-# TODO: level 1, show zeros as bar
-plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1), trim = c(0, 0.995)) + scale_x_sqrt()
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1)) +
 
-plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1)) + scale_x_log10()
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(2))
 
-library(gridExtra)
-
-# TODO: fix so this works. plot should return ggplot objects
-grid.arrange(plot(m, RE = FALSE, type = "post_diff"), plot(m, RE = FALSE, type = "post_ratio"))
-
-
-
-plot_hurdle_time(m$y_overall)
-plot_hurdle_time(m$y_positive)
-plot_hurdle_time(m$hu_prob)
 
 .plot_diff_marg(m, type = "post_diff_ratio")
 .plot_diff_marg(m, type = "post_diff_ratio", hu = TRUE)
