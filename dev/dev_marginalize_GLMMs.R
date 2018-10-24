@@ -200,7 +200,7 @@ plot(m, RE = TRUE)
 plot(m, RE = TRUE, type = "trend", RE_level = c(1))
 plot(m, RE = FALSE, type = "trend")
 
-# TODO: level 1
+# TODO: level 1, show zeros as bar
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1), trim = c(0, 0.995)) + scale_x_sqrt()
 
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1)) + scale_x_log10()
