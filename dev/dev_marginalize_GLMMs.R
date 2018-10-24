@@ -172,7 +172,7 @@ p <- study_parameters(
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(30), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0.5), # prop == 0
+    fixed_hu_intercept = qlogis(0), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
     sd_hu_intercept = 1,
@@ -185,7 +185,7 @@ p <- study_parameters(
     cor_slope_hu_intercept = -0.1,
     cor_slope_hu_slope = -0.1,
     cor_hu_intercept_hu_slope = 0.15,
-    shape = 1.6,
+    shape = 50,
     RR_cont = 0.33,
     OR_hu = 2,
     marginal = TRUE,
@@ -201,7 +201,7 @@ plot(m, RE = TRUE, type = "trend", RE_level = c(1))
 plot(m, RE = FALSE, type = "trend")
 
 # TODO: level 1
-plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 0.995)) + scale_x_sqrt()
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1), trim = c(0, 0.995)) + scale_x_sqrt()
 
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1)) + scale_x_log10()
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(2))

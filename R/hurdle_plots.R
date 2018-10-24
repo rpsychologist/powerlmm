@@ -92,14 +92,18 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
 
 
          # TODO: trim per facet, usefull to see range of data
-         lims <- lapply(unique(res$var), function(x) {
+         res <- lapply(unique(res$var), function(x) {
              tmp <- res[res$var == x, ]
              y <-  quantile(tmp$y, trim)
-             data.frame(y = y, var = x, treatment = "Treatment", time = 0)
-         })
-         lims <- do.call(rbind, lims)
+             lims <- data.frame(y = y, var = x, treatment = "Treatment", time = 0)
 
-        res <- subset(res, y >= min(lims$y) & y <= max(lims$y))
+             subset(tmp, y >= min(lims$y) & y <= max(lims$y))
+
+         })
+         res <- do.call(rbind, res)
+
+        #res <- subset(res, y >= min(lims$y) & y <= max(lims$y))
+
         ggplot(res, aes(x = y,
                         y = time,
                         group = interaction(time, treatment, var),
@@ -115,7 +119,7 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                                           #color = alpha("black", 0.5),
                                           alpha = 0.33,
                                           size = 0.3,
-                                          trim = FALSE) +
+                                          trim = TRUE) +
             # ggridges::geom_density_ridges(data = subset(res, y <= 0),
             #                               scale = 1,
             #                               stat = "density",
@@ -144,7 +148,7 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
             #geom_blank(data = trend$lims, aes(x = mean, y = time)) +
             coord_flip() +
             theme_minimal() +
-            facet_wrap(~var, ncol = 2)
+            facet_wrap(~var, ncol = 2, scales = NULL)
 
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
         .plot_diff_marg(object, type = type, ...)

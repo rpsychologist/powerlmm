@@ -405,10 +405,16 @@ marginalize.plcp_hurdle <- function(object,
                           0,
                           get_slope_diff(pars)/pars$T_end))
 
+    betas_hu <- with(pars, c(fixed_hu_intercept,
+                             fixed_hu_slope,
+                             0,
+                             log(OR_hu)/pars$T_end))
+
     X <- model.matrix(~time * treatment,
                       data = d)
 
     Xmat <- X %*% betas
+    Xmat_hu <- X %*% betas_hu
     Z <- model.matrix(~time,
                       data = d)
 
@@ -434,9 +440,7 @@ marginalize.plcp_hurdle <- function(object,
     calc_eta <- function(i) {
 
         mu <- Xmat[i, ] + Z[i, ] %*% sd2
-
-        hu <- Xmat[i, ] + Z[i, ] %*% sd2_hu
-
+        hu <- Xmat_hu[i, ] + Z[i, ] %*% sd2_hu
         eta <- .calc_eta_hurdle(mu = mu,
                                 p = plogis(hu),
                                 marginal = marginal,
