@@ -172,7 +172,7 @@ p <- study_parameters(
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(30), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0), # prop == 0
+    fixed_hu_intercept = qlogis(0.5), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
     sd_hu_intercept = 1,
