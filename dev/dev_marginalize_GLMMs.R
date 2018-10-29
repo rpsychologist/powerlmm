@@ -177,7 +177,7 @@ p <- study_parameters(
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(100), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0.3), # prop == 0
+    fixed_hu_intercept = qlogis(0.1), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
     sd_hu_intercept = 1,
@@ -192,7 +192,7 @@ p <- study_parameters(
     cor_hu_intercept_hu_slope = 0.15,
     shape = 2,
     RR_cont = 0.33,
-    OR_hu = 2,
+    OR_hu = 1,
     marginal = TRUE,
     family = "gamma")
 
@@ -203,7 +203,7 @@ m <- marginalize(p)
 plot(m, RE = TRUE, type = "trend_ridges",
      RE_level = c(1,2), trim = c(0, 1),
      sd2_p = c(0.5), sd2_hu_p = c(0.5)) +
-    scale_x_continuous(trans = "log1p", breaks = c(0, 100, 1000, 10000))
+    scale_x_continuous(trans = "log1p", breaks = c(0, 100, 1000, 10000)) + coord_cartesian()
 
 
 # Done

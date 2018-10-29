@@ -109,27 +109,23 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                          group = interaction(time, treatment, var),
                          fill = treatment,
                          color = treatment)) +
-             ggridges::geom_density_ridges(data = subset(res, y > 0),
+             ggridges::geom_density_ridges(data = subset(res, y >= 0),
                                            scale = 0.95,
                                            stat = "density",
                                            aes(height = ..count.., color = NULL),
-                                           #binwidth = 1,
-                                           #rel_min_height = 0.01,
                                            color = alpha("white", 0.5),
                                            alpha = 0.75,
                                            size = 0.5,
                                            trim = TRUE) +
-             ggridges::geom_density_ridges(data = subset(res, y == 0),
-                                           stat = "binline",
-                                           scale = 0.95,
-                                           binwidth = 1,
-                                           aes(height = ..count.., color = NULL),
-                                           #binwidth = 1,
-                                           #rel_min_height = 0.01,
-                                           color = alpha("white", 0.5),
-                                           alpha = 0.75,
-                                           size = 0.5,
-                                           draw_baseline = FALSE) +
+             # ggridges::geom_density_ridges(data = subset(res, y == 0),
+             #                               stat = "binline",
+             #                               scale = 0.95,
+             #                               binwidth = 1,
+             #                               aes(height = ..count.., color = NULL),
+             #                               color = alpha("white", 0.5),
+             #                               alpha = 0.75,
+             #                               size = 0.5,
+             #                               draw_baseline = FALSE) +
              geom_path(data = trend$x,
                        aes(x = mean,
                            y = time,
@@ -137,6 +133,16 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                            fill = NULL,
                            group = interaction(treatment, var)),
                        size = 1) +
+             # TODO
+             # geom_segment(data = trend$x,
+             #              aes(x = mean,
+             #                  xend = mean,
+             #                  y = time,
+             #                  yend = time+1,
+             #                  linetype = "mean",
+             #                  fill = NULL,
+             #                  group = interaction(treatment, time, var)),
+             #              size = 1) +
              geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
                        aes(x = Q50,
                            y = time,
@@ -148,7 +154,7 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
              theme_minimal() +
              facet_wrap(~var, ncol = 2, scales = NULL) +
              scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
-             scale_color_manual(values = c("#30394F", "#c0392b"))
+             scale_color_manual(values = c("#222f3e", "#ff6b6b"))
 
 
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
@@ -156,3 +162,30 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
     }
 
 }
+
+
+
+
+# Helpers -----------------------------------------------------------------
+## ggplot2:::compute_density
+compute_density <- function (x, w = NULL, from, to, bw = "nrd0", adjust = 1, kernel = "gaussian",
+          n = 512) {
+    nx <- length(x)
+    if (is.null(w)) {
+        w <- rep(1/nx, nx)
+    }
+    if (nx < 2) {
+        warning("Groups with fewer than two data points have been dropped.",
+                call. = FALSE)
+        return(data.frame(x = NA_real_, density = NA_real_, scaled = NA_real_,
+                          count = NA_real_, n = NA_integer_))
+    }
+    dens <- stats::density(x, weights = w, bw = bw, adjust = adjust,
+                           kernel = kernel, n = n, from = from, to = to)
+    data.frame(x = dens$x,
+               density = dens$y,
+               count = dens$y * nx)
+}
+
+
+
