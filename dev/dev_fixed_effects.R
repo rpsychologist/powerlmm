@@ -2,13 +2,15 @@
 ## TODO: pass L via sim_formula(test = L)?
 
 
-library(multcomp)
+library(emmeans)
 library(lmerTest)
 p <- study_parameters(n1 = 11,
                       n2 = 50,
                       n3 = 4,
                       icc_pre_subject = 0.5,
-                      partially_nested = TRUE,
+                      icc_slope = 0.1,
+                      var_ratio = 0.02,
+                      partially_nested = FALSE,
                       effect_size = 0)
 
 d <- simulate_data(p)

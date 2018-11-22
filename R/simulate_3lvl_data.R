@@ -97,7 +97,7 @@ create_cluster_index <- function(n2, n3) {
      cluster_b0 <- cluster_b0[cluster]
      cluster_b1 <- cluster_b1[cluster]
 
-     # level 2- model
+     # level 2-model
      subject_lvl <- MASS::mvrnorm(tot_n2, c(0, 0), Sigma_subject)
 
      b0 <- fixed_intercept + subject_lvl[, 1] + cluster_b0

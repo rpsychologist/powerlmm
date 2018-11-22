@@ -55,13 +55,33 @@ create_dropout_indicator <- function(paras) {
 #' to the data during each simulation.
 #' @param test A \code{character} vector indicating which parameters should be tested.
 #' Only applies to tests using Satterthwaite \emph{dfs}, or when calculating confidence intervals.
+#' @param family A \code{character} or \code{function} passing GLM response distribution to
+#' \code{glm} or \code{glmer}.
+#' @param post_test Optional; a custom \code{function} that performs a post-hoc test on the fitted object.
+#' See \emph{Details}.
 #'
 #' @details
 #'
-#' It is possible to fit model without any random effects. If no random effects is specified
-#' the model is fit using \code{lm()}.
+#' \bold{(G)LMMs or (G)LM}
 #'
-#' @return Object with class \code{plcp_sim_formula}
+#' It is possible to fit model without any random effects. If no random effects is specified
+#' the model is fit using \code{(g)lm()}.
+#'
+#' \bold{Perform custom post-hoc tests}
+#' It useful to be able to test custom linear hypothesis of the model's parameters, .e.g., using \code{lmerTest::contest} or \pkg{emmeans}.
+#' This function must return a \code{data.frame} with the columns:
+#' \itemize{
+#' \item \code{parameter} which contains a custom name of the parameter.
+#' \item \code{estimate}
+#' \item \code{se}
+#' \item \code{pval}
+#' \item \code{df}
+#' \item \code{df_bw}
+#' }
+#'
+#' The vignette XX give a complete example of using this functionality.
+#'
+#' @return An object with class \code{plcp_sim_formula}
 #' @seealso \code{\link{sim_formula_compare}}, \code{\link{transform_to_posttest}}
 #' @export
 #'
@@ -78,7 +98,11 @@ sim_formula <- function(formula, data_transform = NULL,  test = "time:treatment"
     UseMethod("sim_formula")
 }
 #' @export
-sim_formula.default <- function(formula, data_transform = NULL, test = "time:treatment", family = gaussian, ...) {
+sim_formula.default <- function(formula,
+                                data_transform = NULL,
+                                test = "time:treatment",
+                                post_test = NULL,
+                                family = gaussian, ...) {
 
     if(!is.null(attr(formula, "family"))) {
         family <- attr(formula, "family")
@@ -96,6 +120,7 @@ sim_formula.default <- function(formula, data_transform = NULL, test = "time:tre
               "data_transform" = data_transform,
               "data_transform_lab" = substitute(data_transform),
               "test" = test,
+              "post_test" = post_test,
               "family" = family,
               ...)
 
@@ -939,6 +964,7 @@ analyze_data <- function(formula, d) {
 
            list("fit" = fit,
                 "test" = f$test,
+                "post_test" = f$post_test,
                 "formula" = f)
         })
 
@@ -1199,6 +1225,12 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
                     df_bw = df_bw,
                     formula = fit$formula)
 
+    if(!is.null(fit$post_test)) {
+        FE_post <- fit$post_test(fit$fit)
+    } else FE_post <- NULL
+
+    FE <- rbind(FE, FE_post)
+
     if (CI) {
         FE <- get_CI(fit = fit$fit,
                      test = fit$test,
@@ -1215,6 +1247,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
 
     out <- list("RE" = RE,
          "FE" = FE,
+         "FE_post" = FE_post,
          "logLik" = as.numeric(ll$ll),
          "df" = ll$df,
          "tot_n" = tot_n,
@@ -1420,6 +1453,7 @@ munge_results_ <- function(model, res, effect) {
             tmp <- effect[ , colnames(effect) %in% c("parameter", "model"), drop = FALSE]
         }
         effect <- effect[, !colnames(effect) %in% c("parameter", "model"), drop = FALSE]
+        effect$theta <- as.numeric(effect$theta) # Avoid NA_character_
         effect <- signif(effect, digits)
         effect <- cbind(tmp, effect)
         effect[,-1] <- round(effect[,-1], digits)
