@@ -1,4 +1,11 @@
 
+
+# Changes in version 0.5.0
+
+
+## Bug fixes
+* `Summary(model = ...)` now correctly handles a vector of model names, and will give more informative error messages.
+
 # Changes in version 0.4.0
 
 This version substantially improves the `simulate` method.

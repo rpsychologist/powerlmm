@@ -1795,8 +1795,12 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
                              para = para,
                              ...)
         } else {
-            if(is.numeric(model)) model <- names(object$res)[model]
-            if(!model %in% names(object$res)) stop("No 'model' named: ", model, call. = FALSE)
+            model_names <- names(object$res)
+            if(is.numeric(model)) model <- model_names[model]
+            if(!all(model %in% names(object$res))) stop("No 'model' named: ",
+                                                        model[which(!model %in% model_names)],
+                                                        "\nAvailable models are: '", paste(model_names, collapse = "', '"), "'",
+                                                        call. = FALSE)
             object$res <- object$res[model]
             summary.plcp_sim(object,
                              alpha = alpha,
