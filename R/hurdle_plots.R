@@ -102,21 +102,57 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
          })
          res <- do.call(rbind, res)
 
+         res_dens <- res %>%
+             filter(y > 0) %>%
+             group_by(time, treatment, var) %>%
+             do(ggplot2:::compute_density(.$y, NULL)) %>%
+             filter(x > 0)
+
         #res <- subset(res, y >= min(lims$y) & y <= max(lims$y))
+
+         max_count <- res_dens %>%
+             filter(var == "Within-subject") %>%
+             summarise(count = max(count))
+
+
+
+
+         res0 <- res %>%
+             filter(var == "Within-subject") %>%
+             group_by(time, treatment, var) %>%
+             summarise(p = mean(near(y, 0)))
+
+         step <- mean(diff(unique(res0$time)))
+         res0 <- res0 %>%
+             group_by(treatment) %>%
+             mutate(xend = time + step * p)
 
          ggplot(res, aes(x = y,
                          y = time,
                          group = interaction(time, treatment, var),
                          fill = treatment,
                          color = treatment)) +
-             ggridges::geom_density_ridges(data = subset(res, y >= 0),
-                                           scale = 0.95,
+             # ggridges::geom_density_ridges(data = res_dens,
+             #                               scale = 1,
+             #                               stat = "identity",
+             #                               aes(x = x, height = count, color = NULL),
+             #                               color = NA,
+             #                               alpha = 0.75,
+             #                               trim = TRUE) +
+             ggridges::geom_density_ridges(data = filter(res, y > 0),
+                                           scale = 1,
                                            stat = "density",
                                            aes(height = ..count.., color = NULL),
-                                           color = alpha("white", 0.5),
+                                           color = NA,
                                            alpha = 0.75,
-                                           size = 0.5,
+                                           draw_baseline = FALSE,
                                            trim = TRUE) +
+             #ggridges::stat_density_ridges(data = res, quantile_lines = TRUE, quantiles = c(0.025, 0.975), alpha = 0.7) +
+             geom_segment(data = res0,
+                          aes(y = time, yend = xend, x = 0, xend = 0, color = treatment),
+                          alpha = 0.5,
+                          stat = "identity", size = 2) +
+
              # ggridges::geom_density_ridges(data = subset(res, y == 0),
              #                               stat = "binline",
              #                               scale = 0.95,
@@ -133,7 +169,7 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                            fill = NULL,
                            group = interaction(treatment, var)),
                        size = 1) +
-             # TODO
+             #TODO
              # geom_segment(data = trend$x,
              #              aes(x = mean,
              #                  xend = mean,

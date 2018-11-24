@@ -80,7 +80,7 @@ marginalize.plcp_nested <- function(object,
 }
 
 .create_dummy_d <- function(pars) {
-    time <- 0:(pars$n1 - 1)
+    time <- get_time_vector(pars)
 
     d <- expand.grid(time = time,
                      treatment = 0:1,

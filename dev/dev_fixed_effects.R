@@ -1,6 +1,50 @@
-## fixed effects
-## TODO: pass L via sim_formula(test = L)?
 
+
+
+
+
+
+
+
+
+
+# New argument for fixed clusters DGP -------------------------------------
+## want to use 3-level RE model, but be able to set fixed cluster based on percentiles AND sds?
+## create helper that specify fixed cluster slopes in cohen's d units?
+
+
+# treatment effect will be unaffected as long as the therapist skill is same in both groups
+p <- study_parameters(n1 = 11,
+                      n2 = 50,
+                      n3 = 4,
+                      icc_pre_subject = 0.5,
+                      fixed_slope = -1,
+                      icc_slope = 0.1,
+                      fixed_cluster_intercepts = list(c(0.5,   0.5,   0.5,   0.5)),
+                      fixed_cluster_slopes     = list(c(0.9, 0.9, 0.9, 0.9)), # equal in both groups
+                      var_ratio = 0.02,
+                      partially_nested = FALSE,
+                      effect_size = -1)
+
+
+d <- simulate_data(p)
+d$cluster_slope %>% unique
+
+# use per treatment to set different therapist slopes in tx and cc
+
+p <- study_parameters(n1 = 11,
+                      n2 = 50,
+                      n3 = 4,
+                      icc_pre_subject = 0.5,
+                      icc_slope = 0.1,
+                      fixed_cluster_intercepts = 0.5, # default to 0
+                      fixed_cluster_slopes = per_treatment(c(0.8, 0.8, 0.9, 0.9),
+                                                           c(0.1, 0.2, 0.2, 0.3)),
+                      var_ratio = 0.02,
+                      partially_nested = FALSE,
+                      effect_size = 0)
+
+## fixed effects
 
 library(emmeans)
 library(lmerTest)

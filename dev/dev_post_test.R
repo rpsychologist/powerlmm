@@ -37,9 +37,7 @@ d %>%
 fit2 <- lmer(y ~ time*treatment + (1 + time | subject), data = d)
 
 
-test <- function(a) {
 
-}
 
 post_test <- function(fit, d = NULL) {
     res <- emmeans::emmeans(fit, ~cluster * time,
@@ -91,7 +89,7 @@ p <- study_parameters(design = study_design(),
                       partially_nested = FALSE,
                       effect_size = 0)
 
-res <- simulate(p, nsim = 5000, formula = f, cores = 16)
+res <- simulate(p, nsim = 1000, formula = f, cores = 16)
 
 summary(res)
 get_power(p)

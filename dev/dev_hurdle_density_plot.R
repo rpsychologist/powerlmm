@@ -22,7 +22,7 @@ p <- study_parameters(
     n1 = 3,
     n2 = 20,
     fixed_intercept = log(100), # median(Y > 0)
-    fixed_hu_intercept = qlogis(0.2), # prop == 0
+    fixed_hu_intercept = qlogis(0.5), # prop == 0
     fixed_slope = log(0.99),
     fixed_hu_slope = log(1),
     sd_hu_intercept = 1,
@@ -59,7 +59,9 @@ y <- subset(y, x > 0)
 y0 <- data.frame(x = 0,
                  density = 0,
                  count = length(dplyr::filter(res, time == 0, y - 0 < .Machine$double.eps^0.5)$y))
-y0$density <- y0$count/nrow(tmp)
+
+# scale based on positive part
+y0$density <- y0$count/nrow(tmp) * max(y$density)
 
 #y  <- rbind(y, y0)
 
