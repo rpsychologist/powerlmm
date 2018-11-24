@@ -90,7 +90,7 @@ marginalize.plcp_nested <- function(object,
 }
 
 .get_inv_link <- function(family, sigma = NULL) {
-    # log-transformation, but call links for concistency
+    # log-transformation, but call link for concistency
     ln_inv <- function(sigma) {
         sigma <- sigma
         function(eta) {
