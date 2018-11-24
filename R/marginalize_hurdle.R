@@ -12,7 +12,7 @@ marginalize.plcp_hurdle <- function(object,
 
     # pars
     R_cov <- create_R_cov(pars)
-    time <- 0:(pars$n1 - 1)
+    time <- get_time_vector(object)
 
     d <- expand.grid(time = time,
                      treatment = 0:1,
@@ -130,6 +130,7 @@ marginalize.plcp_hurdle <- function(object,
 
     XtX <- crossprod(X)
 
+    ## TODO: move outside function
     calc_eta <- function(i, full) {
 
         mu <- Xmat[i, ] + c(Z[i, ] %*% t(sd0[, c(1,2)]))
@@ -148,7 +149,7 @@ marginalize.plcp_hurdle <- function(object,
         exp_mu_positive <- exp(mu_positive)
 
         if(i %in% which(d$time == max(d$time))) {
-            ps <- 1:99/100
+            ps <- 1:99/100 # percentiles
             post <- data.frame("percentile" = ps,
                                "value" = quantile(exp_mu_overall, ps),
                                "treatment" = d[i, "treatment"]
@@ -190,6 +191,8 @@ marginalize.plcp_hurdle <- function(object,
     coef_hu_prob_marg_logit <- solve(XtX, crossprod(X, qlogis(hu_prob[, "mean"])))
     coef_hu_prob_median_logit <- solve(XtX, crossprod(X, qlogis(hu_prob[, "Q50"])))
 
+
+    ## TODO: create function
     coefs <- mapply(function(x, name) {
             x <- x
             d <- data.frame(var = paste("b", name, rownames(x), sep = "_"),
@@ -216,6 +219,9 @@ marginalize.plcp_hurdle <- function(object,
                   "hu_prob" = coefs[3:4])
 
     ## TODO: also return post ES with sd and percentiles
+    ## TODO: clean up summary func
+    ## TODO: avoid duplicate code in vectorized version
+
 
     # posttest
     post <- marg_y_overall[marg_y_overall$time == max(marg_y_overall$time), c("treatment","mean", "Q50")]
@@ -389,6 +395,7 @@ marginalize.plcp_hurdle <- function(object,
                                   link_scale = FALSE,
                                   ...) {
 
+    # TODO: avoid duplicate code
     d <- .create_dummy_d(pars)
     family <- pars$family
     marginal <- pars$marginal

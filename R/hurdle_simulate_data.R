@@ -116,7 +116,6 @@ sim_hurdle <- function(n1, n2, T_end,
 
     }
 
-
     y <- rep(0, length(time) * n2)
     y[nh] <- tmp[nh]
 
@@ -132,6 +131,8 @@ sim_hurdle <- function(n1, n2, T_end,
                cluster_slope = b1,
                cluster_intercept_hu = b0_hu,
                cluster_slope_hu = b1_hu,
+               hu = logit,
+               mu = mulog,
                abst = ifelse(yh == 1, 0, 1))
 }
 sim_hurdle_EMA <- function(n1_obs,
