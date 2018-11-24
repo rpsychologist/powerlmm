@@ -1406,6 +1406,23 @@ prepare_paras.default <- function(paras) {
         paras_tx$n3 <-  paras$n3
     }
 
+    if(is.per_treatment(paras$fixed_cluster_intercepts)) {
+        paras_tx$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$treatment
+        paras$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$control
+    }
+    if(!is.null(paras_tx$fixed_cluster_intercepts) &
+       length(paras_tx$fixed_cluster_intercepts) == 1) {
+        paras_tx$fixed_cluster_intercepts <- rep(paras_tx$fixed_cluster_intercepts, paras_tx$n3)
+    }
+    if(!is.null(paras$fixed_cluster_intercepts) &
+       length(paras$fixed_cluster_intercepts) == 1) {
+        paras$fixed_cluster_intercepts <- rep(paras$fixed_cluster_intercepts, paras$n3)
+    }
+    if(is.per_treatment(paras$fixed_cluster_slopes)) {
+        paras_tx$fixed_cluster_slopes <- paras$fixed_cluster_slopes[[1]]$treatment
+        paras$fixed_cluster_slopes <- paras$fixed_cluster_slopes[[1]]$control
+    }
+
     # if(is.unequal_clusters(paras$n2)) {
     #     paras$n3 <- length(unlist(paras$n2))
     #     paras_tx$n3 <- length(unlist(paras$n2))
@@ -1422,6 +1439,7 @@ prepare_paras.default <- function(paras) {
         attr(paras$dropout, "per_treatment") <- TRUE
         attr(paras_tx$dropout, "per_treatment") <- TRUE
     }
+
 
     if(length(paras_tx$n2) == 1) {
         paras_tx$n2 <- rep(paras_tx$n2, paras_tx$n3)
