@@ -1,4 +1,6 @@
-plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overall", "positive", "hurdle"),
+plot.plcp_marginal_hurdle <- function(object,
+                                      type = "trend",
+                                      outcome = c("overall", "positive", "hurdle"),
                                       RE = TRUE, RE_level = 2, hu = FALSE, trim = c(0,1),
                                       ...) {
     check_installed("ggplot2")
@@ -62,9 +64,17 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
         #                             level1_func = .sample_level1_nested_hurdle,
         #                             ...)
 
+        trend <- .make_nested_trend(object = object,
+                                    RE = RE,
+                                    RE_level = RE_level,
+                                    var1 = "y",
+                                    var2 = "y_overall",
+                                    level1_func = .sample_level1_nested_hurdle,
+                                    ...)
 
-        .plot_marg(x = x,
-                   Q_long = Q_long,
+
+        .plot_marg(x = trend$x,
+                   Q_long = trend$Q_long,
                    RE = RE,
                    ymin = ymin,
                    ymax = ymax) +
@@ -127,7 +137,9 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
              group_by(treatment) %>%
              mutate(xend = time + step * p)
 
-         ggplot(res, aes(x = y,
+         sub_clust <- subset(trend$x, var %in% c("Subject", "Cluster"))
+
+         p <- ggplot(res, aes(x = y,
                          y = time,
                          group = interaction(time, treatment, var),
                          fill = treatment,
@@ -168,7 +180,7 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
                            linetype = "mean",
                            fill = NULL,
                            group = interaction(treatment, var)),
-                       size = 1) +
+                       size = 1)
              #TODO
              # geom_segment(data = trend$x,
              #              aes(x = mean,
@@ -179,13 +191,19 @@ plot.plcp_marginal_hurdle <- function(object, type = "trend", outcome = c("overa
              #                  fill = NULL,
              #                  group = interaction(treatment, time, var)),
              #              size = 1) +
-             geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
-                       aes(x = Q50,
-                           y = time,
-                           linetype = "median",
-                           fill = NULL,
-                           group = interaction(treatment, var)), size = 1) +
+
+            if(nrow(sub_clust) > 0) {
+                p <- p +
+                    geom_path(data = sub_clust,
+                              aes(x = Q50,
+                                  y = time,
+                                  linetype = "median",
+                                  fill = NULL,
+                                  group = interaction(treatment, var)), size = 1)
+            }
+
              #geom_blank(data = trend$lims, aes(x = mean, y = time)) +
+             p +
              coord_flip() +
              theme_minimal() +
              facet_wrap(~var, ncol = 2, scales = NULL) +
