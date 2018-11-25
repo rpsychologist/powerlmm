@@ -1,9 +1,3 @@
-# TODO
-#' add effect sizes to paras
-#' add function to plot by tx group
-
-
-
 
 # random effects
 create_R_cov <- function(pars) {
@@ -266,14 +260,13 @@ simulate_data.plcp_hurdle <- function(paras,
     d_c <- do.call(gen_fake, paras)
     d_c$treatment <- 0
 
+    # slopes tx
     paras_tx$fixed_slope <- paras$fixed_slope + log(paras$RR_cont)/paras$T_end
     paras_tx$fixed_hu_slope <- paras$fixed_hu_slope + log(paras$OR_hu)/paras$T_end
 
     d_tx <-  do.call(gen_fake, paras_tx)
     d_tx$treatment <- 1
     d_tx$subject = d_tx$subject + paras$n2
-
-
 
     # missing data
     if (is.list(paras$dropout) |
