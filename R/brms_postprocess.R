@@ -39,7 +39,7 @@ predict_hurdle_gamma_mtp <- function (i, draws, ...) {
     theta <- brms:::get_dpar(draws, "hu", i = i)
     shape <- brms:::get_dpar(draws, "shape", i = i)
 
-    # mu on log scale?
+    # mu on log scale
     # solve for g(Y | y > 0)
     mu <- brms:::get_dpar(draws, "mu", i = i) - log(1-theta)
 
