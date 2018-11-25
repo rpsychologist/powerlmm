@@ -362,11 +362,15 @@ marginalize.plcp_nested <- function(object,
 
 ## Sample level 1
 .sample_level1_nested <- function(pars,
-                                  sd2_p = c(0.5, 0.5),
-                                  sd3_p = c(0.5, 0.5),
+                                  fixed_subject_percentiles = c(0.5, 0.5),
+                                  fixed_cluster_percentiles = c(0.5, 0.5),
                                   R = 1e4,
                                   link_scale = FALSE,
                                   ...) {
+
+    # arsg:
+    #   fixed_subject_percentiles: level 2 percentiles
+    #   fixed_cluster_percentiles: level 2 percentiles
 
     d <- .create_dummy_d(pars)
     family <- pars$family
@@ -394,9 +398,11 @@ marginalize.plcp_nested <- function(object,
     #}
 
     # RE
-    sd3 <- qnorm(sd3_p, 0, with(pars, c(sigma_cluster_intercept,
+    sd3 <- qnorm(fixed_cluster_percentiles, 0, with(pars, c(sigma_cluster_intercept,
                               sigma_cluster_slope)))
-    sd2 <- qnorm(sd2_p, 0, with(pars, c(sigma_subject_intercept,
+    sd2 <- qnorm(fixed_subject_percentiles,
+                 0,
+                 with(pars, c(sigma_subject_intercept,
                               sigma_subject_slope)))
 
     sd3[is.na(sd3)] <- 0

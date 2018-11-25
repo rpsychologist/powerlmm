@@ -389,8 +389,8 @@ marginalize.plcp_hurdle <- function(object,
 
 
 .sample_level1_nested_hurdle <- function(pars,
-                                  sd2_p = c(0.5, 0.5),
-                                  sd2_hu_p = c(0.5, 0.5),
+                                  fixed_subject_percentiles = c(0.5, 0.5),
+                                  fixed_subject_hu_percentiles = c(0.5, 0.5),
                                   R = 1e4,
                                   link_scale = FALSE,
                                   ...) {
@@ -436,10 +436,14 @@ marginalize.plcp_hurdle <- function(object,
     }
 
     # RE
-    sd2 <- qnorm(sd2_p, 0, with(pars, c(sd_intercept,
-                                        sd_slope)))
-    sd2_hu <- qnorm(sd2_hu_p, 0, with(pars, c(sd_hu_intercept,
-                                        sd_hu_slope)))
+    sd2 <- qnorm(fixed_subject_percentiles,
+                 0,
+                 with(pars, c(sd_intercept,
+                              sd_slope)))
+    sd2_hu <- qnorm(fixed_subject_hu_percentiles,
+                    0,
+                    with(pars, c(sd_hu_intercept,
+                                 sd_hu_slope)))
 
     sd2[is.na(sd2)] <- 0
     sd2_hu[is.na(sd2_hu)] <- 0
@@ -489,7 +493,10 @@ marginalize.plcp_hurdle <- function(object,
          y_positive = tmp,
          post = NULL,
          post_ps = NULL,
-         mu1_vec = tmp$exp_mu1_vec
+         mu1_vec = tmp$exp_mu1_vec,
+         fixed_subject_percentiles = fixed_subject_percentiles,
+         fixed_subject_hu_percentiles = fixed_subject_hu_percentiles
+
     )
 
 }
