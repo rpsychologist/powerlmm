@@ -1,5 +1,6 @@
-# return summaries of marginal ests distribution
+
 eta_sum <- function(x) {
+    # return summaries of marginal ests distribution
     cbind("mean" = mean(x),
           "sd" = sd(x),
           "Q0.5" = quantile(x, probs = 0.005),
@@ -16,8 +17,9 @@ eta_sum <- function(x) {
 
 }
 
-# helper to display marginal ests
+
 trans_eta <- function(x, var, d) {
+    # helper to display marginal ests
     out <- do.call(rbind, x[, var])
     out <- as.data.frame(out)
     out <- cbind(data.frame(var = var,
@@ -28,8 +30,9 @@ trans_eta <- function(x, var, d) {
     out
 }
 
-# transform percentile ES to long foramt
+
 trans_post_ps <- function(x, hu = FALSE) {
+    # transform percentile ES to long foramt
     post_ps <- x[vapply(x, is.data.frame, logical(1))]
 
     ind <- vapply(post_ps, function(d) all(d$treatment == 0), logical(1))
