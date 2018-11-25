@@ -12,7 +12,7 @@
 ## want to use 3-level RE model, but be able to set fixed cluster based on percentiles AND sds?
 ## create helper that specify fixed cluster slopes in cohen's d units?
 ##          - just use the existing cohens func.
-
+## * Plot() allow plotting fixed, perhaps overlay on trend_ribbon plot?
 
 # treatment effect will be unaffected as long as the therapist skill is same in both groups
 p <- study_parameters(n1 = 11,

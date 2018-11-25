@@ -196,10 +196,13 @@ p <- study_parameters(
     marginal = TRUE,
     family = "gamma")
 
+
+# TODO: plot on linear scale
 plot(p)
 
 m <- marginalize(p)
 
+#TODO remove tidyverse dependency
 plot(m, RE = TRUE, type = "trend_ridges",
      RE_level = c(1,2), trim = c(0, 0.99),
      sd2_p = c(0.1, 0.5),
@@ -214,7 +217,7 @@ plot(m, RE = TRUE)
 plot(m, RE = TRUE, type = "trend", RE_level = c(1)) + scale_fill_brewer(palette = "PuBu")
 plot(m, RE = FALSE, type = "trend")
 
-plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1)) +
+plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1))
 
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(2))
 
