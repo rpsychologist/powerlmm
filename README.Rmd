@@ -77,6 +77,18 @@ plot(p)
 get_power(p, df = "satterthwaite")
 ```
 
+## More vizualisations
+```{r}
+plot(p, 
+     RE_level = c(1, 2), 
+     type = "trend")
+
+plot(p, 
+     RE_level = c(1, 2), 
+     type = "trend_ridges")
+```
+
+
 ### Unequal cluster sizes
 Unequal cluster sizes is also supported, the cluster sizes can either be random (sampled), or the marginal distribution can be specified. 
 
