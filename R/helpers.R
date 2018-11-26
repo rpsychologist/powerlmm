@@ -685,6 +685,9 @@ reshape_eta_sum <- function(x) {
 #' Plot method for \code{study_parameters}-objects
 #' @param x An object of class \code{plcp}.
 #' @param n specifies which row \code{n} should be used if \code{object}
+#' @paran type ...
+#' @param fixed_subject_percentiles ...
+#' @param fixed_cluster_percentiles ...
 #'  is a \code{data.frame} containing multiple setups.
 #' @param type indicated what plot to show. If \code{effect} the plot showing the treatment groups
 #' change over time will be shown, if \code{dropout} the missing data pattern will be shown,
@@ -702,13 +705,17 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
      }
      if(type == "trend") {
          if(RE) {
-             .plot_link(paras, RE_level = RE_level, ...) +
+             .plot_link(paras,
+                        RE_level = RE_level,
+                        ...) +
                  labs(y = "y (link scale)")
          } else {
              .plot_trend(paras, ...)
          }
      } else if(type == "trend_ridges") {
-         .plot_link_ridges(paras, RE_level = RE_level, ...)
+         .plot_link_ridges(paras,
+                           RE_level = RE_level,
+                           ...)
 
      } else if(type == "dropout") {
          .plot_dropout(paras)
@@ -727,8 +734,13 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
     if(overlay) {
         # Overlay L1 trajectory on L2 panel
         tmp <- x[x$var == "Within-subject", ]
-        tmp$var <- "Subject"
-        tmp$color <- "L1"
+
+        # silently ignore overlay when RE_level != 1
+        if(nrow(tmp) > 0) {
+            tmp$var <- "Subject"
+            tmp$color <- "L1"
+        }
+
 
         x$color <- NA
         x[x$var == "Within-subject", "color"] <- "L1"
@@ -743,8 +755,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
     plot_struct <- list(
                         scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
                         guides(color = guide_legend(override.aes = list(fill = NA))),
-                        scale_fill_brewer(palette = "PuBu"),
-                        scale_color_manual(values = c("#e84118", "#e84118", "#e84118")),
+                        scale_fill_brewer(palette = "PuBu"), # PuBu
+                        scale_color_manual(values = c("#192a56", "#e84118", "#e84118")),
                         theme_minimal())
 
     if(RE) {
@@ -760,12 +772,12 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                           color = color,
                           linetype = "median",
                           fill = NULL,
-                          group = interaction(color, var)),
+                          group = interaction(color, var, treatment)),
                       size = 1) +
             geom_line(aes(color = color,
                           linetype = "mean",
                           fill = NULL,
-                          group = interaction(color, var)),
+                          group = interaction(color, var, treatment)),
                       size = 1) +
             geom_point(aes(y = Q50,
                            color =
