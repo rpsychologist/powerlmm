@@ -1,6 +1,6 @@
 # Allow post process fitted object
 # e.g. general linear hypothesis
-
+# TODO: * function that creates return df
 
 library(emmeans)
 library(lmerTest)

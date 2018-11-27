@@ -425,7 +425,7 @@ gradient <- function (fun, x, delta = 1e-04, ...)
     fsub <- apply(Xsub, 1, fun, ...)
     (fadd - fsub)/(2 * delta)
 }
-make_theta_vec2 <- function(x0sq, x01, x1sq) {
+make_theta_vec <- function(x0sq, x01, x1sq) {
 
     # deal with negative paras in numerical derivative
     x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
@@ -454,7 +454,12 @@ make_theta_vec2 <- function(x0sq, x01, x1sq) {
     }
     x
 }
-make_theta_vec <- function(x0sq, x01, x1sq) {
+
+
+make_theta_vec_new <- function(x0sq, x01, x1sq) {
+    ## not used
+    ## meant for crossed-designs
+
     # deal with negative paras in numerical derivative
     x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
     #x01 <- ifelse(x01 < 0, abs(x01), x01)
@@ -495,13 +500,13 @@ make_theta <- function(pars) {
     #p <- make_pars(pars)
     p <- as.list(pars)
     sigma <- sqrt(p$sigma)
-    if(old_vec) {
-        lvl2 <- make_theta_vec2(p$u0, p$u01, p$u1)/sigma
-        lvl3 <- make_theta_vec2(p$v0, p$v01, p$v1)/sigma
-    } else {
+    #if(old_vec) {
         lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
         lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
-    }
+    # } else {
+    #     lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+    #     lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
+    # }
 
     c(lvl2, lvl3)
 }

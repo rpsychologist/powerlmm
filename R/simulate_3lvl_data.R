@@ -86,7 +86,8 @@ create_cluster_index <- function(n2, n3) {
          # level 3-model
          cluster_lvl <-
              MASS::mvrnorm(sum(n3),
-                           mu = c(0, 0),
+                           mu = c(fixed_intercept,
+                                  fixed_slope),
                            Sigma = Sigma_cluster)
 
          if (is.null(dim(cluster_lvl))) {

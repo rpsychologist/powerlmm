@@ -1203,7 +1203,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     object$icc_pre_subject <- get_ICC_pre_subjects(object)
     object$icc_slope <- get_ICC_slope(object)
     object$var_ratio <- get_var_ratio(object)
-
+    object$family <- as.character(object$family)
     out <- object
 
 
@@ -1258,7 +1258,10 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     out$var_ratio <- round(object$var_ratio, digits)
 
     for(i in 1:ncol(out)) {
-        out[,i] <- replace_repeating(out[,i], empty = empty)
+        col_tmp <- out[,i]
+        col_tmp[is.na(col_tmp)] <- "NA"
+        out[,i] <- replace_repeating(col_tmp, empty = empty)
+
     }
 
     list(out = out,
@@ -1308,6 +1311,7 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
 
     out <- out[, select_setup_cols(out)]
     colnames(out) <- gsub("_lab", "", colnames(out))
+
     print(out)
     if(hidden_row > 0) {
         cat("# ...", hidden_row, "setups not shown.")

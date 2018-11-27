@@ -556,7 +556,7 @@ test_varb <- function(object) {
     f <- lme4::lFormula(formula = create_lmer_formula(object),
                         data = d)
 
-    pc <- setup_power_calc(d, f, object)
+    pc <- setup_power_calc.plcp_nested(d = d, f=f, object=object)
     X <- pc$X
     Zt <- pc$Zt
     L0 <- pc$L0

@@ -10,14 +10,18 @@
 \arguments{
 \item{x}{An object of class \code{plcp}.}
 
-\item{n}{specifies which row \code{n} should be used if \code{object}
-is a \code{data.frame} containing multiple setups.}
+\item{n}{specifies which row \code{n} should be used if \code{object}}
 
 \item{type}{indicated what plot to show. If \code{effect} the plot showing the treatment groups
 change over time will be shown, if \code{dropout} the missing data pattern will be shown,
 if \code{both} both plots will be shown.}
 
 \item{...}{Optional arguments.}
+
+\item{fixed_subject_percentiles}{...}
+
+\item{fixed_cluster_percentiles}{...
+is a \code{data.frame} containing multiple setups.}
 }
 \description{
 Plot method for \code{study_parameters}-objects

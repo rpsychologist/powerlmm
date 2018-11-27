@@ -11,7 +11,7 @@ simulate_data(paras, n = 1)
 
 \method{simulate_data}{plcp_nested}(paras, n = NULL)
 
-\method{simulate_data}{plcp_multi}(paras, n = 1)
+\method{simulate_data}{plcp_multi}(paras, n = NULL)
 
 \method{simulate_data}{plcp_crossed}(paras, n = NULL)
 }

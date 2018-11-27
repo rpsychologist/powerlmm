@@ -364,8 +364,12 @@ simulate_data.plcp_nested <- function(paras, n = NULL) {
 }
 #' @rdname simulate_data
 #' @export
-simulate_data.plcp_multi <- function(paras, n = 1) {
-    simulate_data.plcp(as.plcp(paras[n,]))
+simulate_data.plcp_multi <- function(paras, n = NULL) {
+    if(is.null(n)) {
+        n <- 1
+        message("Using first row. You can specify which row to simulate using argument 'n'.")
+    }
+    simulate_data(as.plcp(paras[n,]))
 }
 simulate_data.plcp <- function(paras, ...) {
     NextMethod("simulate_data")
@@ -848,6 +852,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     fit <- analyze_data(formula, d)
 
     res <- extract_results(fit = fit,
+                           d = d,
                            CI = CI,
                            satterthwaite = satterthwaite,
                            df_bw = get_balanced_df(prepped),
@@ -971,9 +976,10 @@ analyze_data <- function(formula, d) {
     fit
 }
 
-extract_results <- function(fit, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n, sim) {
+extract_results <- function(fit, d = NULL, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n, sim) {
     lapply(fit, extract_results_,
            CI = CI,
+           d = d,
            satterthwaite = satterthwaite,
            df_bw = df_bw,
            tot_n = tot_n,
@@ -1015,7 +1021,7 @@ add_p_value <- function(fit, test, ...) {
 }
 #' @importFrom utils packageVersion
 add_p_value.lmerMod <- function(fit, test, satterthwaite, df_bw = NULL, ...) {
-    if(satterthwaite) {
+    if(satterthwaite & !is.null(test)) {
         tmp <- tryCatch(summary(fit))
         tmp <- tmp$coefficients
 
@@ -1211,13 +1217,14 @@ get_LL <- function(fit) {
 get_LL.default <- function(fit, REML = TRUE) {
     ll <- stats::logLik(fit, REML = REML)
     df <- attr(ll, "df")
-    list(ll, df)
+    list(ll = ll,
+         df = df)
 }
 get_LL.glmerMod <- function(fit) {
     get_LL.default(fit, REML = FALSE)
 }
 
-extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
+extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d, sim) {
 
     FE <- get_fixef(fit = fit$fit,
                     test = fit$test,
@@ -1226,7 +1233,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, sim) {
                     formula = fit$formula)
 
     if(!is.null(fit$post_test)) {
-        FE_post <- fit$post_test(fit$fit)
+        FE_post <- fit$post_test(fit$fit, d = d)
     } else FE_post <- NULL
 
     FE <- rbind(FE, FE_post)
@@ -1884,11 +1891,11 @@ summarize_FE <- function(res, theta, alpha, df_bw = NULL) {
         } else theta_i <- NA
         tmp[[i]] <- data.frame(
                     parameter = para,
-                    M_est = mean(estimate),
+                    M_est = mean(estimate, na.rm=TRUE),
                     theta = theta_i,
-                    M_se = mean(se),
-                    SD_est = sd(estimate),
-                    Power = mean(get_cover(estimate, se, alpha = alpha)),
+                    M_se = mean(se, na.rm=TRUE),
+                    SD_est = sd(estimate, na.rm=TRUE),
+                    Power = mean(get_cover(estimate, se, alpha = alpha), na.rm=TRUE),
                     Power_bw = mean(pvals_bw < alpha),
                     Power_satt = mean(pval < alpha, na.rm=TRUE),
                     Satt_NA = Satt_NA
