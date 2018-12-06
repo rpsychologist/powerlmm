@@ -849,10 +849,12 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     #saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
     tot_n <- length(unique(d[d$time == 0,]$subject))
 
+
+
     fit <- analyze_data(formula, d)
 
     res <- extract_results(fit = fit,
-                           d = d,
+                           #d = fit$d,
                            CI = CI,
                            satterthwaite = satterthwaite,
                            df_bw = get_balanced_df(prepped),
@@ -970,6 +972,7 @@ analyze_data <- function(formula, d) {
            list("fit" = fit,
                 "test" = f$test,
                 "post_test" = f$post_test,
+                "d" = d,
                 "formula" = f)
         })
 
@@ -979,7 +982,7 @@ analyze_data <- function(formula, d) {
 extract_results <- function(fit, d = NULL, CI = FALSE, satterthwaite = FALSE, df_bw, tot_n, sim) {
     lapply(fit, extract_results_,
            CI = CI,
-           d = d,
+           #d = d,
            satterthwaite = satterthwaite,
            df_bw = df_bw,
            tot_n = tot_n,
@@ -1224,7 +1227,7 @@ get_LL.glmerMod <- function(fit) {
     get_LL.default(fit, REML = FALSE)
 }
 
-extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d, sim) {
+extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d=NULL, sim) {
 
     FE <- get_fixef(fit = fit$fit,
                     test = fit$test,
@@ -1233,7 +1236,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d, sim) {
                     formula = fit$formula)
 
     if(!is.null(fit$post_test)) {
-        FE_post <- fit$post_test(fit$fit, d = d)
+        FE_post <- fit$post_test(fit$fit, d = fit$d)
     } else FE_post <- NULL
 
     FE <- rbind(FE, FE_post)
