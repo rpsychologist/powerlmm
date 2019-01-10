@@ -80,7 +80,7 @@ marginalize.plcp_hurdle <- function(object,
             # Y
             mu_overall <- mu
             # Y > 0
-            marg_positive <- mu - log(1 - p) - sd_log^2/2
+            mu_positive <- mu - log(1 - p) - sd_log^2/2
         }
 
     }  else {
