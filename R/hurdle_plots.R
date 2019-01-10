@@ -64,17 +64,44 @@ plot.plcp_marginal_hurdle <- function(object,
         #                             level1_func = .sample_level1_nested_hurdle,
         #                             ...)
 
-        trend <- .make_nested_trend(object = object,
-                                    RE = RE,
-                                    RE_level = RE_level,
-                                    var1 = "y",
-                                    var2 = "y_overall",
-                                    level1_func = .sample_level1_nested_hurdle,
-                                    ...)
+        # trend <- .make_nested_trend(object = object,
+        #                             RE = RE,
+        #                             RE_level = RE_level,
+        #                             var1 = "y",
+        #                             var2 = "y_overall",
+        #                             level1_func = .sample_level1_nested_hurdle,
+        #                             ...)
+        #
+        # trend$x$var <- "Subject_overall"
+        # trend$Q_long$var <- "Subject_overall"
+        #
+        #
+        # trend1 <- .make_nested_trend(object = object,
+        #                             RE = RE,
+        #                             RE_level = RE_level,
+        #                             var1 = "y",
+        #                             var2 = "y_positive",
+        #                             level1_func = .sample_level1_nested_hurdle,
+        #                             ...)
+        # trend1$x$var <- "Subject_positive"
+        # trend1$Q_long$var <- "Subject_positive"
+        #
+        # trend2 <- .make_nested_trend(object = object,
+        #                              RE = RE,
+        #                              RE_level = RE_level,
+        #                              var1 = "y",
+        #                              var2 = "hu_prob",
+        #                              level1_func = .sample_level1_nested_hurdle,
+        #                              ...)
+        #
+        # trend2$x$var <- "Hu prob"
+        # trend2$Q_long$var <- "Hu prob"
+        #
+        # trend$x <- rbind(trend$x, trend1$x, trend2$x)
+        # trend$Q_long <- rbind(trend$Q_long, trend1$Q_long, trend2$Q_long)
 
-
-        .plot_marg(x = trend$x,
-                   Q_long = trend$Q_long,
+        .plot_marg(x = x,
+                   Q_long = Q_long,
                    RE = RE,
                    ymin = ymin,
                    ymax = ymax) +
@@ -123,9 +150,6 @@ plot.plcp_marginal_hurdle <- function(object,
          max_count <- res_dens %>%
              filter(var == "Within-subject") %>%
              summarise(count = max(count))
-
-
-
 
          res0 <- res %>%
              filter(var == "Within-subject") %>%

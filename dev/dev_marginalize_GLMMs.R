@@ -192,9 +192,9 @@ p <- study_parameters(
     cor_hu_intercept_hu_slope = 0.15,
     shape = 2,
     RR_cont = 0.33,
-    OR_hu = 1,
+    OR_hu = 0.5,
     marginal = TRUE,
-    family = "gamma")
+    family = "lognormal")
 
 
 # TODO: plot on linear scale
@@ -214,7 +214,7 @@ plot(m, RE = TRUE, type = "trend_ridges",
 plot(m, RE = FALSE)
 plot(m, RE = TRUE)
 
-plot(m, RE = TRUE, type = "trend", RE_level = c(1)) + scale_fill_brewer(palette = "PuBu")
+plot(m, RE = TRUE, type = "trend", RE_level = c(1,2)) + scale_fill_brewer(palette = "PuBu")
 plot(m, RE = FALSE, type = "trend")
 
 plot(m, RE = TRUE, type = "trend_ridges", RE_level = c(1, 2), trim = c(0, 1))

@@ -1235,6 +1235,7 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d=NULL, sim)
                     df_bw = df_bw,
                     formula = fit$formula)
 
+
     if(!is.null(fit$post_test)) {
         FE_post <- fit$post_test(fit$fit, d = fit$d)
     } else FE_post <- NULL
