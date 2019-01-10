@@ -201,14 +201,15 @@ p <- study_parameters(
     design = study_design(family = "hurdle"),
     n1 = 3,
     n2 = 20,
+    T_end = 10,
     fixed_intercept = 2.81, # median(Y > 0)
     fixed_hu_intercept = qlogis(0.8), # prop == 0
-    fixed_slope = -0.01,
-    fixed_hu_slope = -0.05,
+    fixed_slope = log(1.3)/10,
+    fixed_hu_slope = log(.5)/10,
     sd_hu_intercept = 3.6,
-    sd_hu_slope = 0,
+    sd_hu_slope = 0.3,
     sd_intercept = 1.84,
-    sd_slope = 0,
+    sd_slope = 0.05,
     cor_intercept_slope = -0.1,
     cor_intercept_hu_intercept = -0.8,
     cor_intercept_hu_slope = 0.2,
@@ -216,8 +217,8 @@ p <- study_parameters(
     cor_slope_hu_slope = -0.1,
     cor_hu_intercept_hu_slope = 0.15,
     shape = 1.6,
-    RR_cont = 0.8,
-    OR_hu = 0.2,
+    RR_cont = 0.5,
+    OR_hu = 1.5,
     marginal = TRUE,
     family = "gamma")
 
@@ -225,30 +226,60 @@ p <- study_parameters(
 # TODO: plot on linear scale
 #plot(p)
 
-m <- marginalize(p)
-p0 <- plot(m, RE = TRUE, type = "trend",
+m <- marginalize(p, R = 1e4)
+RE <- FALSE
+p0 <- plot(m, RE = RE, type = "trend",
      outcome = "hurdle",
      RE_level = c(1,2)) +
-    scale_fill_brewer(palette = "PuBu")
+    scale_fill_brewer(palette = "PuBu") + facet_wrap(~var)
 
-(p1 <- plot(m, RE = TRUE, type = "trend",
+p1 <- plot(m, RE = RE, type = "trend",
            outcome = "overall",
            RE_level = c(1,2)) +
     scale_fill_brewer(palette = "PuBu") +
-    scale_y_continuous(trans = "log1p", breaks = c(0, 50, 500, 1000))
-    )
+    scale_y_continuous(trans = "log1p", breaks = c(0, 50, 500, 1000)) + facet_wrap(~var)
 
-(p2 <- plot(m, RE = TRUE, type = "trend",
+
+p2 <- plot(m, RE = RE, type = "trend",
            outcome = "positive",
            RE_level = c(1,2)) +
     scale_fill_brewer(palette = "PuBu") +
-    scale_y_continuous(trans = "log1p", breaks = c(0, 50, 500, 1000, 1e4, 5e4))
-    )
+    scale_y_continuous(trans = "log1p", breaks = c(0, 50, 500, 1000, 1e4, 5e4)) + facet_wrap(~var)
+
 
 plot_grid(p0,
           p1,
           p2,
           ncol = 1)
+
+# RE EFFECTs
+RE <- TRUE
+p0 <- plot(m, RE = RE, type = "trend",
+           outcome = "hurdle",
+           RE_level = c(1,2)) +
+    scale_fill_brewer(palette = "PuBu") + facet_wrap(treatment~var)
+
+p1 <- plot(m, RE = RE, type = "trend",
+           outcome = "overall",
+           RE_level = c(1,2)) +
+    scale_fill_brewer(palette = "PuBu") +
+    scale_y_continuous(trans = "log1p", breaks = c(0, 50, 500, 1000)) + facet_wrap(treatment~var)
+
+
+p2 <- plot(m, RE = RE, type = "trend",
+           outcome = "positive",
+           RE_level = c(1,2)) +
+    scale_fill_brewer(palette = "PuBu") +
+    scale_y_continuous(trans = "log1p", breaks = c(0, 50, 500, 1000, 1e4, 5e4)) + facet_wrap(treatment~var)
+
+
+plot_grid(p0,
+          p1,
+          p2,
+          ncol = 1)
+
+
+
 
 #TODO remove tidyverse dependency
 plot(m,
