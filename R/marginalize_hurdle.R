@@ -20,11 +20,11 @@ marginalize.plcp_hurdle <- function(object,
 
     betas <- with(pars, c(fixed_intercept,
                           fixed_slope,
-                          0,
+                          fixed_intercept_tx,
                           log(RR_cont)/pars$T_end))
     betas_hu <- with(pars, c(fixed_hu_intercept,
                              fixed_hu_slope,
-                             0,
+                             fixed_hu_intercept_tx,
                              log(OR_hu)/pars$T_end))
     Xmat <- model.matrix(~time * treatment,
                          data = d)

@@ -260,6 +260,9 @@ simulate_data.plcp_hurdle <- function(paras,
     d_c <- do.call(gen_fake, paras)
     d_c$treatment <- 0
 
+    # intercepts tx
+    paras_tx$fixed_intercept <- paras$fixed_intercept + paras$fixed_intercept_tx
+    paras_tx$fixed_hu_intercept <- paras$fixed_hu_intercept + paras$fixed_hu_intercept_tx
     # slopes tx
     paras_tx$fixed_slope <- paras$fixed_slope + log(paras$RR_cont)/paras$T_end
     paras_tx$fixed_hu_slope <- paras$fixed_hu_slope + log(paras$OR_hu)/paras$T_end

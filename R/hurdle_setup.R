@@ -6,7 +6,9 @@ study_parameters.plcp_design_hurdle_nested <- function(design = NULL,
                                          n2,
                                          T_end = NULL,
                                          fixed_intercept,
+                                         fixed_intercept_tx = 0,
                                          fixed_hu_intercept,
+                                         fixed_hu_intercept_tx = 0,
                                          fixed_slope,
                                          fixed_hu_slope,
                                          sd_hu_intercept = 0,
@@ -40,6 +42,9 @@ study_parameters.plcp_design_hurdle_nested <- function(design = NULL,
     .check_dropout_arg(args$dropout)
 
     # defaults
+    args$fixed_intercept_tx <- fixed_intercept_tx
+    args$fixed_hu_intercept_tx <- fixed_hu_intercept_tx
+
     args$cor_intercept_slope <- cor_intercept_slope
     args$cor_intercept_hu_intercept <- cor_intercept_hu_intercept
     args$cor_intercept_hu_slope <- cor_intercept_hu_slope
