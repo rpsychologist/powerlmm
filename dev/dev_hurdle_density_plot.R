@@ -16,7 +16,6 @@ plot(m, RE = TRUE, type = "trend_ridges",
     scale_color_manual(values = c("#222f3e", "#ff6b6b"))
 
 
-
 p <- study_parameters(
     design = study_design(family = "hurdle"),
     n1 = 3,
