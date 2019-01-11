@@ -42,7 +42,6 @@ p <- study_parameters(
 
 m <- marginalize(p)
 
-
 res <- .mu_vec_to_long(m,
                        RE_level = 1,
                        var1 = "mu1_vec",
