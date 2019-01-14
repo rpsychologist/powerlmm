@@ -232,7 +232,7 @@ plot.plcp_marginal_hurdle <- function(object,
              theme_minimal() +
              facet_wrap(~var, ncol = 2, scales = NULL) +
              scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
-             scale_color_manual(values = c("#222f3e", "#ff6b6b"))
+             scale_color_manual(values = c("#222f3e", "#2980b9"))
 
 
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
