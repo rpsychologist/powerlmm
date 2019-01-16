@@ -2,6 +2,8 @@ marginalize.brmsfit <- function(object,
                                 R = 1e3,
                                 .func = .marginalize_hurdle_sim_vec,
                                 ...) {
+
+    # Hurdle models
     fit <- object
     stopifnot(fit$family$family %in% c("hurdle_lognormal", "hurdle_gamma", "custom"))
     family_name <- fit$family$name

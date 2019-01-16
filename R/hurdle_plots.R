@@ -1,3 +1,5 @@
+
+#' @export
 plot.plcp_marginal_hurdle <- function(object,
                                       type = "trend",
                                       outcome = c("overall", "positive", "hurdle"),
