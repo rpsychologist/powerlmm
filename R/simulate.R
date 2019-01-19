@@ -936,12 +936,9 @@ fit_model.default <- function(formula, data, ...) {
     family <- formula$family
     formula <- as.formula(formula$formula)
     if(is.null(lme4::findbars(formula))) {
-        fit <- tryCatch(
             #do.call(lme4::lmer, list(formula=f, data=d))
             fit <- stats::lm(formula = formula, data = data)
-        )
     } else {
-        fit <- tryCatch(
             #do.call(lme4::lmer, list(formula=f, data=d))
             if(family$family == "gaussian") {
 
@@ -953,9 +950,15 @@ fit_model.default <- function(formula, data, ...) {
                 args$data <- data
                 fit <- do.call(lme4::glmer, args)
             }
-
-        )
     }
+}
+
+
+fit_error <- function(e) {
+    fit <- e
+    class(fit) <- "plcp_error"
+
+    fit
 }
 
 analyze_data <- function(formula, d) {
@@ -966,8 +969,8 @@ analyze_data <- function(formula, d) {
                     d <- f$data_transform(d)
 
             #}
-            fit <- fit_model(f,
-                             data = d)
+            fit <- tryCatch(fit_model(f, data = d),
+                            error = fit_error)
 
            list("fit" = fit,
                 "test" = f$test,
@@ -991,6 +994,19 @@ extract_results <- function(fit, d = NULL, CI = FALSE, satterthwaite = FALSE, df
 extract_random_effects <- function(fit) {
     UseMethod("extract_random_effects")
 }
+
+extract_random_effects.plcp_error <- function(fit) {
+
+    data.frame(parameter = NA,
+               var1 = NA,
+               var2 = NA,
+               vcov = NA,
+               CI_lwr = NA,
+               CI_upr = NA,
+               stringsAsFactors = FALSE)
+
+}
+
 extract_random_effects.lm <- function(fit) {
     data.frame(grp = "Residual",
                var1 = NA,
@@ -1123,6 +1139,17 @@ fix_sath_NA_pval <- function(x, df) {
 get_fixef <- function(fit, ...) {
     UseMethod("get_fixef")
 }
+
+get_fixef.plcp_error <- function(...) {
+    data.frame(
+        "parameter" = NA,
+        "estimate" = NA,
+        "se" = NA,
+        "pval" = NA,
+        "df" = NA
+    )
+}
+
 get_fixef.default <- function(fit, test, df_bw, satterthwaite, ...) {
 
     # need to know in which order time and treatment was entered
@@ -1177,6 +1204,11 @@ get_fixef_coef.lm <- function(fit, ...) {
 get_convergence <- function(fit) {
     UseMethod("get_convergence")
 }
+
+get_convergence.plcp_error <- function(fit) {
+    fit
+}
+
 get_convergence.lmerMod <- function(fit) {
     is.null(fit@optinfo$conv$lme4$code)
 }
@@ -1216,6 +1248,10 @@ get_CI.default <- function(fit, test, FE, ...) {
 #' @export
 get_LL <- function(fit) {
     UseMethod("get_LL")
+}
+get_LL.plcp_error <- function(fit) {
+    list(ll = NA,
+         df = NA)
 }
 get_LL.default <- function(fit, REML = TRUE) {
     ll <- stats::logLik(fit, REML = REML)
@@ -1865,6 +1901,11 @@ summarize_RE <- function(res, theta) {
 }
 summarize_FE <- function(res, theta, alpha, df_bw = NULL) {
     d <- res$FE
+
+    # remove failed models
+    # these are saved in <convergence>
+    d <- d[!is.na(d$parameter), ]
+
     parms <- unique(d$parameter)
     tmp <- vector("list", length(parms))
     for(i in seq_along(parms)) {

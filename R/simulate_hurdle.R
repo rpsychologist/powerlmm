@@ -207,6 +207,8 @@ extract_random_effects.brmsfit <- function(fit) {
 
 }
 
+
+
 get_convergence.brmsfit <- function(fit) {
     np <- brms::nuts_params(fit)
 
