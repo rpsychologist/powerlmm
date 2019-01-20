@@ -1265,11 +1265,12 @@ get_LL.glmerMod <- function(fit) {
 
 extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d=NULL, sim) {
 
-    FE <- get_fixef(fit = fit$fit,
+    FE <- tryCatch(get_fixef(fit = fit$fit,
                     test = fit$test,
                     satterthwaite = satterthwaite,
                     df_bw = df_bw,
-                    formula = fit$formula)
+                    formula = fit$formula),
+                   error = get_fixef.plcp_error)
 
 
     if(!is.null(fit$post_test)) {
@@ -1283,12 +1284,15 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d=NULL, sim)
                      test = fit$test,
                      FE = FE)
     }
-    RE <- extract_random_effects(fit$fit)
+    RE <- tryCatch(extract_random_effects(fit$fit),
+                   error = extract_random_effects.plcp_error)
 
-    conv <- get_convergence(fit$fit)
+    conv <- tryCatch(get_convergence(fit$fit),
+                     error = get_convergence.plcp_error)
 
     # save for postprocess LRT test
-    ll <- get_LL(fit$fit)
+    ll <- tryCatch(get_LL(fit$fit),
+                   error = get_LL.plcp_error)
     RE$sim <- sim
     FE$sim <- sim
 
