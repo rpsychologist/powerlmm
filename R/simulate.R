@@ -765,6 +765,7 @@ simulate.plcp_list <-
                 time = time["elapsed"],
                 formula = formula
             )
+        saveRDS(out, "debug.Rds")
         out <- munge_results(out)
         if(inherits(formula, "plcp_compare_sim_formula")) {
             class(out) <- append(class(out), "plcp_sim_formula_compare")
