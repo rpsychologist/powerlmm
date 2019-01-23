@@ -942,7 +942,6 @@ fit_model.default <- function(formula, data, ...) {
     } else {
             #do.call(lme4::lmer, list(formula=f, data=d))
             if(family$family == "gaussian") {
-
                 fit <- lme4::lmer(formula = formula, data = data)
             } else {
                 args$test <- NULL
@@ -1278,7 +1277,8 @@ extract_results_ <- function(fit, CI, satterthwaite,  df_bw, tot_n, d=NULL, sim)
         FE_post <- fit$post_test(fit$fit, d = fit$d)
     } else FE_post <- NULL
 
-    FE <- rbind(FE, FE_post)
+
+    FE <- dplyr::bind_rows(FE, FE_post)
 
     if (CI) {
         FE <- get_CI(fit = fit$fit,
