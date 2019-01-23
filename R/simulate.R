@@ -1453,7 +1453,6 @@ munge_results <- function(res) {
     tot_n <- lapply(models, munge_results_, x, "tot_n")
     crossed <- inherits(res$paras, "plcp_crossed")
 
-
     for(i in seq_along(RE)) {
         tmp <- RE[[i]]
         class(tmp) <- append(class(tmp), grep("plcp", class(res$formula[[i]]), value = TRUE))
@@ -1485,7 +1484,10 @@ munge_results_ <- function(model, res, effect) {
         x <- res[[i]][[model]][[effect]]
         x
     })
-    res <- do.call(rbind, res)
+    if(effect %in% c("RE", "FE") ) {
+        res <- dplyr::bind_rows(res)
+        res <- dplyr::filter(res, !is.na(parameter))
+    } else do.call(rbind, res)
 
     res
 }
