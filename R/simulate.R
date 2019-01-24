@@ -787,7 +787,9 @@ simulate.plcp_data_frame <-
              batch_progress,
              save = FALSE,
              save_folder = "save",
-             save_folder_create = FALSE) {
+             save_folder_create = FALSE,
+             cl = NULL,
+             ...) {
 
         if (save) {
             if(!dir.exists(save_folder)) {
@@ -816,10 +818,12 @@ simulate.plcp_data_frame <-
                     rep(" ", options()$width - 13))
                 cat("\n")
             }
-            if(cores > 1 && interactive()) {
+
+            if(is.null(cl) & cores > 1 & interactive()) {
+                # to avoid init workers for each batch
                 cl <- parallel::makeCluster(cores)
                 on.exit(parallel::stopCluster(cl))
-            } else cl <- NULL
+            }
             x <- simulate.plcp_list(
                 as.plcp(object[i,]),
                 nsim = nsim,
