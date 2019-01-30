@@ -779,9 +779,9 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                           fill = NULL,
                           group = interaction(color, var, treatment)),
                       size = 1) +
-            geom_point(aes(y = Q50,
-                           color =
-                               color)) +
+            # geom_point(aes(y = Q50,
+            #                color =
+            #                    color)) +
             #scale_color_manual(values = c("median" = "red", "mean" = "red")) +
             facet_wrap(~treatment, ncol = 2) +
             plot_struct
