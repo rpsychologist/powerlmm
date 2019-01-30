@@ -1600,7 +1600,7 @@ print.plcp_sim_summary <- function(x, verbose = TRUE, digits = 2, ...) {
     #print
     x <- res$summary
 
-    tot_n <- tot_n_(res$tot_n)
+    tot_n <- tot_n_(unlist(res$tot_n))
     if(length(unique(tot_n)) == 1) tot_n <- unique(tot_n)
     n3 <- get_n3(res$paras)
     n2 <- get_n2(res$paras)
