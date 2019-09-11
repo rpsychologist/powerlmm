@@ -111,7 +111,7 @@ plot.plcp_VPC <- function(x, ...) {
         ggplot2::geom_point() +
         ggplot2::labs(title = "Variance partitioning",
                x = "Time point",
-               y = "Proportion of total variance")
+               y = "Percentage of total variance (%)")
 
     if(requireNamespace("ggsci", quietly = TRUE)) {
        p <- p + ggsci::scale_fill_d3() +

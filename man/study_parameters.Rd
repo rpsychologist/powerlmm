@@ -4,94 +4,11 @@
 \alias{study_parameters}
 \title{Setup study parameters}
 \usage{
-study_parameters(n1, n2, n3 = 1, T_end = NULL, fixed_intercept = 0L,
-  fixed_slope = 0L, sigma_subject_intercept = NULL,
-  sigma_subject_slope = NULL, sigma_cluster_intercept = NULL,
-  sigma_cluster_slope = NULL, sigma_error = 10, cor_subject = 0L,
-  cor_cluster = 0L, cor_within = 0L, var_ratio = NULL,
-  icc_slope = NULL, icc_pre_subject = NULL, icc_pre_cluster = NULL,
-  effect_size = 0L, cohend = NULL, partially_nested = FALSE,
-  dropout = 0L, deterministic_dropout = TRUE)
-}
-\arguments{
-\item{n1}{Number of level 1 units, e.g. measurements per subject.}
-
-\item{n2}{Number of level 2 units per level 3 unit, e.g. subjects per cluster.
-Unbalanced cluster sizes are supported, see \code{\link{unequal_clusters}}.}
-
-\item{n3}{Number of level 3 units per treatment, can be different in each
-treatment arm, see \code{\link{per_treatment}}.}
-
-\item{T_end}{Time point of the last measurement. If \code{NULL} it will be set
-to \code{n1 - 1}.}
-
-\item{fixed_intercept}{Average baseline value, assumed to be equal for both groups.}
-
-\item{fixed_slope}{Overall change per unit time, in the control group.}
-
-\item{sigma_subject_intercept}{Subject-level random intercept.}
-
-\item{sigma_subject_slope}{Subject-level random slope.}
-
-\item{sigma_cluster_intercept}{Cluster-level random intercept.}
-
-\item{sigma_cluster_slope}{Cluster-level random slope.}
-
-\item{sigma_error}{Within-subjects (residual) variation.}
-
-\item{cor_subject}{Correlation between the subject-level random intercept
-and slopes.}
-
-\item{cor_cluster}{Correlation between the cluster-level random intercept
-and slopes.}
-
-\item{cor_within}{Correlation of the level 1 residual. Currently ignored in
-the analytical power calculations.}
-
-\item{var_ratio}{Ratio of the random
-slope variance to the within-subject variance.}
-
-\item{icc_slope}{Proportion of slope variance
-at the cluster level.}
-
-\item{icc_pre_subject}{Amount of baseline
-variance at the subject level. N.B. the variance at the subject-level also
-included the cluster-level variance. If there's no random slopes, this would
-be the subject-level ICC, i.e. correlation between time points.}
-
-\item{icc_pre_cluster}{Amount of baseline
-variance at the cluster level.}
-
-\item{effect_size}{The treatment effect. Either a \code{numeric} indicating the mean
-difference (unstandardized) between the treatments at posttest, or a standardized effect
-using the \code{\link{cohend}} helper function.}
-
-\item{cohend}{\emph{Deprecated}; now act as a shortcut to \code{\link{cohend}} helper function.
-Equivalent to using \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}}
-
-\item{partially_nested}{\code{logical}; indicates if there's clustering in both
-arms or only in the treatment arm.}
-
-\item{dropout}{Dropout process, see \code{\link{dropout_weibull}} or
-\code{\link{dropout_manual}}. Assumed to be 0 if \code{NULL}.}
-
-\item{deterministic_dropout}{\code{logical}; if \code{FALSE} the input to
-\code{dropout} will be treated as random and dropout will be sampled
-from a multinomial distribution. N.B.: the random dropout will be
-sampled independently in both treatment arms.}
-}
-\value{
-A \code{list} or \code{data.frame} of parameters values, either of
-class \code{plcp} or \code{plcp_multi} if multiple parameters are compared.
+study_parameters(design = study_design(nested = TRUE, levels = 3, groups
+  = 2, time_form = "linear"), ...)
 }
 \description{
-Setup the parameters for calculating power for longitudinal multilevel studies
-comparing two groups. Ordinary two-level models (subjects with repeated measures),
-and longitudinal three-level models with clustering due to therapists, schools, provider etc,
-are supported. Random slopes at the subject level and cluster level are
-possible. Cluster sizes can be unbalanced, and vary by treatment.
-Partially nested designs are supported. Missing data can also be accounted
-for.
+Setup study parameters
 }
 \details{
 \bold{Comparing a combination of parameter values}
@@ -100,6 +17,12 @@ It is possible to setup a grid of parameter combinations by entering the values
 as vectors. All unique combinations of the inputs will be returned. This is
 useful if you want see how different values of the parameters affect power.
 See also the convenience function \code{\link{get_power_table}}.
+
+\bold{Two- or three-level models}
+
+If either \code{sigma_cluster_slope} or \code{icc_slope} and
+ \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
+\code{NULL} it will be assumed a two-level design is wanted.
 
 \bold{Standardized and unstandardized inputs}
 
@@ -135,12 +58,6 @@ the raw difference in means at posttest, or use a standardized effect size, see
 The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
 \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
 
-\bold{Two- or three-level models}
-
-If either \code{sigma_cluster_slope} or \code{icc_slope} and
- \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
-\code{NULL} it will be assumed a two-level design is wanted.
-
 \bold{Unequal cluster sizes and unbalanced allocation}
 
 It is possible to specify different cluster sizes using
@@ -170,76 +87,4 @@ match the dropout proportions in expectation. The random dropout in
 each treatment group is sampled from independent multinomial distributions.
 
 Generally, power based on fixed dropout is a good approximation of random dropout.
-}
-\examples{
-# Three level model with both subject- and cluster-level random slope
-# Power calculation using standardized inputs
-p <- study_parameters(n1 = 11,
-                      n2 = 5,
-                      n3 = 4,
-                      icc_pre_subject = 0.5,
-                      icc_pre_cluster = 0,
-                      var_ratio = 0.03,
-                      icc_slope = 0.05,
-                      effect_size = cohend(-0.8))
-
-get_power(p)
-
-# The same calculation with all parameters specified directly
-p <- study_parameters(n1 = 11,
-                      n2 = 5,
-                      n3 = 4,
-                      T_end = 10,
-                      fixed_intercept = 37,
-                      fixed_slope = -0.65,
-                      sigma_subject_intercept = 2.8,
-                      sigma_subject_slope = 0.4726944,
-                      sigma_cluster_intercept = 0,
-                      sigma_cluster_slope = 0.1084435,
-                      sigma_error = 2.8,
-                      cor_subject = -0.5,
-                      cor_cluster = 0,
-                      effect_size = cohend(-0.8))
-get_power(p)
-
-# Standardized and unstandardized inputs
-p <- study_parameters(n1 = 11,
-                      n2 = 5,
-                      n3 = 4,
-                      sigma_subject_intercept = 2.8,
-                      icc_pre_cluster = 0.07,
-                      sigma_subject_slope = 0.47,
-                      icc_slope = 0.05,
-                      sigma_error = 2.8,
-                      effect_size = cohend(-0.8))
-
-get_power(p)
-
-## Two-level model with subject-level random slope
-p <- study_parameters(n1 = 11,
-                      n2 = 40,
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.03,
-                      effect_size = cohend(-0.8))
-get_power(p)
-
-# add missing data
-p <- update(p, dropout = dropout_weibull(0.2, 1))
-get_power(p)
-
-## Comparing a combination of values
-p <- study_parameters(n1 = 11,
-                      n2 = c(5, 10),
-                      n3 = c(2, 4),
-                      icc_pre_subject = 0.5,
-                      icc_pre_cluster = 0,
-                      var_ratio = 0.03,
-                      icc_slope = c(0, 0.05),
-                      effect_size = cohend(c(-0.5, -0.8))
-                      )
-
-get_power(p)
-}
-\seealso{
-\code{\link{cohend}}, \code{\link{get_power}}, \code{\link{simulate.plcp}}
 }

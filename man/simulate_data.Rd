@@ -2,15 +2,18 @@
 % Please edit documentation in R/simulate.R
 \name{simulate_data}
 \alias{simulate_data}
-\alias{simulate_data.plcp}
+\alias{simulate_data.plcp_nested}
 \alias{simulate_data.plcp_multi}
+\alias{simulate_data.plcp_crossed}
 \title{Generate a data set using a \code{study_parameters}-object}
 \usage{
 simulate_data(paras, n = 1)
 
-\method{simulate_data}{plcp}(paras, n = NULL)
+\method{simulate_data}{plcp_nested}(paras, n = NULL)
 
-\method{simulate_data}{plcp_multi}(paras, n = 1)
+\method{simulate_data}{plcp_multi}(paras, n = NULL)
+
+\method{simulate_data}{plcp_crossed}(paras, n = NULL)
 }
 \arguments{
 \item{paras}{An object created by \code{\link{study_parameters}}}

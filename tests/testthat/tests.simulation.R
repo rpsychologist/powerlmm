@@ -112,7 +112,7 @@ test_that("simulation summary", {
     tmp2 <- summary(res, para = "cluster_slope")
     expect_output(print(tmp2), "Model:  summary")
     expect_output(print(tmp2), "Random effects: 'cluster_slope'")
-    expect_output(print(tmp2), "model  M_est  theta")
+    expect_output(print(tmp2), "model M_est theta")
     expect_output(print(tmp2), "Total number of subjects:  100")
 
     # params

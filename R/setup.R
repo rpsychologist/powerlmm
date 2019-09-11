@@ -1,4 +1,222 @@
+
+#' @export
+study_design <- function(nested = TRUE,
+                         family = "gaussian",
+                         levels = 3,
+                         groups = 2,
+                         time_form = "linear") {
+
+    if(groups != 2) {
+        message("Argument 'groups' is currently ignored.", call. = FALSE)
+        groups <- 2
+    }
+    if(time_form != "linear") {
+        message("Argument 'time_form' is currently ignored.", call. = FALSE)
+        time_form <- "linear"
+    }
+    if(any(family %in% c("hurdle", "two-part"))
+       & !nested) stop("'crossed' designs are not yet implemented for hurdle models", call. = FALSE)
+    if(any(family %in% c("hurdle", "two-part"))
+       & levels != 2) {
+        warning("3 level designs are not yet implemented for hurdle models", call. = FALSE)
+        levels <- 2
+    }
+
+
+
+    families <- c("gaussian",
+                  "binomial", "poisson",
+                  "gamma", "lognormal",
+                  "hurdle", "two-part")
+    if(!family %in% families) stop("Not a supported 'family'", call. = FALSE)
+
+    # check inputs
+    stopifnot(is.logical(nested))
+    stopifnot(levels %in% 2:3)
+    stopifnot(time_form == "linear")
+
+
+     if(family %in% c("two-part", "hurdle")) {
+         family_class <- "hurdle"
+     } else {
+         family_class <- NULL
+     }
+
+    args <- list(nested = nested,
+                 levels = levels,
+                 groups = groups,
+                 time_form = time_form,
+                 family = family)
+
+    if(nested) {
+        class(args) <- paste(c("plcp_design", family_class, "nested"),
+                                    collapse = "_")
+    } else {
+        class(args) <- paste(c("plcp_design", family_class, "crossed"),
+                                                 collapse = "_")
+    }
+    class(args) <- append(class(args), "plcp_design")
+
+    args
+}
+
+
+print.plcp_design <- function(x, ...) {
+    if(x$levels == 3) {
+        levels <- paste0("3 ", ifelse(x$nested, "(nested)", "(crossed)"))
+    } else if(x$levels == 2) {
+        levels <- 2
+    }
+    res <- structure(list(levels = levels,
+                          groups = x$groups,
+                          family = x$family,
+                          time_form = x$time_form,
+                          method = "Study design"),
+                     class = "power.htest")
+
+    print(res)
+}
+
+#' @export
+study_parameters <- function(design = study_design(nested = TRUE,
+                                                   levels = 3,
+                                                   groups = 2,
+                                                   time_form = "linear"), ...) {
+    UseMethod("study_parameters")
+}
+
+study_parameters.default <- function(...) {
+    study_parameters.plcp_design_crossed(...)
+}
+
+# checks
+.check_dropout_arg <- function(dropout) {
+    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+    if(is.per_treatment(dropout)) {
+        tx <- dropout[[1]]$treatment
+        cc <- dropout[[1]]$control
+        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+    }
+}
+.make_single_or_multi <- function(paras, model = NULL) {
+    if((is.data.frame(paras) & nrow(paras) == 1)) {
+        paras <- as.list(paras)
+    }
+    if(is.data.frame(paras)) {
+        if(is.null(model)) {
+            multi <- "plcp_multi"
+        } else {
+            multi <- c(paste0(c("plcp_multi", model), collapse = "_"),
+                        "plcp_multi")
+        }
+        class(paras) <- append(multi,
+                               class(paras))
+    } else {
+        if(is.null(model)) {
+            single <- "plcp"
+        } else {
+            single <- c(paste0(c("plcp", model), collapse = "_"),
+                        "plcp")
+        }
+
+        class(paras) <- append(single,
+                               class(paras))
+        }
+
+    paras
+}
+
+
 #' Setup study parameters
+#'
+#' @details
+#' \bold{Comparing a combination of parameter values}
+#'
+#' It is possible to setup a grid of parameter combinations by entering the values
+#' as vectors. All unique combinations of the inputs will be returned. This is
+#' useful if you want see how different values of the parameters affect power.
+#' See also the convenience function \code{\link{get_power_table}}.
+#'
+#' \bold{Two- or three-level models}
+#'
+#' If either \code{sigma_cluster_slope} or \code{icc_slope} and
+#'  \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
+#' \code{NULL} it will be assumed a two-level design is wanted.
+#'
+#' \bold{Standardized and unstandardized inputs}
+#'
+#' All parameters of the models can be specified. However, many of the raw
+#' parameter values in a multilevel/LMM do no directly affect the power of the
+#' test of the \code{treatment:time}-coefficient. Power will depend greatly on the relative
+#' size of the parameters, therefore, it is possible to setup your calculations
+#' using only standardized inputs, or by a combination of raw inputs and
+#' standardized inputs. For instance, if \code{sigma_subject_slope} and
+#' \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
+#' solved for. Only the cluster-level parameters can be solved when standardized and
+#' raw values are mixed. \code{sigma_error} is 10 by default. More information regarding
+#' the standardized inputs are available in the two-level and three-level vignettes.
+#'
+#' \bold{Difference between 0 and NA}
+#'
+#' For the variance components \code{0} and \code{NA/NULL} have different meanings.
+#' A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
+#' a random intercept is estimated at the cluster level, but the true value is 0.
+#' If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
+#' This choice will matter when running simulations, or if Satterthwaite \emph{dfs} are used.
+#'
+#' The default behavior if a parameters is not specified is that \code{cor_subject} and
+#' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
+#'
+#' \bold{Effect size and Cohen's d}
+#'
+#' The argument \code{effect_size} let's you specify the average difference in change
+#' between the treatment groups. You can either pass a \code{numeric} value to define
+#' the raw difference in means at posttest, or use a standardized effect size, see
+#' \code{\link{cohend}} for more details on the standardized effects.
+#'
+#' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
+#' \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
+#'
+#' \bold{Unequal cluster sizes and unbalanced allocation}
+#'
+#' It is possible to specify different cluster sizes using
+#' \code{\link{unequal_clusters}}. Cluster sizes can vary between treatment arms
+#' by also using \code{\link{per_treatment}}. The number of clusters per treatment can
+#' also be set by using \code{\link{per_treatment}}. Moreover, cluster
+#' sizes can be sampled from a distribution, and treated as a random variable.
+#' See \code{\link{per_treatment}} and \code{\link{unequal_clusters}} for examples of their use.
+#'
+#' \bold{Missing data and dropout}
+#'
+#' Accounting for missing data in the power calculations is possible. Currently,
+#' \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
+#' \code{\link{dropout_manual}}. It is possible to have different dropout
+#' patterns per treatment group using \code{\link{per_treatment}}. See their
+#' respective help pages for examples of their use.
+#'
+#' If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
+#' However, exactly which subjects dropout is randomly sampled within treatments. Thus,
+#' clusters can become slightly unbalanced, but generally power varies little over realizations.
+#'
+#' For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
+#' of dropout is converted to the probability of having exactly \emph{i} measurements,
+#' and the actual dropout is sampled from a multinomial distribution. In this case, the proportion of
+#' dropout varies over the realizations from the multinomial distribution, but will
+#' match the dropout proportions in expectation. The random dropout in
+#' each treatment group is sampled from independent multinomial distributions.
+#'
+#' Generally, power based on fixed dropout is a good approximation of random dropout.
+#'
+#' @export
+study_parameters <- function(design = study_design(nested = TRUE,
+                                                   levels = 3,
+                                                   groups = 2,
+                                                   time_form = "linear"), ...) {
+    UseMethod("study_parameters")
+}
+
+#' Setup nested study parameters
 #'
 #' Setup the parameters for calculating power for longitudinal multilevel studies
 #' comparing two groups. Ordinary two-level models (subjects with repeated measures),
@@ -54,84 +272,7 @@
 #' @return A \code{list} or \code{data.frame} of parameters values, either of
 #' class \code{plcp} or \code{plcp_multi} if multiple parameters are compared.
 #'
-#' @details
-#'
-#' \bold{Comparing a combination of parameter values}
-#'
-#' It is possible to setup a grid of parameter combinations by entering the values
-#' as vectors. All unique combinations of the inputs will be returned. This is
-#' useful if you want see how different values of the parameters affect power.
-#' See also the convenience function \code{\link{get_power_table}}.
-#'
-#' \bold{Standardized and unstandardized inputs}
-#'
-#' All parameters of the models can be specified. However, many of the raw
-#' parameter values in a multilevel/LMM do no directly affect the power of the
-#' test of the \code{treatment:time}-coefficient. Power will depend greatly on the relative
-#' size of the parameters, therefore, it is possible to setup your calculations
-#' using only standardized inputs, or by a combination of raw inputs and
-#' standardized inputs. For instance, if \code{sigma_subject_slope} and
-#' \code{icc_slope} is specified, the \code{sigma_cluster_slope} will be
-#' solved for. Only the cluster-level parameters can be solved when standardized and
-#' raw values are mixed. \code{sigma_error} is 10 by default. More information regarding
-#' the standardized inputs are available in the two-level and three-level vignettes.
-#'
-#' \bold{Difference between 0 and NA}
-#'
-#' For the variance components \code{0} and \code{NA/NULL} have different meanings.
-#' A parameter that is 0 is still kept in the model, e.g. if \code{icc_pre_cluster = 0}
-#' a random intercept is estimated at the cluster level, but the true value is 0.
-#' If the argument is either \code{NULL} or \code{NA} it is excluded from the model.
-#' This choice will matter when running simulations, or if Satterthwaite \emph{dfs} are used.
-#'
-#' The default behavior if a parameters is not specified is that \code{cor_subject} and
-#' \code{cor_cluster} is 0, and the other variance components are \code{NULL}.
-#'
-#' \bold{Effect size and Cohen's d}
-#'
-#' The argument \code{effect_size} let's you specify the average difference in change
-#' between the treatment groups. You can either pass a \code{numeric} value to define
-#' the raw difference in means at posttest, or use a standardized effect size, see
-#' \code{\link{cohend}} for more details on the standardized effects.
-#'
-#' The argument \code{cohend} is kept for legacy reasons, and is equivalent to using
-#' \code{effect_size = cohend(cohend, standardizer = "pretest_SD", treatment = "control")}.
-#'
-#' \bold{Two- or three-level models}
-#'
-#' If either \code{sigma_cluster_slope} or \code{icc_slope} and
-#'  \code{sigma_cluster_intercept} or \code{icc_pre_cluster} is
-#' \code{NULL} it will be assumed a two-level design is wanted.
-#'
-#' \bold{Unequal cluster sizes and unbalanced allocation}
-#'
-#' It is possible to specify different cluster sizes using
-#' \code{\link{unequal_clusters}}. Cluster sizes can vary between treatment arms
-#' by also using \code{\link{per_treatment}}. The number of clusters per treatment can
-#' also be set by using \code{\link{per_treatment}}. Moreover, cluster
-#' sizes can be sampled from a distribution, and treated as a random variable.
-#' See \code{\link{per_treatment}} and \code{\link{unequal_clusters}} for examples of their use.
-#'
-#' \bold{Missing data and dropout}
-#'
-#' Accounting for missing data in the power calculations is possible. Currently,
-#' \code{dropout} can be specified using either \code{\link{dropout_weibull}} or
-#' \code{\link{dropout_manual}}. It is possible to have different dropout
-#' patterns per treatment group using \code{\link{per_treatment}}. See their
-#' respective help pages for examples of their use.
-#'
-#' If \code{deterministic_dropout = TRUE} then the proportion of dropout is treated is fixed.
-#' However, exactly which subjects dropout is randomly sampled within treatments. Thus,
-#' clusters can become slightly unbalanced, but generally power varies little over realizations.
-#'
-#' For \emph{random dropout}, \code{deterministic_dropout = FALSE}, the proportion
-#' of dropout is converted to the probability of having exactly \emph{i} measurements,
-#' and the actual dropout is sampled from a multinomial distribution. In this case, the proportion of
-#' dropout varies over the realizations from the multinomial distribution, but will
-#' match the dropout proportions in expectation. The random dropout in
-#' each treatment group is sampled from independent multinomial distributions.
-#'
-#' Generally, power based on fixed dropout is a good approximation of random dropout.
+#' @inherit study_parameters details
 #'
 #'
 #' @seealso \code{\link{cohend}}, \code{\link{get_power}}, \code{\link{simulate.plcp}}
@@ -206,7 +347,8 @@
 #'
 #' get_power(p)
 #' @export
-study_parameters <- function(n1,
+study_parameters.plcp_design_nested <- function(design = study_design(nested = TRUE),
+                                    n1,
                              n2,
                              n3 = 1,
                              T_end = NULL,
@@ -216,7 +358,10 @@ study_parameters <- function(n1,
                              sigma_subject_slope = NULL,
                              sigma_cluster_intercept = NULL,
                              sigma_cluster_slope = NULL,
+                             fixed_cluster_intercepts = NULL,
+                             fixed_cluster_slopes = NULL,
                              sigma_error = 10,
+                             shape = NULL,
                              cor_subject = 0L,
                              cor_cluster = 0L,
                              cor_within = 0L,
@@ -228,7 +373,7 @@ study_parameters <- function(n1,
                              cohend = NULL,
                              partially_nested = FALSE,
                              dropout = 0L,
-                             deterministic_dropout = TRUE) {
+                             deterministic_dropout = TRUE, ...) {
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
 
@@ -237,14 +382,8 @@ study_parameters <- function(n1,
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
-    # drop out checks
-    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    if(is.per_treatment(dropout)) {
-        tx <- dropout[[1]]$treatment
-        cc <- dropout[[1]]$control
-        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    }
+    # dropout checks
+    .check_dropout_arg(dropout)
 
     # warn n3 is ignored
     if(is.unequal_clusters(n2) & !is.per_treatment(n2) & is.per_treatment(n3)) {
@@ -290,6 +429,10 @@ study_parameters <- function(n1,
         stop("'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined, use 'icc_pre_cluster'", call. = FALSE)
     }
 
+    # GLMMs
+    if(design$family == "gamma" & is.null(shape)) {
+        stop("'gamma' family requires parameter 'shape'", call. = FALSE)
+    }
 
     args <- list(
         n1 = n1,
@@ -302,7 +445,10 @@ study_parameters <- function(n1,
         sigma_subject_slope = sigma_subject_slope,
         sigma_cluster_intercept = sigma_cluster_intercept,
         sigma_cluster_slope = sigma_cluster_slope,
+        fixed_cluster_intercepts = fixed_cluster_intercepts,
+        fixed_cluster_slopes = fixed_cluster_slopes,
         sigma_error = sigma_error,
+        shape = shape,
         cor_subject = cor_subject,
         cor_cluster = cor_cluster,
         cor_within = cor_within,
@@ -313,9 +459,11 @@ study_parameters <- function(n1,
         effect_size = effect_size,
         partially_nested = partially_nested,
         dropout = dropout,
-        deterministic_dropout = deterministic_dropout
+        deterministic_dropout = deterministic_dropout,
+        family = design$family
     )
     save_call <- args
+    save_call$design <- design
 
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
@@ -434,20 +582,17 @@ study_parameters <- function(n1,
     cols <- colnames(tmp)[cols]
     paras <- tmp[, !(names(tmp) %in% cols)]
 
+    # save design type
+    paras$design <- "plcp_design_nested"
 
     # Single or multi?
-    if((is.data.frame(paras) & nrow(paras) == 1)) {
-        paras <- as.list(paras)
-    }
-    if(is.data.frame(paras)) {
-        class(paras) <- append(c("plcp_multi"), class(paras))
-    } else class(paras) <- append(c("plcp"), class(paras))
-
+    paras <- .make_single_or_multi(paras, model = "nested")
     # Default cor_*
     if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
     if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
 
     # Classes
+    #class(paras) <- c("plcp","plcp_nested")
     if(all(is.na(paras$sigma_cluster_slope)) &
        all(is.na(paras$sigma_cluster_intercept))) {
         class(paras) <- append(class(paras), c("plcp_2lvl"))
@@ -458,10 +603,14 @@ study_parameters <- function(n1,
         class(paras) <- append(class(paras), c("plcp_mixed"))
     }
 
+
     attr(paras, "call") <- save_call
     paras
 
 }
+
+study_parameters.default <- study_parameters.plcp_design_nested
+
 
 sim_parameters <- function(...) {
     dots <- list(...)
@@ -540,7 +689,7 @@ prepare_print_n2 <- function(x) {
 
     n2
 }
-prepare_print_plcp <- function(x, two_level = FALSE) {
+prepare_print_plcp <- function(x, two_level = FALSE, hanging = 19) {
     n1 <- x$n1
     n2 <- prepare_print_n2(x)
     n3 <- get_n3(x)
@@ -549,10 +698,17 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
                  nchar(print_per_treatment_(2, n2, n2 = TRUE)$lab),
                  nchar(print_per_treatment_(3, tot_n)$lab))
     if(two_level) width <- max(vapply(tot_n, nchar, numeric(1)))
-    n2 <- print_per_treatment(n2, width = width, n2 = TRUE)
-    n3 <- print_per_treatment(n3, width = width)
+    n2 <- print_per_treatment(n2,
+                              width = width,
+                              n2 = TRUE,
+                              hanging = hanging)
+    n3 <- print_per_treatment(n3,
+                              width = width,
+                              hanging = hanging)
 
-    tot_n <- print_per_treatment(tot_n, width = width)
+    tot_n <- print_per_treatment(tot_n,
+                                 width = width,
+                                 hanging = hanging)
 
     icc_slope <- round(get_ICC_slope(x), 2)
     var_ratio <- round(get_var_ratio(x), 2)
@@ -579,7 +735,8 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     gd$control <-  format(gd$control*100, nsmall = 0, digits = 0, width = 2)
     gd$treatment <- format(gd$treatment*100, nsmall = 0, digits = 0, width = 2)
     colnames(gd) <- c("time", "%, control", "%, treatment")
-    gd <- print_per_treatment(gd)
+    gd <- print_per_treatment(gd,
+                              hanging = hanging)
 
     res <- structure(list(n1 = n1,
                           n2 = n2,
@@ -608,6 +765,47 @@ prepare_print_plcp_2lvl <- function(x) {
 
     res
 }
+prepare_print_plcp_hurdle_2lvl <- function(x) {
+    res <- prepare_print_plcp(x, two_level = TRUE, hanging = 18)
+    if(!is.list(x$dropout)) res$dropout <- "No missing data"
+
+    if(x$marginal) marginal <- " marginal" else marginal <- NULL
+    res$method <- paste0("Study setup (two-level,", marginal, " hurdle-", x$family, ")")
+    res$icc_slope <- NULL
+    res$icc_pre_clusters <- NULL
+    res$n2 <- res$total_n
+    res$n3 <- NULL
+    res$total_n <- NULL
+    res$icc_pre_subjects <- NULL
+    res$var_ratio <- NULL
+
+
+    ES_cont <- paste0("Continuous (multiplicative): ", x$RR_cont)
+    res$effect_size <- paste0("Zeros (OR): ", x$OR_hu,
+                              "\n", paste0(rep(" ", 18), collapse = ""),
+                              ES_cont)
+
+    names(res)[names(res) == "effect_size_2"] <- ""
+
+    # attrs <- attributes(res)
+    #
+    # # reorder
+    # res <- structure(res[c("n1", "n2", "dropout", "family", "effect_size", "method")],
+    #                  class = "power.htest")
+    # attr(res, "width") <- attrs$width
+    #
+
+
+
+    res
+
+}
+
+
+
+
+
+
 prepare_print_plcp_3lvl <- function(x) {
     res <- prepare_print_plcp(x)
 
@@ -664,6 +862,16 @@ print.plcp_2lvl <- function(x, ...) {
     print(res, digits = 2, ...)
 }
 
+#' Print method for two-part/hurdle \code{study_parameters}-objects
+#' @param x An object of class \code{plcp_hurdle}.
+#' @param ... Optional arguments.
+#' @method print plcp_2lvl
+#' @export
+print.plcp_hurdle <- function(x, ...) {
+    res <- prepare_print_plcp_hurdle_2lvl(x)
+
+    print(res, digits = 2, ...)
+}
 
 #' Return the raw difference between the groups at posttest
 #'
@@ -675,7 +883,7 @@ print.plcp_2lvl <- function(x, ...) {
 #' @return A \code{numeric} indicating the mean difference between the treatment and
 #' control group at posttest.
 #' @export
-get_slope_diff <- function(object) {
+get_slope_diff <- function(object, ...) {
     UseMethod("get_slope_diff")
 }
 
@@ -867,7 +1075,7 @@ cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
 .cohend <- function(ES, standardizer, treatment) {
     if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
     # return a ES func
-    # that get_slope_diff can evaluate
+    # that get_slope_diff we can evaluate
     if(standardizer == "pretest_SD") {
         f <- calc_slope_from_d(ES, time = "pre", treatment = treatment)
     } else if(standardizer == "posttest_SD") {
@@ -929,6 +1137,7 @@ get_effect_size.plcp_multi <- function(object) {
     x$standardizer <- as.character(x$standardizer)
     x
 }
+
 # print multi-sim ---------------------------------------------------------
 
 replace_repeating <- function(x, empty) {
@@ -942,6 +1151,29 @@ get_dropout_post <- function(object) {
     x <- get_dropout(object)
     x[nrow(x),]
 }
+
+.add_ES_multi <- function(object, out, out_dense, ...) {
+    UseMethod(".add_ES_multi")
+}
+.add_ES_multi.plcp_multi <- function(object, out, out_dense, ..) {
+    ES <- get_effect_size(object)
+    out_dense$effect_size <- ES$ES
+    out_dense$ES_sd <- paste(ES$standardizer, ES$treatment, sep = "_")
+    out$effect_size <- ES$ES
+
+    list(out = out,
+         out_dense = out_dense)
+}
+.add_ES_multi.plcp_multi_hurdle <- function(object, out, out_dense, ..) {
+    #ES <- get_effect_size(object)
+    out_dense$effect_size <- 0
+    out_dense$ES_sd <- 0
+    out$effect_size <- 0
+
+    list(out = out,
+         out_dense = out_dense)
+}
+
 prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     paras <- object
 
@@ -967,12 +1199,11 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     n3 <- do.call(rbind, n3)
 
 
-
     object$icc_pre_cluster <- get_ICC_pre_clusters(object)
     object$icc_pre_subject <- get_ICC_pre_subjects(object)
     object$icc_slope <- get_ICC_slope(object)
     object$var_ratio <- get_var_ratio(object)
-
+    object$family <- as.character(object$family)
     out <- object
 
 
@@ -983,7 +1214,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     } else {
         out$dropout_tx <- dropout$treatment
         out$dropout_cc <- dropout$control
-        out$dropout <- NA
+        out$dropout <- NULL
     }
 
     per_tx_n2 <- vapply(seq_along(object$n2), function(i) is.per_treatment(object$n2[i]), logical(1))
@@ -1015,17 +1246,22 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         }
     }
 
-    ES <- get_effect_size(object)
+
     out_dense <- out
-    out_dense$effect_size <- ES$ES
-    out_dense$ES_sd <- paste(ES$standardizer, ES$treatment, sep = "_")
+    tmp <- .add_ES_multi(object, out, out_dense)
+    out <- tmp$out
+    out_dense <- tmp$out_dense
+
     out$icc_pre_cluster <- round(object$icc_pre_cluster, digits)
     out$icc_pre_subject <- round(object$icc_pre_subject, digits)
     out$icc_slope <- round(object$icc_slope, digits)
     out$var_ratio <- round(object$var_ratio, digits)
-    out$effect_size <- ES$ES
+
     for(i in 1:ncol(out)) {
-        out[,i] <- replace_repeating(out[,i], empty = empty)
+        col_tmp <- out[,i]
+        col_tmp[is.na(col_tmp)] <- "NA"
+        out[,i] <- replace_repeating(col_tmp, empty = empty)
+
     }
 
     list(out = out,
@@ -1075,6 +1311,7 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
 
     out <- out[, select_setup_cols(out)]
     colnames(out) <- gsub("_lab", "", colnames(out))
+
     print(out)
     if(hidden_row > 0) {
         cat("# ...", hidden_row, "setups not shown.")
@@ -1083,6 +1320,29 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
     invisible(x)
 }
 
+#' Print method for \code{study_parameters}-multiobjects
+#' @rdname print.plcp_multi
+print.plcp_multi_hurdle <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
+    nr <- nrow(x)
+    if(nr <= print_max) rmax <- nr else rmax <- print_max
+    hidden_row <- nr - print_max
+    x <- x[1:rmax, ]
+    family <- unique(as.character(x$family))
+    x$family <- NULL
+    pp <- prepare_multi_setup(x, empty = empty, digits = digits)
+    out <- pp$out
+    out <- as.data.frame(out)
+    cat(paste0("# Multi-study setup (two-level hurdle ", family, ")"), "\n")
+
+    out <- out[, select_setup_cols(out)]
+    colnames(out) <- gsub("_lab", "", colnames(out))
+    print(out)
+    if(hidden_row > 0) {
+        cat("# ...", hidden_row, "setups not shown.")
+    }
+
+    invisible(x)
+}
 
 
 
@@ -1105,8 +1365,13 @@ eval_n2 <- function(n2) {
     n2
 }
 
+#' @export
 prepare_paras <- function(paras) {
+    UseMethod("prepare_paras")
+}
+prepare_paras.default <- function(paras) {
     paras_tx <- paras
+
     per_tx_n2 <- FALSE
     if (is.per_treatment(paras$n3)) {
         n3_tx <- paras$n3[[1]]$treatment
@@ -1145,6 +1410,23 @@ prepare_paras <- function(paras) {
         paras_tx$n3 <-  paras$n3
     }
 
+    if(is.per_treatment(paras$fixed_cluster_intercepts)) {
+        paras_tx$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$treatment
+        paras$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$control
+    }
+    if(!is.null(paras_tx$fixed_cluster_intercepts) &
+       length(paras_tx$fixed_cluster_intercepts) == 1) {
+        paras_tx$fixed_cluster_intercepts <- rep(paras_tx$fixed_cluster_intercepts, paras_tx$n3)
+    }
+    if(!is.null(paras$fixed_cluster_intercepts) &
+       length(paras$fixed_cluster_intercepts) == 1) {
+        paras$fixed_cluster_intercepts <- rep(paras$fixed_cluster_intercepts, paras$n3)
+    }
+    if(is.per_treatment(paras$fixed_cluster_slopes)) {
+        paras_tx$fixed_cluster_slopes <- paras$fixed_cluster_slopes[[1]]$treatment
+        paras$fixed_cluster_slopes <- paras$fixed_cluster_slopes[[1]]$control
+    }
+
     # if(is.unequal_clusters(paras$n2)) {
     #     paras$n3 <- length(unlist(paras$n2))
     #     paras_tx$n3 <- length(unlist(paras$n2))
@@ -1161,6 +1443,7 @@ prepare_paras <- function(paras) {
         attr(paras$dropout, "per_treatment") <- TRUE
         attr(paras_tx$dropout, "per_treatment") <- TRUE
     }
+
 
     if(length(paras_tx$n2) == 1) {
         paras_tx$n2 <- rep(paras_tx$n2, paras_tx$n3)
@@ -1359,10 +1642,12 @@ is.per_treatment <- function(x) {
     } else return(FALSE)
 }
 as.plcp <- function(.p) {
-    paras <- .p
-    if(is.data.frame(paras)) {
-        paras <- as.list(paras)
-        paras <- do.call(study_parameters, paras)
+
+    if(is.data.frame(.p)) {
+        tmp <- as.list(.p)
+        tmp$design <- attr(.p, "call")$design
+        #func <- paste0("study_parameters.", tmp$design)
+        paras <- do.call(study_parameters, tmp)
         #class(paras) <- append(c("plcp"), class(paras))
     }
     paras
@@ -1429,6 +1714,7 @@ check_new_argument <- function(args, new) {
    names(x)
 }
 
+#' @export
 get_n2 <- function(paras, n1 = 1) {
     UseMethod("get_n2")
 }
@@ -1464,6 +1750,7 @@ get_n2_ <- function(paras) {
 }
 
 
+#' @export
 get_n3 <- function(paras, n1 = 1) {
     UseMethod("get_n3")
 }
@@ -1490,6 +1777,7 @@ get_n3_ <- function(paras) {
     unlist(n3)
 }
 
+#' @export
 get_tot_n <- function(paras, n = 1) {
     UseMethod("get_tot_n")
 }

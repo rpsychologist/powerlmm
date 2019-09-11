@@ -106,11 +106,12 @@ create_G <- function(p, d) {
     G
 }
 
-# Approximate asymptotic covariance of random effects
-# from package 'pbkrtest'
-# License: GPL (>= 2)
+
 vcovAdj16_internal <- function (Phi, SigmaG, X)
 {
+    # Approximate asymptotic covariance of random effects
+    # from package 'pbkrtest'
+    # License: GPL (>= 2)
     SigmaInv <- SigmaG$iV
     n.ggamma <- SigmaG$n.ggamma
     TT <- SigmaInv %*% X
@@ -154,10 +155,11 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     attr(WW, "P") <- PP
     WW
 }
-# from package 'pbkrtest'
-# License: GPL (>= 2)
+
 .indexSymmat2vec <- function (i, j, N)
 {
+    # from package 'pbkrtest'
+    # License: GPL (>= 2)
     k <- if (i <= j) {
         (i - 1) * (N - i/2) + j
     }
@@ -166,8 +168,11 @@ vcovAdj16_internal <- function (Phi, SigmaG, X)
     }
 }
 
-
+#' @export
 get_balanced_df <- function(object) {
+    UseMethod("get_balanced_df")
+}
+get_balanced_df.default <- function(object) {
 
     if(is.null(object$prepared)) {
         pp <- prepare_paras(object)

@@ -2,10 +2,14 @@
 % Please edit documentation in R/setup.R
 \name{print.plcp_multi}
 \alias{print.plcp_multi}
+\alias{print.plcp_multi_hurdle}
 \title{Print method for \code{study_parameters}-multiobjects}
 \usage{
 \method{print}{plcp_multi}(x, print_max = 10, empty = ".",
   digits = 2, ...)
+
+print.plcp_multi_hurdle(x, print_max = 10, empty = ".", digits = 2,
+  ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_multi}.}
@@ -19,5 +23,7 @@
 \item{...}{Optional arguments.}
 }
 \description{
+Print method for \code{study_parameters}-multiobjects
+
 Print method for \code{study_parameters}-multiobjects
 }

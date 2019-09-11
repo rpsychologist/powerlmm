@@ -238,6 +238,8 @@ print.plcp_power_2lvl <- function(x, ...) {
 #' the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is \code{NA} or \code{NULL} the
 #' corresponding term is removed from the lmer formula. Parameters that are 0 are retained.
 #'
+#' For crossed design if all correlations involving an effect is NA then that random effect will be modeled as uncorelated.
+#'
 #'
 #' Currently only objects with one study design are supported, i.e. objects with class \code{plcp},
 #' and not \code{plcp_multi}; \code{data.frame} with multiple designs are currently not supported.
@@ -256,6 +258,9 @@ create_lmer_formula.plcp_multi <- function(object, n = 1, ...) {
 
 #' @export
 create_lmer_formula.plcp <- function(object, n = NULL, ...) {
+    NextMethod("create_lmer_formula")
+}
+create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     u01 <- object$cor_subject
@@ -267,7 +272,7 @@ create_lmer_formula.plcp <- function(object, n = NULL, ...) {
     f0 <- "y ~ time*treatment"
     lvl2 <- make_random_formula(u0, u01, u1, term = "subject")
     if("plcp_2lvl" %in% class(object)) {
-    f <- paste(f0, lvl2, sep  = " + ")
+        f <- paste(f0, lvl2, sep  = " + ")
     } else if("plcp_3lvl" %in% class(object)) {
         if(object$partially_nested) {
             lvl3 <- make_random_formula_pn(v0, v01, v1)
@@ -276,6 +281,56 @@ create_lmer_formula.plcp <- function(object, n = NULL, ...) {
         }
         f <-  paste(f0, lvl2, lvl3, sep  = " + ")
     }
+    if(object$family == "gaussian") {
+        attr(f, "fit_func") <- "lmer"
+
+    } else if(object$family %in% c("binomial")) {
+        attr(f, "fit_func") <- "glmer"
+        attr(f, "family") <- binomial("logit")
+    } else if(object$family %in% c("poisson")) {
+        attr(f, "fit_func") <- "glmer"
+        attr(f, "family") <- poisson("log")
+    } else if(object$family %in% c("gamma")) {
+        attr(f, "fit_func") <- "glmer"
+        attr(f, "family") <- Gamma("log")
+    }
+
+    f
+}
+
+get_pars_short_name <- function(object) {
+
+    pars <- list()
+    pars["u0"] <- object$sigma_subject_intercept
+    pars["u1"] <- object$sigma_subject_slope
+    pars["u01"] <- object$cor_subject
+    pars["v0"] <- object$sigma_cluster_intercept
+    pars["v1"] <- object$sigma_cluster_slope
+    pars["v2"] <- object$sigma_cluster_intercept_tx
+    pars["v3"] <- object$sigma_cluster_slope_tx
+    pars["v01"] <- object$cor_cluster_intercept_slope
+    pars["v02"] <- object$cor_cluster_intercept_intercept_tx
+    pars["v03"] <- object$cor_cluster_intercept_slope_tx
+    pars["v12"] <- object$cor_cluster_slope_intercept_tx
+    pars["v13"] <- object$cor_cluster_slope_slope_tx
+    pars["v23"] <- object$cor_cluster_intercept_tx_slope_tx
+
+    pars
+}
+
+create_lmer_formula.plcp_crossed <- function(object, n = NULL, ...) {
+
+    tmp <- get_pars_short_name(object)
+    f0 <- "y ~ time*treatment"
+    lvl2 <- with(tmp,
+                 make_random_formula(u0, u01, u1,
+                                     term = "subject")
+                 )
+    lvl3 <- with(tmp,
+                 make_random_formula_crossed(v0, v1, v2, v3,
+                                             v01, v02, v03, v12, v13, v23)
+                 )
+    f <-  paste(f0, lvl2, lvl3, sep  = " + ")
 
     f
 }
@@ -306,6 +361,53 @@ make_random_formula_pn <- function(x0, x01, x1) {
     f
 }
 
+## separate crossed slopes that should be correlated or independent
+make_re_term <- function(v_i, corr, term) {
+    cors <- NULL
+    indep <- NULL
+
+    if(!is.na(v_i)) {
+        if(corr) cors <- term else indep <- term
+    }
+    list(cors = cors,
+         indep = indep
+         )
+}
+make_cor_formula <- function(terms, subset = "cors") {
+    terms <- unlist(terms[,c(subset)])
+    if(all(is.na(terms))) return(NULL)
+    if(!"1" %in% terms) terms <- c("0", terms)
+
+    slopes <- paste(terms, collapse = " + ")
+
+    if(subset == "cors" | length(terms) == 1) {
+        paste("(", slopes, " | cluster)", sep = "")
+    } else {
+        paste("(", slopes, " || cluster)", sep = "")
+    }
+
+}
+
+make_random_formula_crossed <- function(v0, v1, v2, v3, v01, v02, v03, v12, v13, v23) {
+
+    # which cors to include
+    # only remove cor when all term involving term is NA
+    cor0 <- !all(is.na(c(v01, v02, v03)))
+    cor1 <- !all(is.na(c(v01, v12, v13)))
+    cor2 <- !all(is.na(c(v02, v12, v23)))
+    cor3 <- !all(is.na(c(v03, v13, v23)))
+
+    terms <- mapply(make_re_term,
+                    v_i = c(v0, v1, v2, v3),
+                    corr = c(cor0, cor1, cor2, cor3),
+                    term = c("1", "time", "treatment", "time:treatment"),
+                    SIMPLIFY = FALSE)
+    terms <- do.call(rbind, terms)
+
+    f <- paste(c(make_cor_formula(terms),
+               make_cor_formula(terms, "indep")), collapse = " + ")
+    f
+}
 
 
 
@@ -325,12 +427,10 @@ gradient <- function (fun, x, delta = 1e-04, ...)
 }
 make_theta_vec <- function(x0sq, x01, x1sq) {
 
-    # deal with negative paras in numeric derivative
+    # deal with negative paras in numerical derivative
     x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
     #x01 <- ifelse(x01 < 0, abs(x01), x01)
     x1sq <- ifelse(x1sq < 0, abs(x1sq), x1sq)
-
-
 
     if((NA_or_zero(x0sq) | NA_or_zero(x1sq)) & is.na(x01)) {
         x <- c(x0sq, x01, x1sq)
@@ -354,21 +454,115 @@ make_theta_vec <- function(x0sq, x01, x1sq) {
     }
     x
 }
+
+
+make_theta_vec_new <- function(x0sq, x01, x1sq) {
+    ## not used
+    ## meant for crossed-designs
+
+    # deal with negative paras in numerical derivative
+    x0sq <- ifelse(x0sq < 0, abs(x0sq), x0sq)
+    #x01 <- ifelse(x01 < 0, abs(x01), x01)
+    x1sq <- ifelse(x1sq < 0, abs(x1sq), x1sq)
+    x <- matrix(c(x0sq, x01,
+                  x01, x1sq),
+                ncol = 2)
+    x0 <- x
+    if(all(is.na(x))) return(numeric(0))
+    keep <- which(lower.tri(x, diag = TRUE))
+    keep <- keep[!is.na(x[keep])]
+    del <- which(is.na(c(x0sq,  x1sq)))
+    if(length(del) > 0) x <- x[-del, -del, drop = FALSE]
+
+    x[is.na(x)] <- 0
+
+    zeros <- vapply(1:ncol(x), function(i) all(x[i, i] == 0), logical(1))
+
+    x <- x[!zeros, !zeros, drop = FALSE]
+    if(ncol(x) == 1) {
+        m <- sqrt(x)
+    } else {
+        x <- nearPD(x, keepDiag = TRUE)$mat
+        m <- t(chol(x))
+        }
+
+    full <- diag(rep(0, 2))
+
+    m <- m[lower.tri(m, diag = TRUE)]
+    keep_zero <- x0[keep] == 0
+    full[keep[!keep_zero]] <- m[m != 0]
+    full[keep[keep_zero]] <- 0
+    full[keep]
+
+}
+
 make_theta <- function(pars) {
     #p <- make_pars(pars)
     p <- as.list(pars)
     sigma <- sqrt(p$sigma)
-    lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
-    lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
+    #if(old_vec) {
+        lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+        lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
+    # } else {
+    #     lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+    #     lvl3 <- make_theta_vec(p$v0, p$v01, p$v1)/sigma
+    # }
+
     c(lvl2, lvl3)
 }
-varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
+make_theta_crossed <- function(pars) {
+    #p <- make_pars(pars)
+    p <- as.list(pars)
+    sigma <- sqrt(p$sigma)
+    lvl2 <- make_theta_vec(p$u0, p$u01, p$u1)/sigma
+
+    x <- with(p, matrix(c(v0, v01, v02,  v03,
+                          v01, v1,  v12, v13,
+                          v02, v12, v2,   v23,
+                          v03, v13, v23,  v3), ncol = 4))
+
+    x0 <- x
+    if(all(is.na(x))) return(numeric(0))
+    keep <- which(lower.tri(x, diag = TRUE))
+    keep <- keep[!is.na(x[keep])]
+    del <- with(p,
+                which(is.na(c(v0, v1, v2, v3)))
+    )
+    if(length(del) > 0) x <- x[-del, -del, drop = FALSE]
+
+    x[is.na(x)] <- 0
+
+    zeros <- vapply(1:ncol(x), function(i) all(x[i, i] == 0), logical(1))
+
+    x <- x[!zeros, !zeros, drop = FALSE]
+    if(ncol(x) == 1) {
+        m <- sqrt(x)
+    } else {
+        x <- nearPD(x, keepDiag = TRUE)$mat
+        m <- t(chol(x))
+    }
+
+    full <- diag(rep(0, 2))
+
+    m <- m[lower.tri(m, diag = TRUE)]
+    keep_zero <- x0[keep] == 0
+    full[keep[!keep_zero]] <- m[m != 0]
+    full[keep[keep_zero]] <- 0
+    c(lvl2,
+      full[keep]/sigma)
+}
+varb_func <- function(para, X, Zt, L0, Lambdat, Lind, crossed = FALSE) {
     ## adapted from lme4PureR
     ind <- which(!is.na(para))
     pars <- as.list(para)
     function(x = NULL, Lc) {
         if(!is.null(x)) pars[ind] <- x
-        theta <- make_theta(pars)
+        if(crossed) {
+            theta <- make_theta_crossed(pars)
+        } else {
+            theta <- make_theta(pars)
+        }
+
         sigma2 <- pars$sigma
         Lambdat@x <- theta[Lind]
         L0 <- Matrix::update(L0, Lambdat %*% Zt, mult = 1)
@@ -381,8 +575,12 @@ varb_func <- function(para, X, Zt, L0, Lambdat, Lind) {
         t(Lc) %*% (sigma2 * solve(RXtRX)) %*% Lc
     }
 }
+setup_power_calc <- function(object, d, f) {
+    UseMethod("setup_power_calc")
+}
 
-setup_power_calc <- function(d, f, object) {
+
+setup_power_calc.plcp_nested <- function(object, d, f) {
     u0 <- object$sigma_subject_intercept
     u1 <- object$sigma_subject_slope
     cor_subject <- object$cor_subject
@@ -413,9 +611,48 @@ setup_power_calc <- function(d, f, object) {
          "Lind" = Lind)
 
 }
+setup_power_calc.plcp_crossed <- function(object, d, f) {
+
+    pars <- get_pars_short_name(object)
+    pars <- with(pars,
+                 list(u0 = u0^2,
+                 u1 = u1^2,
+                 u01 = u0 * u1 * u01,
+                 v0 = v0^2,
+                 v1 = v1^2,
+                 v2 = v2^2,
+                 v3 = v3^2,
+                 v01 = v0 * v1 * v01,
+                 v02 = v0 * v2 * v02,
+                 v03 = v0 * v3 * v03,
+                 v12 = v1 * v2 * v12,
+                 v13 = v1 * v3 * v13,
+                 v23 = v2 * v3 * v23,
+                 sigma = object$sigma_error^2)
+                 )
+
+    theta <- make_theta_crossed(pars)
+
+    X <- f$X
+    Lambdat <- f$reTrms$Lambdat
+    Lind <- f$reTrms$Lind
+    Zt <- f$reTrms$Zt
+    Lambdat@x <- theta[Lind]
+    L0 <- Matrix::Cholesky(tcrossprod(Lambdat %*% Zt), LDL = FALSE, Imult = 1)
+
+    list("pars" = pars,
+         "theta" = theta,
+         "X" = X,
+         "Zt" = Zt,
+         "Lambdat" = Lambdat,
+         "L0" = L0,
+         "Lind" = Lind)
+
+}
 
 power_worker <- function(object, df, alpha, use_satterth) {
 
+    crossed <- inherits(object, "plcp_crossed")
     function(i = NULL) {
         use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
         prepped <- prepare_paras(object)
@@ -424,7 +661,9 @@ power_worker <- function(object, df, alpha, use_satterth) {
             f <- lme4::lFormula(formula = create_lmer_formula(object),
                                 data = d)
 
-            pc <- setup_power_calc(d, f, object)
+            pc <- setup_power_calc(object = object,
+                                   d = d,
+                                   f = f)
             pars <- pc$pars
             X <- pc$X
             Zt <- pc$Zt
@@ -437,7 +676,8 @@ power_worker <- function(object, df, alpha, use_satterth) {
                               Zt = Zt,
                               L0 = L0,
                               Lambdat = Lambdat,
-                              Lind = Lind)
+                              Lind = Lind,
+                              crossed = crossed)
             Phi <- varb(Lc = diag(4))
             se <- sqrt(Phi[4,4])
             calc_type <- "matrix"
@@ -789,425 +1029,5 @@ print.plcp_multi_power <- function(x, ...) {
 
 
 
-# OLD ---------------------------------------------------------------------
-
-
-get_power_3lvl_old.list <- function(object, ...) {
-    paras <- object
-    dots <- list(...)
-    n1 <- paras$n1
-
-    if(!is.unequal_clusters(paras$n2) & !is.per_treatment(paras$n2)) {
-        paras$n2 <- per_treatment(unlist(paras$n2),
-                                  unlist(paras$n2))
-    }
-    if(!is.per_treatment(paras$n3)) {
-        paras$n3 <- per_treatment(unlist(paras$n3),
-                                  unlist(paras$n3))
-    }
-    n2 <- paras$n2
-    n3 <- paras$n3
-    T_end <- paras$T_end
-
-    error <- paras$sigma_error
-    u1 <- paras$sigma_subject_slope
-    v1 <- paras$sigma_cluster_slope
-
-    slope_diff <- get_slope_diff(paras)/T_end
-
-    res <- get_power_3lvl.paras(n1 = n1,
-                                n2 = n2,
-                                n3 = n3,
-                                T_end = T_end,
-                                error = error,
-                                u1 = u1,
-                                v1 = v1,
-                                slope_diff = slope_diff,
-                                partially_nested = paras$partially_nested,
-                                allocation_ratio = paras$allocation_ratio,
-                                dropout = paras$dropout,
-                                paras = paras,
-                                ...)
-
-
-    # show progress in shiny
-    if (is.function(dots$updateProgress)) {
-        dots$updateProgress()
-    }
-
-    res <- list(
-        power = res$power,
-        dropout_cc = list(as.character(res$dropout_cc)),
-        se = res$se,
-        df = res$df,
-        dropout_tx = list(as.character(res$dropout_tx)),
-        n1 = paras$n1,
-        n2_cc = res$n2_cc,
-        n2_tx = res$n2_tx,
-        n3_cc = res$n3_cc,
-        n3_tx = res$n3_tx,
-        allocation_ratio = paras$allocation_ratio,
-        tot_n = res$tot_n,
-        var_ratio = get_var_ratio(paras),
-        icc_slope = get_ICC_slope(paras),
-        icc_pre_subjects = get_ICC_pre_subjects(paras),
-        icc_pre_clusters = get_ICC_pre_clusters(paras),
-        cohend = paras$cohend,
-        T_end = paras$T_end,
-        partially_nested = res$partially_nested,
-        paras = paras)
-
-    class(res) <- append("plcp_power_3lvl", class(res))
-
-    res
-
-}
-get_power_2lvl.list <- function(object, ...) {
-    paras <- object
-    dots <- list(...)
-    n1 <- paras$n1
-
-    tmp <- get_tot_n(paras)
-    paras$n2 <- per_treatment(tmp$control, tmp$treatment)
-    paras$n3 <- per_treatment(1, 1)
-    n2 <- paras$n2
-
-    n3 <- paras$n3
-    T_end <- paras$T_end
-
-    error <- paras$sigma_error
-    u1 <- paras$sigma_subject_slope
-    v1 <- 0
-
-    slope_diff <- get_slope_diff(paras)/T_end
-
-    res <- get_power_3lvl.paras(n1 = n1,
-                                n2 = n2,
-                                n3 = n3,
-                                T_end = T_end,
-                                error = error,
-                                u1 = u1,
-                                v1 = v1,
-                                slope_diff = slope_diff,
-                                partially_nested = paras$partially_nested,
-                                allocation_ratio = paras$allocation_ratio,
-                                dropout = paras$dropout,
-                                paras = paras,
-                                ...)
-
-
-    # show progress in shiny
-    if (is.function(dots$updateProgress)) {
-        dots$updateProgress()
-    }
-
-    res <- list(power = res$power,
-                dropout_cc = list(as.character(res$dropout_cc)),
-                se = res$se,
-                df = res$df,
-                dropout_tx = list(as.character(res$dropout_tx)),
-                n1 = paras$n1,
-                n2_cc = sum(unlist(res$n2_cc)),
-                n2_tx = sum(unlist(res$n2_tx)),
-                tot_n = res$tot_n,
-                allocation_ratio = paras$allocation_ratio,
-                var_ratio = get_var_ratio(paras),
-                icc_slope = get_ICC_slope(paras),
-                icc_pre_subjects = get_ICC_pre_subjects(paras),
-                cohend = paras$cohend,
-                T_end = paras$T_end,
-                paras = paras)
-
-    class(res) <- append("plcp_power_2lvl", class(res))
-
-    res
-
-}
-
-get_power_3lvl.paras <- function(n1,
-                                 n2,
-                                 n3,
-                                 T_end,
-                                 error,
-                                 u1,
-                                 v1,
-                                 slope_diff,
-                                 partially_nested,
-                                 allocation_ratio = 1,
-                                 dropout = NULL,
-                                 ...) {
-    dots <- list(...)
-
-    sx <- Vectorize(var_T)(n1, T_end)
-
-
-    if(is.unequal_clusters(n2) | is.list(dropout)) {
-
-        res <- get_se_3lvl_matrix(dots$paras)
-        se <- res$se
-        var_cc <- res$var_cc
-        var_tx <- res$var_tx
-
-        dropout_cc <- format_dropout(get_dropout(dots$paras)$control)
-        dropout_tx <- format_dropout(get_dropout(dots$paras)$treatment)
-    } else {
-        n2_tx <- n2[[1]]$treatment
-        n2_cc <- get_n2(dots$paras)$control
-
-        n3_tx <- n3[[1]]$treatment
-        n3_cc <- n3[[1]]$control
-        if(partially_nested) {
-            se <- sqrt( (error^2 + n1*u1^2*sx)/(n1*n2_cc*sx) + (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx) )
-        } else {
-            var_cc <- (error^2 + n1*u1^2*sx + n1*n2_cc*v1^2*sx) / (n1*n2_cc*n3_cc*sx)
-            var_tx <- (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx)
-            se <- sqrt(var_cc + var_tx)
-        }
-        dropout_cc <- 0
-        dropout_tx <- 0
-
-    }
-    n2_tx <- get_tot_n(dots$paras)$treatment
-    n2_cc <- get_tot_n(dots$paras)$control
-
-    n3_cc <- get_n3(dots$paras)$control
-    n3_tx <- get_n3(dots$paras)$treatment
-
-
-    lambda <- slope_diff / se
-    if(v1 == 0) {
-        df <-  (n2_tx + n2_cc) - 2
-    } else if(!partially_nested) {
-        df <- (n3_cc + n3_tx) - 2
-    } else {
-        df <-(2*n3_tx) - 2
-
-    }
-    power <- pt(qt(1-0.05/2, df = df), df = df, ncp = lambda, lower.tail = FALSE) +
-        pt(qt(0.05/2, df = df), df = df, ncp = lambda)
-
-    # show progress in shiny
-    if (is.function(dots$updateProgress)) {
-        dots$updateProgress()
-    }
-
-    res <- data.frame(n1 = n1,
-                      n3_cc = n3_cc,
-                      n3_tx = n3_tx,
-                      ratio = get_var_ratio(u1=u1, v1=v1, error=error),
-                      icc_slope = get_ICC_slope(u1=u1, v1=v1),
-                      tot_n = get_tot_n(dots$paras)$total,
-                      se = se,
-                      df = df,
-                      power = power,
-                      dropout_tx = dropout_tx,
-                      dropout_cc = dropout_cc,
-                      partially_nested = partially_nested)
-
-    res$n2_tx <- list(n2_tx)
-    res$n2_cc <- list(n2_cc)
-
-
-
-    res
-}
-
-get_se_classic <- function(object) {
-
-    if(is.null(object$prepared)) {
-        p_tx <- prepare_paras(object)
-    } else {
-        p_tx <- object
-        object <- p_tx$treatment
-    }
-
-    p_cc <- p_tx$control
-    p_tx <- p_tx$treatment
-
-    n1 <- object$n1
-    T_end <- object$T_end
-    sx <- Vectorize(var_T)(n1, T_end)
-
-
-
-    n2_tx <- unique(unlist(p_tx$n2))
-    n3_tx <- unlist(p_tx$n3)
-    n2_cc <- unique(unlist(p_cc$n2))
-    n3_cc <- unlist(p_cc$n3)
-
-
-    error <- object$sigma_error
-    u1 <- object$sigma_subject_slope
-    u1[is.na(u1)] <- 0
-    v1 <- object$sigma_cluster_slope
-    v1[is.na(v1)] <- 0
-
-    if(object$partially_nested) {
-        se <- sqrt( (error^2 + n1*u1^2*sx)/(n1*n2_cc*n3_cc*sx) + (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx) )
-    } else {
-        var_cc <- (error^2 + n1*u1^2*sx + n1*n2_cc*v1^2*sx) / (n1*n2_cc*n3_cc*sx)
-        var_tx <- (error^2 + n1*u1^2*sx + n1*n2_tx*v1^2*sx) / (n1*n2_tx*n3_tx*sx)
-        se <- sqrt(var_cc + var_tx)
-    }
-
-
-    se
-
-}
-
-
-
-# Matrix power ------------------------------------------------------------
-
-## Unbalanced
-create_Z_block <- function(n2) {
-    B <- matrix(c(1, 0, 0, 1), nrow=2, ncol=2)
-    A <- array(1, dim = c(n2, 1))
-    kronecker(A, B)
-}
-
-
-#' @import Matrix
-get_vcov <- function(paras) {
-    n1 <- paras$n1
-    n2 <- unlist(paras$n2)
-    n3 <- paras$n3
-    if(length(n2) == 1) {
-        n2 <- rep(n2, n3)
-    }
-
-    # paras
-    u0 <- paras$sigma_subject_intercept
-    u1 <- paras$sigma_subject_slope
-    u01 <- u0 * u1 * paras$cor_subject
-    v0 <- paras$sigma_cluster_intercept
-    v1 <- paras$sigma_cluster_slope
-    v01 <- v0 * v1 * paras$cor_cluster
-    sigma <- paras$sigma_error
-    lvl2_re <- matrix(c(u0^2, u01,
-                        u01, u1^2), nrow = 2, ncol = 2)
-    lvl3_re <- matrix(c(v0^2, v01,
-                        v01, v1^2), nrow = 2, ncol = 2)
-
-
-    ##
-    tot_n <- get_tot_n(paras)$control # tx == cc
-    A <- Diagonal(tot_n)
-    B <- Matrix(c(rep(1, n1), get_time_vector(paras)), ncol = 2, nrow = n1)
-    X <- kronecker(A, B)
-
-    # missing
-    if(is.list(paras$dropout) | is.function(paras$dropout[[1]])) {
-        miss <- dropout_process(unlist(paras$dropout), paras)
-        cluster <- create_cluster_index(n2, n3)
-        cluster <- rep(cluster, each = n1)
-        miss$cluster <- cluster
-        miss <- miss[order(miss$id), ]
-        X <- X[miss$missing == 0, ]
-    }
-    Xt <- Matrix::t(X)
-    ## random
-    I1 <- Diagonal(tot_n)
-    lvl2 <- kronecker(I1, lvl2_re)
-
-    I3 <- Diagonal(n3)
-    Z <- bdiag(lapply(n2, create_Z_block))
-
-    lvl3 <- Z %*% kronecker(I3, lvl3_re)
-    lvl3 <- Matrix::tcrossprod(lvl3, Z)
-
-
-    # missing data
-    if(is.list(paras$dropout) | is.function(paras$dropout[[1]])) {
-        ids <- miss[miss$missing == 0, ]
-
-        ids <- lapply(unique(ids$id), function(id) {
-            n <- length(ids[ids$id == id, 1])
-            data.frame(id = id,
-                       n = n)
-        })
-        ids <- do.call(rbind, ids)
-        ids <- ids[ids$n == 1, "id"]
-
-        s_id <- c(2*ids - 1, 2*ids)
-        tmp <- Xt %*% X
-        if(length(s_id) == 0) {
-            tmp <- solve(tmp)
-        } else {
-            tmp[-s_id, -s_id] <- solve(tmp[-s_id, -s_id])
-        }
-    } else {
-        ids <- NULL
-        s_id <- NULL
-        tmp <- solve(Xt %*% X)
-    }
-    XtX_inv <- tmp
-    if(length(ids) > 0) {
-        lvl2[ids*2, ] <- 0
-        lvl2[, ids*2] <- 0
-
-        lvl3[ids*2, ] <- 0
-        lvl3[, ids*2] <- 0
-    }
-    I <- Diagonal(nrow(X))
-    A <- sigma^-2 * (I - X %*% XtX_inv %*% Xt)
-    B <- sigma^2 * XtX_inv + (lvl2 + lvl3)
-
-    B_inv <- B
-    rm(B)
-
-    # deal with subjects with only 1 observations
-    if(length(s_id) == 0) {
-        B_inv <- solve(B_inv)
-    } else {
-        tmp <- Matrix::solve(B_inv[-s_id, -s_id])
-        tmp <- as.matrix(tmp)
-        B_inv <- as.matrix(B_inv)
-        B_inv[-s_id, -s_id] <- tmp
-        B_inv <- Matrix(B_inv)
-        rm(tmp)
-        if(length(ids) == 1) {
-            B_inv[2*ids-1, 2*ids-1] <-  1/B_inv[2*ids-1, 2*ids-1]
-        } else {
-            Matrix::diag(B_inv[2*ids-1, 2*ids-1]) <-
-                1/Matrix::diag(B_inv[2*ids-1, 2*ids-1])
-        }
-    }
-
-    C <- X %*% XtX_inv %*% B_inv %*% XtX_inv %*% Xt
-    V_inv <- A+C
-
-    W <- create_Z_block(n3)
-    var_betas <- solve(Matrix::t(W) %*% Matrix::t(Z) %*% Xt %*%
-                           V_inv %*% X %*% Z %*% W)
-
-    var_betas
-}
-
-
-get_se_3lvl_matrix <- function(paras, ...) {
-    dots <- list(...)
-
-    unequal_allocation <- is.per_treatment(paras$n2) | is.per_treatment(paras$n3)
-    dropout_per_treatment <- is.per_treatment(paras$dropout)
-
-    tmp <- prepare_paras(paras)
-    paras <- tmp$control
-    paras_tx <- tmp$treatment
-
-    var_grp1 <- get_vcov(paras)
-
-    if(unequal_allocation | dropout_per_treatment | paras$partially_nested) {
-        var_grp2 <- get_vcov(paras_tx)
-    } else {
-        var_grp2 <- var_grp1
-    }
-
-    se <- sqrt(var_grp1[2,2] + var_grp2[2,2])
-
-    list(se = se,
-         var_cc = var_grp1[2,2],
-         var_tx = var_grp2[2,2])
-}
 
 

@@ -21,12 +21,13 @@ URL: https://github.com/rpsychologist/powerlmm
 BugReports: https://github.com/rpsychologist/powerlmm/issues
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Depends: R (>= 3.2.0)
 Imports: stats, 
     methods,
     parallel,
     lme4 (>= 1.1),
+    ggplot2 (>= 2.2),
     Matrix,
     MASS,
     scales,
@@ -38,8 +39,8 @@ Suggests: testthat,
     rmarkdown,
     pbmcapply (>= 1.1),
     lmerTest (>= 2.0),
-    ggplot2 (>= 2.2),
     ggsci,
+    ggridges,
     viridis,
     gridExtra,
     shiny (>= 1.0),

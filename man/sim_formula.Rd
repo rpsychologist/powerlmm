@@ -4,7 +4,8 @@
 \alias{sim_formula}
 \title{Create a simulation formula}
 \usage{
-sim_formula(formula, data_transform = NULL, test = "time:treatment")
+sim_formula(formula, data_transform = NULL, test = "time:treatment",
+  ...)
 }
 \arguments{
 \item{formula}{A \code{character} containing a \pkg{lme4} formula.}
@@ -14,16 +15,38 @@ to the data during each simulation.}
 
 \item{test}{A \code{character} vector indicating which parameters should be tested.
 Only applies to tests using Satterthwaite \emph{dfs}, or when calculating confidence intervals.}
+
+\item{family}{A \code{character} or \code{function} passing GLM response distribution to
+\code{glm} or \code{glmer}.}
+
+\item{post_test}{Optional; a custom \code{function} that performs a post-hoc test on the fitted object.
+See \emph{Details}.}
 }
 \value{
-Object with class \code{plcp_sim_formula}
+An object with class \code{plcp_sim_formula}
 }
 \description{
 Create a simulation formula
 }
 \details{
+\bold{(G)LMMs or (G)LM}
+
 It is possible to fit model without any random effects. If no random effects is specified
-the model is fit using \code{lm()}.
+the model is fit using \code{(g)lm()}.
+
+\bold{Perform custom post-hoc tests}
+It useful to be able to test custom linear hypothesis of the model's parameters, .e.g., using \code{lmerTest::contest} or \pkg{emmeans}.
+This function must return a \code{data.frame} with the columns:
+\itemize{
+\item \code{parameter} which contains a custom name of the parameter.
+\item \code{estimate}
+\item \code{se}
+\item \code{pval}
+\item \code{df}
+\item \code{df_bw}
+}
+
+The vignette XX give a complete example of using this functionality.
 }
 \examples{
 # 2-lvl model
