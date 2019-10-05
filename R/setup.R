@@ -4,7 +4,8 @@ study_design <- function(nested = TRUE,
                          family = "gaussian",
                          levels = 3,
                          groups = 2,
-                         time_form = "linear") {
+                         time_form = "linear",
+                         custom = FALSE) {
 
     if(groups != 2) {
         message("Argument 'groups' is currently ignored.", call. = FALSE)
@@ -48,12 +49,15 @@ study_design <- function(nested = TRUE,
                  time_form = time_form,
                  family = family)
 
-    if(nested) {
+    if (custom) {
+        class(args) <- "plcp_design_custom"
+    } else if(nested) {
         class(args) <- paste(c("plcp_design", family_class, "nested"),
-                                    collapse = "_")
+                             collapse = "_")
+
     } else {
         class(args) <- paste(c("plcp_design", family_class, "crossed"),
-                                                 collapse = "_")
+                             collapse = "_")
     }
     class(args) <- append(class(args), "plcp_design")
 
@@ -611,6 +615,12 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
 
 study_parameters.default <- study_parameters.plcp_design_nested
 
+study_parameters.plcp_design_custom <- function(design, ..., data_gen = NULL) {
+    paras <- list(...)
+    paras$data_gen <- data_gen
+    class(paras) <- c("plcp_custom", "plcp")
+    paras
+}
 
 sim_parameters <- function(...) {
     dots <- list(...)
@@ -800,11 +810,6 @@ prepare_print_plcp_hurdle_2lvl <- function(x) {
     res
 
 }
-
-
-
-
-
 
 prepare_print_plcp_3lvl <- function(x) {
     res <- prepare_print_plcp(x)
@@ -1465,7 +1470,7 @@ prepare_paras.default <- function(paras) {
     out
 }
 
-
+prepare_paras.plcp_custom <- function(paras) paras
 
 
 

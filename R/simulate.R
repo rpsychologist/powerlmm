@@ -416,7 +416,10 @@ simulate_data.plcp_crossed <- function(paras, n = NULL) {
     d
 }
 
+simulate_data.plcp_custom <- function(paras, n = NULL) {
+    do.call(paras$data_gen, paras)
 
+}
 #' Perform a simulation study using a \code{study_parameters}-object
 #'
 #' @param object An object created by \code{\link{study_parameters}}.
@@ -765,7 +768,6 @@ simulate.plcp_list <-
                 time = time["elapsed"],
                 formula = formula
             )
-        saveRDS(out, paste0("debug_", format(Sys.time(), "%Y%m%d_%H%M_%S"),".Rds"))
         out <- munge_results(out)
         if(inherits(formula, "plcp_compare_sim_formula")) {
             class(out) <- append(class(out), "plcp_sim_formula_compare")
@@ -2032,6 +2034,10 @@ get_RE_thetas.plcp_crossed <- function(paras, ...) {
         )
 
 }
+get_RE_thetas.plcp_custom <- function(paras, ...) {
+    list()
+}
+get_slope_diff.plcp_custom <- function(paras) NA
 
 ## extract fixed effect thetas
 #' @export
