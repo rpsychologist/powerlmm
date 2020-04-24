@@ -4,3 +4,5 @@
 .RData
 ~$README.md
 powerlmm.pdf
+.vscode/
+dev/
