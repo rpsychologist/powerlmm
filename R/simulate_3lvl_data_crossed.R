@@ -130,7 +130,7 @@ create_cluster_index_crossed <- function(n2) {
     u1 <- subject_lvl[, 2][subject]
 
     b0 <- fixed_intercept + fixed_tx * TX + u0 + v0 + v2 * TX
-    b1 <- fixed_slope  + fixed_slope_time_tx * TX + u1 + v1 + v3 * TX
+    b1 <- fixed_slope + fixed_slope_time_tx * TX + u1 + v1 + v3 * TX
 
     # level-1 model
     sigma.y <- diag(n1)

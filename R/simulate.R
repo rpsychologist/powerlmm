@@ -356,7 +356,7 @@ simulate_data.plcp_nested <- function(paras, n = NULL) {
     # combine
     d_tx$treatment <- 1
     d_c$treatment <- 0
-    d_c$subject <- d_c$subject + max(d_tx$subject)
+    d_tx$subject <- d_tx$subject + max(d_c$subject)
     d_tx$cluster <- d_tx$cluster + max(d_c$cluster)
     dt <- rbind(d_c, d_tx)
 

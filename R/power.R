@@ -511,6 +511,7 @@ make_theta <- function(pars) {
     c(lvl2, lvl3)
 }
 make_theta_crossed <- function(pars) {
+
     #p <- make_pars(pars)
     p <- as.list(pars)
     sigma <- sqrt(p$sigma)
@@ -548,6 +549,7 @@ make_theta_crossed <- function(pars) {
     keep_zero <- x0[keep] == 0
     full[keep[!keep_zero]] <- m[m != 0]
     full[keep[keep_zero]] <- 0
+
     c(lvl2,
       full[keep]/sigma)
 }
@@ -650,13 +652,16 @@ setup_power_calc.plcp_crossed <- function(object, d, f) {
 
 }
 
-power_worker <- function(object, df, alpha, use_satterth) {
-
+power_worker <- function(object, df, alpha, use_satterth, ...) {
+    dots <- list(...)
+    use_matrix_manual <- ifelse(is.null(dots$use_matrix), FALSE, dots$use_matrix)
+    print(dots)
     crossed <- inherits(object, "plcp_crossed")
     function(i = NULL) {
         use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
         prepped <- prepare_paras(object)
-        if(use_matrix_se) {
+        if(use_matrix_se || use_matrix_manual) {
+            print("useMatrix")
             d <- simulate_data(prepped)
             f <- lme4::lFormula(formula = create_lmer_formula(object),
                                 data = d)
@@ -755,7 +760,8 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, progress = TRUE
     power_fun <- power_worker(object = object,
                               df = df,
                               alpha = alpha,
-                              use_satterth = use_satterth)
+                              use_satterth = use_satterth,
+                              ...)
     if(cores > 1) {
         if(is.null(cl)) {
             cl <- makeCluster(getOption("cl.cores", min(R, cores)))
