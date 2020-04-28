@@ -4,8 +4,15 @@
 \alias{print.plcp_multi_sim_summary}
 \title{Print method for \code{summary.plcp_multi_sim}-objects}
 \usage{
-\method{print}{plcp_multi_sim_summary}(x, add_cols = NULL, bias = TRUE,
-  power = TRUE, estimates = TRUE, digits = 2, ...)
+\method{print}{plcp_multi_sim_summary}(
+  x,
+  add_cols = NULL,
+  bias = TRUE,
+  power = TRUE,
+  estimates = TRUE,
+  digits = 2,
+  ...
+)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_multi_sim_summary}}

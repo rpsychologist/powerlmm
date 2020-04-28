@@ -5,13 +5,31 @@
 \alias{simulate.plcp_multi}
 \title{Perform a simulation study using a \code{study_parameters}-object}
 \usage{
-\method{simulate}{plcp}(object, nsim, seed = NULL, formula = NULL,
-  satterthwaite = FALSE, CI = FALSE, cores = 1, progress = FALSE,
-  batch_progress = TRUE, ...)
+\method{simulate}{plcp}(
+  object,
+  nsim,
+  seed = NULL,
+  formula = NULL,
+  satterthwaite = FALSE,
+  CI = FALSE,
+  cores = 1,
+  progress = FALSE,
+  batch_progress = TRUE,
+  ...
+)
 
-\method{simulate}{plcp_multi}(object, nsim, seed = NULL,
-  formula = NULL, satterthwaite = FALSE, CI = FALSE, cores = 1,
-  progress = FALSE, batch_progress = TRUE, ...)
+\method{simulate}{plcp_multi}(
+  object,
+  nsim,
+  seed = NULL,
+  formula = NULL,
+  satterthwaite = FALSE,
+  CI = FALSE,
+  cores = 1,
+  progress = FALSE,
+  batch_progress = TRUE,
+  ...
+)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}.}

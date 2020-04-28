@@ -655,7 +655,6 @@ setup_power_calc.plcp_crossed <- function(object, d, f) {
 power_worker <- function(object, df, alpha, use_satterth, ...) {
     dots <- list(...)
     use_matrix_manual <- ifelse(is.null(dots$use_matrix), FALSE, dots$use_matrix)
-    print(dots)
     crossed <- inherits(object, "plcp_crossed")
     function(i = NULL) {
         use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth

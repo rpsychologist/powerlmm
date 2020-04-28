@@ -4,18 +4,36 @@
 \alias{study_parameters.plcp_design_nested}
 \title{Setup nested study parameters}
 \usage{
-
-  \method{study_parameters}{plcp_design_nested}(design = study_design(nested
-  = TRUE), n1, n2, n3 = 1, T_end = NULL, fixed_intercept = 0L,
-  fixed_slope = 0L, sigma_subject_intercept = NULL,
-  sigma_subject_slope = NULL, sigma_cluster_intercept = NULL,
-  sigma_cluster_slope = NULL, fixed_cluster_intercepts = NULL,
-  fixed_cluster_slopes = NULL, sigma_error = 10, shape = NULL,
-  cor_subject = 0L, cor_cluster = 0L, cor_within = 0L,
-  var_ratio = NULL, icc_slope = NULL, icc_pre_subject = NULL,
-  icc_pre_cluster = NULL, effect_size = 0L, cohend = NULL,
-  partially_nested = FALSE, dropout = 0L,
-  deterministic_dropout = TRUE, ...)
+\method{study_parameters}{plcp_design_nested}(
+  design = study_design(nested = TRUE),
+  n1,
+  n2,
+  n3 = 1,
+  T_end = NULL,
+  fixed_intercept = 0L,
+  fixed_slope = 0L,
+  sigma_subject_intercept = NULL,
+  sigma_subject_slope = NULL,
+  sigma_cluster_intercept = NULL,
+  sigma_cluster_slope = NULL,
+  fixed_cluster_intercepts = NULL,
+  fixed_cluster_slopes = NULL,
+  sigma_error = 10,
+  shape = NULL,
+  cor_subject = 0L,
+  cor_cluster = 0L,
+  cor_within = 0L,
+  var_ratio = NULL,
+  icc_slope = NULL,
+  icc_pre_subject = NULL,
+  icc_pre_cluster = NULL,
+  effect_size = 0L,
+  cohend = NULL,
+  partially_nested = FALSE,
+  dropout = 0L,
+  deterministic_dropout = TRUE,
+  ...
+)
 }
 \arguments{
 \item{n1}{Number of level 1 units, e.g. measurements per subject.}

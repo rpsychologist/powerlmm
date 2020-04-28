@@ -4,8 +4,10 @@
 \alias{study_parameters}
 \title{Setup study parameters}
 \usage{
-study_parameters(design = study_design(nested = TRUE, levels = 3, groups
-  = 2, time_form = "linear"), ...)
+study_parameters(
+  design = study_design(nested = TRUE, levels = 3, groups = 2, time_form = "linear"),
+  ...
+)
 }
 \description{
 Setup study parameters

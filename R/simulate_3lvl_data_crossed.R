@@ -61,11 +61,10 @@ create_cluster_index_crossed <- function(n2) {
 
     tot_n2 <- length(unlist(cluster))
     subject <- rep(1:tot_n2, each = n1) # subject IDs
-
-
-    TX <- rep(1, length(cluster$treatment), each = n1)
-    CC <- rep(0, length(cluster$control), each = n1)
-    TX <- c(TX,CC)
+    
+    TX <- rep(0.5, length(cluster$treatment), each = n1)
+    CC <- rep(-0.5, length(cluster$control), each = n1)
+    TX <- c(CC, TX)
 
     # level-2 variance matrix
     Sigma_subject = c(
@@ -110,11 +109,11 @@ create_cluster_index_crossed <- function(n2) {
         cluster_b3 <- cluster_lvl[, 4] # slope time:tx
     }
 
-    print(paste("cor", cor(cluster_b1, cluster_b1 + cluster_b3)))
-    print(paste("cov", cov(cluster_b1, cluster_b1 + cluster_b3)))
-    print(paste("sd", sd(cluster_b1)))
-    print(paste("sd", sd(cluster_b1 + cluster_b3)))
-    print(cor(cluster_b1, cluster_b3))
+    # print(paste("cor", cor(cluster_b1, cluster_b1 + cluster_b3)))
+    # print(paste("cov", cov(cluster_b1, cluster_b1 + cluster_b3)))
+    # print(paste("sd", sd(cluster_b1)))
+    # print(paste("sd", sd(cluster_b1 + cluster_b3)))
+    # print(cor(cluster_b1, cluster_b3))
 
     cluster <- unlist(cluster)
     v0 <- cluster_b0[cluster][subject]
@@ -150,8 +149,8 @@ create_cluster_index_crossed <- function(n2) {
                     treatment = TX,
                     subject,
                     cluster = rep(cluster, each = n1),
-                    intercept_subject = b0[subject],
-                    slope_subject = b1[subject],
+                    intercept_subject = u0,
+                    slope_subject = u1,
                     intercept_cluster = v0,
                     intercept_cluster_tx = v2,
                     slope_cluster = v1,

@@ -3,7 +3,6 @@
 \docType{package}
 \name{powerlmm}
 \alias{powerlmm}
-\alias{powerlmm-package}
 \title{Power Analysis for Longitudinal Multilevel Models}
 \description{
 The \pkg{powerlmm} package provides a fast and flexible way to calculate power for
