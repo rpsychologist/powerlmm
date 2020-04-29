@@ -32,8 +32,8 @@ create_cluster_index_crossed <- function(n2) {
                                  sigma_subject_slope,
                                  sigma_cluster_intercept,
                                  sigma_cluster_slope,
-                                 sigma_cluster_intercept_tx,
-                                 sigma_cluster_slope_tx,
+                                 sigma_cluster_intercept_crossed,
+                                 sigma_cluster_slope_crossed,
                                  sigma_error,
                                  cor_subject = 0,
                                  cor_cluster_intercept_slope = 0,
@@ -77,16 +77,16 @@ create_cluster_index_crossed <- function(n2) {
 
     # level-3 variance matrix
     cV0V1 <- sigma_cluster_intercept * sigma_cluster_slope * cor_cluster_intercept_slope
-    cV0V2 <- sigma_cluster_intercept * sigma_cluster_intercept_tx * cor_cluster_intercept_intercept_tx
-    cV0V3 <- sigma_cluster_intercept * sigma_cluster_slope_tx * cor_cluster_intercept_slope_tx
-    cV1V2 <- sigma_cluster_slope * sigma_cluster_intercept_tx * cor_cluster_slope_intercept_tx
-    cV1V3 <- sigma_cluster_slope * sigma_cluster_slope_tx * cor_cluster_slope_slope_tx
-    cV2V3 <- sigma_cluster_intercept_tx * sigma_cluster_slope_tx * cor_cluster_intercept_tx_slope_tx
+    cV0V2 <- sigma_cluster_intercept * sigma_cluster_intercept_crossed * cor_cluster_intercept_intercept_tx
+    cV0V3 <- sigma_cluster_intercept * sigma_cluster_slope_crossed * cor_cluster_intercept_slope_tx
+    cV1V2 <- sigma_cluster_slope * sigma_cluster_intercept_crossed * cor_cluster_slope_intercept_tx
+    cV1V3 <- sigma_cluster_slope * sigma_cluster_slope_crossed * cor_cluster_slope_slope_tx
+    cV2V3 <- sigma_cluster_intercept_crossed * sigma_cluster_slope_crossed * cor_cluster_intercept_tx_slope_tx
 
     Sigma_cluster <- c(sigma_cluster_intercept^2, cV0V1, cV0V2,    cV0V3,
                        cV0V1, sigma_cluster_slope^2,     cV1V2,    cV1V3,
-                       cV0V2, cV1V2, sigma_cluster_intercept_tx^2, cV2V3,
-                       cV0V3, cV1V3, cV2V3,     sigma_cluster_slope_tx^2)
+                       cV0V2, cV1V2, sigma_cluster_intercept_crossed^2, cV2V3,
+                       cV0V3, cV1V3, cV2V3,     sigma_cluster_slope_crossed^2)
 
     Sigma_cluster <-  matrix(Sigma_cluster, 4, 4)
 

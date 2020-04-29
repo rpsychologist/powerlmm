@@ -17,8 +17,8 @@
   sigma_subject_slope = NULL,
   sigma_cluster_intercept = NULL,
   sigma_cluster_slope = NULL,
-  sigma_cluster_intercept_tx = NULL,
-  sigma_cluster_slope_tx = NULL,
+  sigma_cluster_intercept_crossed = NULL,
+  sigma_cluster_slope_crossed = NULL,
   sigma_error = 10,
   cor_subject = 0L,
   cor_cluster_intercept_slope = 0L,
@@ -30,10 +30,10 @@
   cor_within = 0L,
   var_ratio = NULL,
   icc_slope = NULL,
-  icc_slope_tx = NULL,
+  icc_slope_crossed = NULL,
   icc_pre_subject = NULL,
   icc_pre_cluster = NULL,
-  icc_pre_cluster_tx = NULL,
+  icc_pre_cluster_crossed = NULL,
   effect_size = 0L,
   cohend = NULL,
   dropout = 0L,
@@ -79,6 +79,9 @@ slope variance to the within-subject variance.}
 \item{icc_slope}{Proportion of slope variance
 at the cluster level.}
 
+\item{icc_slope_crossed}{Proportion of \code{icc_slope} slope variance
+at the cluster level casued by the crossed cluster:treatment interaction.}
+
 \item{icc_pre_subject}{Proportion of baseline
 variance at the subject level. N.B. the variance at the subject-level also
 included the cluster-level variance. If there's no random slopes, this would
@@ -86,6 +89,9 @@ be the subject-level ICC, i.e. correlation between time points.}
 
 \item{icc_pre_cluster}{Proportion of baseline
 variance at the cluster level.}
+
+\item{icc_pre_cluster_crossed}{Proportion of \code{icc_pre_cluster} variance related to the
+cluster:treatment interaction.}
 
 \item{effect_size}{The treatment effect. Either a \code{numeric} indicating the mean
 difference (unstandardized) between the treatments at posttest, or a standardized effect
@@ -101,12 +107,6 @@ Equivalent to using \code{effect_size = cohend(cohend, standardizer = "pretest_S
 \code{dropout} will be treated as random and dropout will be sampled
 from a multinomial distribution. N.B.: the random dropout will be
 sampled independently in both treatment arms.}
-
-\item{icc_slope_crossed}{Proportion of \code{icc_slope} slope variance
-at the cluster level casued by the crossed cluster:treatment interaction.}
-
-\item{icc_pre_cluster_crossed}{Proportion of \code{icc_pre_cluster} variance related to the
-cluster:treatment interaction.}
 
 \item{cor_cluster}{A 3 x 3 matrix of the cluster-level variance components.}
 
@@ -129,7 +129,7 @@ for.
 \details{
 \bold{Crossed Factor}
 The interpretation of the crossed variance components depends on the coding of the
-/code{treatment} variable.
+\code{treatment} variable.
 }
 \examples{
 # Three level model with both subject- and cluster-level random slope

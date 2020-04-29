@@ -40,6 +40,23 @@ get_ICC_slope.plcp <- function(object, ...) {
     get_ICC_slope.default(u1 = object$sigma_subject_slope,
                       v1 = object$sigma_cluster_slope)
 }
+#' @export
+get_ICC_slope.plcp_crossed <- function(object, interaction = FALSE) {
+    u1 <- object$sigma_subject_slope
+    v2 <- object$sigma_cluster_slope
+    v3 <- object$sigma_cluster_slope_crossed
+
+    if(interaction) {
+        # the propoprtion of 3-lvl slope variance
+        # caused by the interaction
+        v3^2/(v2^2 + v3^2)
+    } else {
+        # proportion of total re slope variance
+        # at the 3rd level
+        (v2^2 + v3^2)/(u1^2 + v2^2 + v3^2)
+    }
+   
+}
 
 #' @export
 get_ICC_slope.plcp_multi <- function(object, ...) {
@@ -134,6 +151,16 @@ get_ICC_pre_subjects.plcp <- function(object, ...) {
                             error = object$sigma_error)
 }
 #' @export
+get_ICC_pre_subjects.plcp_crossed <- function(object, ...) {
+    u0 <- object$sigma_subject_intercept
+    v0 <- object$sigma_cluster_intercept
+    v1 <- object$sigma_cluster_intercept_crossed
+    error <- object$sigma_error
+
+    (u0^2 +  v0^2 + v1^2)/(u0^2 + v0^2 + v1^2 + error^2)
+}
+
+#' @export
 get_ICC_pre_subjects.plcp_multi <- function(object, ...) {
     get_ICC_pre_subjects.plcp(object)
 }
@@ -180,6 +207,19 @@ get_ICC_pre_clusters.plcp <- function(object, ...) {
     get_ICC_pre_clusters.default(u0 = object$sigma_subject_intercept,
                             v0 = object$sigma_cluster_intercept,
                             error = object$sigma_error)
+}
+#' @export
+get_ICC_pre_clusters.plcp_crossed <- function(object, interaction = FALSE) {
+    u0 <- object$sigma_subject_intercept
+    v0 <- object$sigma_cluster_intercept
+    v1 <- object$sigma_cluster_intercept_crossed
+    error <- object$sigma_error
+
+    if(interaction) {
+        v1^2/(v0^2 + v1^2)
+    } else {
+        (v0^2 + v1^2)/(u0^2 + v0^2 + v1^2 + error^2)
+    }
 }
 #' @export
 get_ICC_pre_clusters.plcp_multi <- function(object, ...) {

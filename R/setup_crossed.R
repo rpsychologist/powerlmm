@@ -48,7 +48,7 @@ solve_cluster_intercept <- function(
     }
     if (crossed) {
         icc_cluster_crossed <- tmp$icc_pre_cluster_crossed
-        icc_cluster_crossed[is.na(icc_cluster_crossed)] <- 0
+        icc_cluster_crossed[is.na(icc_cluster_crossed) || is.null(icc_cluster_crossed)] <- 0    
         tot_cluster_var <- tmp$sigma_cluster_intercept^2
         tmp$sigma_cluster_intercept <-
             sqrt(tot_cluster_var * (1 - icc_cluster_crossed))
@@ -84,7 +84,7 @@ solve_cluster_slope <- function(
     }
     if (crossed) {
         icc_cluster_crossed <- tmp$icc_slope_crossed
-        icc_cluster_crossed[is.na(icc_cluster_crossed)] <- 0
+        icc_cluster_crossed[is.na(icc_cluster_crossed) || is.null(icc_cluster_crossed)] <- 0
         tot_cluster_var <- tmp$sigma_cluster_slope^2
         tmp$sigma_cluster_slope <-
             sqrt(tot_cluster_var * (1 - icc_cluster_crossed))
@@ -316,19 +316,25 @@ study_parameters.plcp_design_crossed <- function(design,
 
 
 
-    # ## Default NA
-    # if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
-    #     tmp_args$icc_pre_subject <- NA
-    # }
-    # if(is.null(var_ratio) & (is.null(sigma_subject_slope) || is.na(sigma_subject_slope)) & is.null(sigma_cluster_slope)) {
-    #     tmp_args$var_ratio <- NA
-    # }
-    # if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
-    #     tmp_args$icc_pre_cluster <- NA
-    # }
-    # if(is.null(icc_slope) & is.null(sigma_cluster_slope)) {
-    #     tmp_args$icc_slope <- NA
-    # }
+    ## Default NA
+    if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
+        tmp_args$icc_pre_subject <- NA
+    }
+    if (is.null(var_ratio) & (is.null(sigma_subject_slope) || is.na(sigma_subject_slope)) & is.null(sigma_cluster_slope)) {
+        tmp_args$var_ratio <- NA
+    }
+    if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
+        tmp_args$icc_pre_cluster <- NA
+    }
+    if(is.null(icc_pre_cluster_crossed) & is.null(sigma_cluster_intercept_crossed)) {
+        tmp_args$icc_pre_cluster_crossed <- NA
+    }
+    if(is.null(icc_slope) & is.null(sigma_cluster_slope)) {
+        tmp_args$icc_slope <- NA
+    }
+    if(is.null(icc_slope_crossed) & is.null(sigma_cluster_slope_crossed)) {
+        tmp_args$icc_slope_crossed <- NA
+    }
      tmp <- expand.grid(tmp_args)
     # ## --
     #
@@ -396,9 +402,9 @@ study_parameters.plcp_design_crossed <- function(design,
     # avoid problems with prepare_paras()
     paras$partially_nested <- FALSE
     paras$custom_model <- FALSE
-    # if(is.data.frame(paras)) {
-    #     class(paras) <- append(c("plcp_multi"), class(paras))
-    # } else class(paras) <- append(c("plcp"), class(paras))
+    if(is.data.frame(paras)) {
+        class(paras) <- append(c("plcp_multi"), class(paras))
+    } else class(paras) <- append(c("plcp_crossed", "plcp"), class(paras))
     #
     # # Default cor_*
     # if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
@@ -414,8 +420,6 @@ study_parameters.plcp_design_crossed <- function(design,
     # } else {
     #     class(paras) <- append(class(paras), c("plcp_mixed"))
     # }
-
-    class(paras) <- append(class(paras), c("plcp","plcp_crossed"))
 
     attr(paras, "call") <- save_call
     paras

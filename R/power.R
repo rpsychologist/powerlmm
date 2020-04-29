@@ -299,15 +299,14 @@ create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
 }
 
 get_pars_short_name <- function(object) {
-
     pars <- list()
     pars["u0"] <- object$sigma_subject_intercept
     pars["u1"] <- object$sigma_subject_slope
     pars["u01"] <- object$cor_subject
     pars["v0"] <- object$sigma_cluster_intercept
     pars["v1"] <- object$sigma_cluster_slope
-    pars["v2"] <- object$sigma_cluster_intercept_tx
-    pars["v3"] <- object$sigma_cluster_slope_tx
+    pars["v2"] <- object$sigma_cluster_intercept_crossed
+    pars["v3"] <- object$sigma_cluster_slope_crossed
     pars["v01"] <- object$cor_cluster_intercept_slope
     pars["v02"] <- object$cor_cluster_intercept_intercept_tx
     pars["v03"] <- object$cor_cluster_intercept_slope_tx
@@ -355,7 +354,6 @@ make_random_formula_pn <- function(x0, x01, x1) {
     } else if(!is.na(x0) & !is.na(x1) & !is.na(x01)) {
         f <- "(0 + treatment + treatment:time | cluster)"
     } else if(!is.na(x0) & !is.na(x1) & is.na(x01)) {
-
         f <- "(0 + treatment + treatment:time || cluster)"
     }
     f

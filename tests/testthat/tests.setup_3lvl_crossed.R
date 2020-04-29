@@ -1,4 +1,14 @@
 
+
+
+
+get_ICC_slope(p)
+get_ICC_slope(p, interaction = TRUE)
+
+get_ICC_pre_subjects(p)
+get_ICC_pre_clusters(p)
+get_ICC_pre_clusters(p, interaction = TRUE)
+
 # Messages
 test_that("ignore n3", {
     expect_message(study_parameters(n1 = 10,
