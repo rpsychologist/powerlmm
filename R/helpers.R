@@ -62,6 +62,10 @@ get_ICC_slope.plcp_crossed <- function(object, interaction = FALSE) {
 get_ICC_slope.plcp_multi <- function(object, ...) {
     get_ICC_slope.plcp(object)
 }
+#' @export
+get_ICC_slope.plcp_multi_crossed <- function(object, ...) {
+    get_ICC_slope.plcp_crossed(object, ...)
+}
 
 
 #' Calculates the ratio of the slope variance to the within-subjects error variance
@@ -164,6 +168,10 @@ get_ICC_pre_subjects.plcp_crossed <- function(object, ...) {
 get_ICC_pre_subjects.plcp_multi <- function(object, ...) {
     get_ICC_pre_subjects.plcp(object)
 }
+#' @export
+get_ICC_pre_subjects.plcp_multi_crossed <- function(object, ...) {
+    get_ICC_pre_subjects.plcp_crossed(object)
+}
 
 ##
 ## ICC_pre_clusters
@@ -225,8 +233,10 @@ get_ICC_pre_clusters.plcp_crossed <- function(object, interaction = FALSE) {
 get_ICC_pre_clusters.plcp_multi <- function(object, ...) {
     get_ICC_pre_clusters.plcp(object)
 }
-
-
+#' @export
+get_ICC_pre_clusters.plcp_multi_crossed <- function(object, ...) {
+    get_ICC_pre_clusters.plcp_crossed(object)
+}
 
 var_T <- function(n1, T_end) {
     time <- seq(0, T_end, length.out = n1)

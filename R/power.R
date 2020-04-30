@@ -681,7 +681,7 @@ power_worker <- function(object, df, alpha, use_satterth, ...) {
                               Lind = Lind,
                               crossed = crossed)
             Phi <- varb(Lc = diag(4))
-            se <- sqrt(Phi[4,4])
+            se <- sqrt(Phi[4, 4])
             calc_type <- "matrix"
         } else {
             se <- get_se_classic(prepped)
@@ -1029,8 +1029,3 @@ print.plcp_multi_power <- function(x, ...) {
 
     out_dense
 }
-
-
-
-
-

@@ -27,6 +27,7 @@ solve_subject_slope <- function(sigma_subject_slope, tmp) {
 solve_cluster_intercept <- function(
     sigma_subject_intercept,
     sigma_cluster_intercept,
+    sigma_cluster_intercept_crossed = NULL,
     tmp, 
     crossed = FALSE) {
     if (is.null(sigma_cluster_intercept)) {
@@ -46,7 +47,7 @@ solve_cluster_intercept <- function(
             tmp$sigma_cluster_intercept <- sqrt(v0)
         }
     }
-    if (crossed) {
+    if (crossed && is.null(sigma_cluster_intercept_crossed)) {
         icc_cluster_crossed <- tmp$icc_pre_cluster_crossed
         icc_cluster_crossed[is.na(icc_cluster_crossed) || is.null(icc_cluster_crossed)] <- 0    
         tot_cluster_var <- tmp$sigma_cluster_intercept^2
@@ -62,6 +63,7 @@ solve_cluster_slope <- function(
     icc_slope,
     sigma_subject_slope,
     sigma_cluster_slope,
+    sigma_cluster_slope_crossed = NULL,
     tmp,
     crossed = FALSE) {
     if (is.null(sigma_cluster_slope)) {
@@ -82,7 +84,7 @@ solve_cluster_slope <- function(
             }
         }
     }
-    if (crossed) {
+    if (crossed && is.null(sigma_cluster_slope_crossed)) {
         icc_cluster_crossed <- tmp$icc_slope_crossed
         icc_cluster_crossed[is.na(icc_cluster_crossed) || is.null(icc_cluster_crossed)] <- 0
         tot_cluster_var <- tmp$sigma_cluster_slope^2
@@ -269,6 +271,8 @@ study_parameters.plcp_design_crossed <- function(design,
                                      ...) {
 
 
+    
+    print("crossed")
     # deprecated Cohen's d
     if(!is.null(cohend)) {
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
@@ -308,9 +312,11 @@ study_parameters.plcp_design_crossed <- function(design,
         icc_pre_cluster_crossed = icc_pre_cluster_crossed,
         effect_size = effect_size,
         dropout = dropout,
-        deterministic_dropout = deterministic_dropout
+        deterministic_dropout = deterministic_dropout,
+        family = design$family
     )
     save_call <- args
+    save_call$design <- design
 
     tmp_args <- args[!vapply(args, is.null, logical(1))]
 
@@ -369,6 +375,7 @@ study_parameters.plcp_design_crossed <- function(design,
     tmp <- solve_cluster_intercept(
         sigma_subject_intercept = sigma_subject_intercept,
         sigma_cluster_intercept = sigma_cluster_intercept,
+        sigma_cluster_intercept_crossed = sigma_cluster_intercept_crossed,
         tmp = tmp,
         crossed = TRUE
     )
@@ -377,6 +384,7 @@ study_parameters.plcp_design_crossed <- function(design,
         icc_slope = icc_slope,
         sigma_subject_slope = sigma_subject_slope,
         sigma_cluster_slope = sigma_cluster_slope,
+        sigma_cluster_slope_crossed = sigma_cluster_slope_crossed,
         tmp = tmp,
         crossed = TRUE
     )
@@ -394,23 +402,22 @@ study_parameters.plcp_design_crossed <- function(design,
 
 
     # Single or multi?
-    if((is.data.frame(paras) & nrow(paras) == 1)) {
-        paras <- as.list(paras)
-    }
+    paras <- .make_single_or_multi(paras, model = "crossed")
 
     paras$design <- "plcp_design_crossed"
     # avoid problems with prepare_paras()
     paras$partially_nested <- FALSE
     paras$custom_model <- FALSE
-    if(is.data.frame(paras)) {
-        class(paras) <- append(c("plcp_multi"), class(paras))
-    } else class(paras) <- append(c("plcp_crossed", "plcp"), class(paras))
-    #
+    # if(is.data.frame(paras)) {
+    #     class(paras) <- append(c("plcp_multi"), class(paras))
+    # } else class(paras) <- append(c("plcp_crossed", "plcp"), class(paras))
+    # #
     # # Default cor_*
     # if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
     # if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
 
     # # Classes
+     class(paras) <- append(class(paras), c("plcp_crossed"))
     # if(all(is.na(paras$sigma_cluster_slope)) &
     #    all(is.na(paras$sigma_cluster_intercept))) {
     #     class(paras) <- append(class(paras), c("plcp_2lvl"))

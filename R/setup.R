@@ -1,15 +1,15 @@
 
-#' @export
-study_parameters <- function(design = study_design(nested = TRUE,
-                                                   levels = 3,
-                                                   groups = 2,
-                                                   time_form = "linear"), ...) {
-    UseMethod("study_parameters")
-}
+# #' @export
+# study_parameters <- function(design = study_design(nested = TRUE,
+#                                                    levels = 3,
+#                                                    groups = 2,
+#                                                    time_form = "linear"), ...) {
+#     UseMethod("study_parameters")
+# }
 
-study_parameters.default <- function(...) {
-    study_parameters.plcp_design_crossed(...)
-}
+# study_parameters.default <- function(...) {
+#     study_parameters.plcp_design_crossed(...)
+# }
 
 # checks
 .check_dropout_arg <- function(dropout) {
@@ -298,6 +298,8 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
                              deterministic_dropout = TRUE, ...) {
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
+
+    print("nested")
 
     # deprecated Cohen's d
     if(!is.null(cohend)) {
@@ -851,7 +853,6 @@ get_dropout_post <- function(object) {
 
 prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     paras <- object
-
     n2 <- lapply(1:nrow(paras), function(i) {
         x <- get_n2(as.plcp(paras[i,]))
 
@@ -956,6 +957,9 @@ get_multi_title.plcp_2lvl <- function(object) {
 }
 get_multi_title.plcp_3lvl <- function(object) {
    "# Multi-study setup (three-level)"
+}
+get_multi_title.plcp_multi_crossed <- function(object) {
+   "# Multi-study setup (three-level, crossed)"
 }
 
 select_setup_cols <- function(x) {
