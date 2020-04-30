@@ -201,6 +201,36 @@ get_balanced_df.default <- function(object) {
     df
 }
 
+get_balanced_df.plcp_crossed <- function(object) {
+
+    if(is.null(object$prepared)) {
+        pp <- prepare_paras(object)
+    } else pp <- object
+
+    n2_cc <- get_tot_n(pp$control)$control
+    n2_tx <- get_tot_n(pp$treatment)$treatment
+
+    n3_cc <- pp$control$n3
+    n3_tx <- pp$treatment$n3
+
+
+    df <- ifelse(pp$treatment$sigma_cluster_slope_crossed == 0, n3_cc - 1, (n2_tx + n2_cc) - 2)
+    df <- ifelse(pp$treatment$sigma_cluster_slope_crossed > 0, n3_cc - 1, df)
+    df <- ifelse(is.na(pp$treatment$sigma_cluster_slope_crossed), (n2_tx + n2_cc) - 2, df)
+
+
+    # if(pp$treatment$sigma_cluster_slope == 0) {
+    #     df <- (n2_tx + n2_cc) - 2
+    # } else if(pp$treatment$partially_nested) {
+    #     df <- n3_tx - 1
+    # } else {
+    #     df <- (n3_cc + n3_tx) - 2
+    #
+    # }
+    df
+}
+
+
 get_satterth_df <- function(object, d, pars, Lambdat, X, Zt, L0, Phi, varb) {
     A <- Lambdat %*% Zt
     L <- as(L0, "sparseMatrix")
@@ -221,9 +251,9 @@ get_satterth_df <- function(object, d, pars, Lambdat, X, Zt, L0, Phi, varb) {
 
     ## delta method
     vv <- vcovAdj16_internal(Phi, SigmaG, X)
-    Lc <- c(0,0,0,1)
+    Lc <- c(0, 0, 0, 1)
     g <- gradient(function(x)  as.numeric(varb(x = x, Lc)), x = pars[!is.na(pars)], delta = 1e-4)
-    df <- 2*(Phi[4,4])^2 / (t(g) %*% vv %*% g)
+    df <- 2 * (Phi[4,4])^2 / (t(g) %*% vv %*% g)
     df <- as.numeric(df)
 
     df

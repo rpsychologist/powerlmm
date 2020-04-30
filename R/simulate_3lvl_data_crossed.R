@@ -62,8 +62,8 @@ create_cluster_index_crossed <- function(n2) {
     tot_n2 <- length(unlist(cluster))
     subject <- rep(1:tot_n2, each = n1) # subject IDs
     
-    TX <- rep(0.5, length(cluster$treatment), each = n1)
-    CC <- rep(-0.5, length(cluster$control), each = n1)
+    TX <- rep(0, length(cluster$treatment), each = n1)
+    CC <- rep(1, length(cluster$control), each = n1)
     TX <- c(CC, TX)
 
     # level-2 variance matrix

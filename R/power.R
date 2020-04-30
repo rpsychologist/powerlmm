@@ -126,6 +126,8 @@ get_power <- function(object, df = "between", alpha = 0.05, progress = TRUE, R =
 #' @export
 print.plcp_power_3lvl <- function(x, ...) {
    .p <- x
+   print(.p$design)
+   crossed <- .p$paras$design == "plcp_design_crossed"
 
    partially_nested <- .p$paras$partially_nested
    MCSE <- 0
@@ -138,7 +140,7 @@ print.plcp_power_3lvl <- function(x, ...) {
 
        .p$paras$n3 <- per_treatment(mean(unlist(n3$control)),
                                     mean(unlist(n3$treatment)))
-       x <- prepare_print_plcp_3lvl(.p$paras)
+       x <- prepare_print_plcp_3lvl(.p$paras, crossed = crossed)
        width <- attr(x, "width")
 
       #.p$paras$n2 <- per_treatment(mean(unlist(tot_n$control)),
@@ -152,10 +154,14 @@ print.plcp_power_3lvl <- function(x, ...) {
        #x$tot_n <- mean(unlist(.p$tot_n))
        .p$df <- mean(unlist(.p$df))
        #x$se <- mean(unlist(x$se))
-   } else x <- prepare_print_plcp_3lvl(.p$paras)
+   } else x <- prepare_print_plcp_3lvl(.p$paras, crossed = crossed)
 
 
-   x$method <- "Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)\n                  with missing data and unbalanced designs"
+   x$method <- paste0(
+       "Power Analysis for Longitudinal Linear Mixed-Effects Models ",
+       "(3-level,", ifelse(crossed, " crossed",""), ")",
+       "\n                  with missing data and unbalanced designs"
+       )
    x$df <- .p$df
    x$alpha <- .p$alpha
    if(MCSE > 0) {
@@ -180,7 +186,7 @@ print.plcp_power_3lvl <- function(x, ...) {
     print(x, ...)
 
     if(partially_nested & !.p$satterth) {
-        message("N.B: Satterthwaite dfs are recommended for partially-nested models, or calculate power with 'simulate.plcp'")
+        message("N.B: Satterthwaite dfs are recommended for partially-nested models, or calculate power using 'simulate.plcp'")
     }
 }
 
@@ -216,7 +222,9 @@ print.plcp_power_2lvl <- function(x, ...) {
     x$df <- .p$df
     x$alpha <- .p$alpha
     x$power <- paste(round(.p$power * 100, 0), "%")
-    x$method <- "Power Analysis for Longitudinal Linear Mixed-Effects Models\n            with missing data and unbalanced designs"
+    x$method <- paste0(
+        "Power Analysis for Longitudinal Linear Mixed-Effects Models\n",
+        "            with missing data and unbalanced designs")
     if(.p$R > 1) x$note <- paste0("Sample size is random. Values are the mean from R = ", .p$R, " realizations.")
     print(x)
 
@@ -814,6 +822,7 @@ get_power.plcp <- function(object, df = "between", alpha = 0.05, progress = TRUE
 
     if("plcp_2lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_2lvl")
     if("plcp_3lvl" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
+    if("plcp_crossed" %in% class(object))  class(out) <- append(class(out), "plcp_power_3lvl")
 
     out
 }

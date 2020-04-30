@@ -91,7 +91,7 @@ solve_cluster_slope <- function(
         tmp$sigma_cluster_slope <-
             sqrt(tot_cluster_var * (1 - icc_cluster_crossed))
         tmp$sigma_cluster_slope_crossed <-
-            sqrt(tot_cluster_var * icc_cluster_crossed)
+            sqrt(tot_cluster_var * tmp$icc_slope_crossed)
     }
     tmp
 }
