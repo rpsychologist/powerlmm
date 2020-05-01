@@ -73,7 +73,7 @@ create_cluster_index_crossed <- function(n2) {
         sigma_subject_intercept * sigma_subject_slope * cor_subject,
         sigma_subject_slope^2
     )
-    Sigma_subject = matrix(Sigma_subject, 2, 2) # variances
+    Sigma_subject <- matrix(Sigma_subject, 2, 2) # variances
 
     # level-3 variance matrix
     cV0V1 <- sigma_cluster_intercept * sigma_cluster_slope * cor_cluster_intercept_slope
@@ -94,7 +94,8 @@ create_cluster_index_crossed <- function(n2) {
     cluster_lvl <-
         MASS::mvrnorm(length(unique(cluster$treatment)),
                       mu = c(0, 0, 0, 0),
-                      Sigma = Sigma_cluster, empirical = FALSE)
+                      Sigma = Sigma_cluster, 
+                      empirical = FALSE)
 
     if (is.null(dim(cluster_lvl))) {
         # if theres only one therapist
