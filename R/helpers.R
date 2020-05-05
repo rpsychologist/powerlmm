@@ -280,11 +280,22 @@ NA_or_zero <- function(x) {
 # convert NA paras to 0
 # used e.g. in get_SDS()
 NA_to_zero <- function(object) {
-    ind <- c("sigma_subject_intercept", "sigma_subject_slope", "cor_subject",
-             "sigma_cluster_intercept", "sigma_cluster_slope", "cor_cluster",
-             "sigma_error")
+    ind <- c(
+        "sigma_subject_intercept",
+        "sigma_subject_slope",
+        "cor_subject",
+        "sigma_cluster_intercept",
+        "sigma_cluster_slope",
+        "cor_cluster",
+        "cor_cluster_intercept_slope",
+        "cor_cluster_intercept_intercept_tx",
+        "cor_cluster_intercept_slope_tx",
+        "cor_cluster_slope_intercept_tx",
+        "cor_cluster_slope_slope_tx",
+        "cor_cluster_intercept_tx_slope_tx",
+        "sigma_error")
 
-    for(i in ind) {
+    for (i in ind) {
         x <- object[[i]]
         object[[i]][is.na(x)] <- 0
     }

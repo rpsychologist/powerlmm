@@ -200,6 +200,35 @@ get_sds.plcp <- function(object, treatment = "treatment", n = NULL) {
 }
 
 #' @export
+get_sds.plcp_crossed <- function(object, treatment = "treatment", n = NULL) {
+    p <- get_pars_short_name(object)
+    time <- get_time_vector(object)
+    treatment <- as.numeric(treatment == "treatment")
+    v_2 <- with(p, u0^2 + 2 * u01 * time + u1^2 * time^2)
+    v_3 <- with(p,
+        v0^2 +
+            2 * v01 * time +
+            v1^2 * time^2 +
+            (
+                v2^2 +
+                    2 * v02 +
+                    2 * v03 * time +
+                    2 * v12 * time +
+                    2 * v13 * time^2 +
+                    2 * v23 * time +
+                    v3^2 * time^2
+            ) * treatment
+    )
+    tot <- v_2 + v_3 + object$sigma_error^2
+    sds <- sqrt(tot)
+    res <- data.frame(time = time,
+        SD = sds,
+        SD_no_random_slopes = sds[1])
+    class(res) <- append(c("plcp_sds"), class(res))
+    res
+}
+
+#' @export
 get_sds.plcp_multi <- function(object, treatment = "treatment", n = 1) {
     get_sds.plcp(as.plcp(object[n, ]), treatment = treatment)
 
@@ -229,13 +258,11 @@ get_sds_ <- function(sigma_subject_intercept,
      sds_lvl2 <- sqrt((u0^2 + 2*u01*time + u1^2*time^2 + v0^2 + error^2))
 
      res <- data.frame(time = time,
-                       SD_with_random_slopes = sds,
+                       SD = sds,
                        SD_no_cluster_random_slope = sds_lvl2,
                        SD_no_random_slopes = sqrt(u0^2 + v0^2 + error^2))
 
      res
-
-
 }
 
 
@@ -251,7 +278,7 @@ plot.plcp_sds <- function(x, ...) {
      res <- .res
      res$time <- round(res$time,1)
 
-     p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "SD_with_random_slopes")) +
+     p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "SD")) +
          ggplot2::geom_hline(ggplot2::aes_string(color = "'Random slopes = 0'",
                          yintercept = "SD_no_random_slopes")) +
          ggplot2::geom_line(ggplot2::aes(color = "With random slopes")) +
@@ -273,8 +300,8 @@ plot.plcp_sds <- function(x, ...) {
 #' @param ... Optional arguments.
 #' @export
 #' @method print plcp_sds
-print.plcp_sds <- function(x, ...) {
-    print.data.frame(x, digits = 2, ...)
+print.plcp_sds <- function(x, digits = 2, ...) {
+    print.data.frame(x, digits = digits, ...)
 }
 
 
@@ -303,14 +330,13 @@ print.plcp_sds <- function(x, ...) {
 #'                           icc_slope = 0.05,
 #'                           var_ratio = 0.03)
 #' get_correlation_matrix(paras)
-get_correlation_matrix <- function(object) {
+get_correlation_matrix <- function(object, ...) {
     UseMethod("get_correlation_matrix")
 }
 
 #' @export
 get_correlation_matrix.plcp <- function(object) {
     paras <- NA_to_zero(object)
-
 
     u0 <- paras$sigma_subject_intercept
     u1 <- paras$sigma_subject_slope
@@ -342,6 +368,41 @@ get_correlation_matrix.plcp <- function(object) {
 
     class(V) <- append(class(V), "plcp_ICC2")
 
+    V
+}
+#' @export
+get_correlation_matrix.plcp_crossed <- function(object, treatment = "treatment", cov = FALSE) {
+    treatment = as.numeric(treatment == "treatment")
+    paras <- NA_to_zero(object)
+    p <- get_pars_short_name(paras)
+    Sigma_cluster <- with(p,
+        c(
+            v0^2, v01, v02, v03,
+            v01, v1^2, v12, v13,
+            v02, v12, v2^2, v23,
+            v03, v13, v23, v3^2)
+    )
+    D2 <- matrix(Sigma_cluster, 4, 4)
+    error <- paras$sigma_error
+    u01 <- paras$cor_subject * u0 * u1
+    time <- get_time_vector(paras)
+    n1 <- paras$n1
+    n2 <- paras$n2
+    sx2 <- sum((time - mean(time))^2) / n1
+    X <- matrix(c(rep(1, n1), time), ncol = 2)
+    Z <- X
+    Z2 <- cbind(Z, X * treatment)
+    D <- matrix(
+        c(
+            u0^2, u01,
+            u01, u1^2
+        ),
+        ncol = 2)
+    V <- Z %*% D %*% t(Z) + Z2 %*% D2 %*% t(Z2) + error^2 * diag(n1)
+    if(!cov) V <- cov2cor(V)
+    time_rounded <- round(time, 1)
+    dimnames(V) <- list(time_rounded, time_rounded)
+    class(V) <- append(class(V), "plcp_ICC2")
     V
 }
 #' @rdname get_correlation_matrix
@@ -402,10 +463,7 @@ plot.plcp_ICC2 <- function(x, ...) {
 #'
 #' @method print plcp_ICC2
 #' @export
-print.plcp_ICC2 <- function(x, ...) {
+print.plcp_ICC2 <- function(x, digits = 2, ...) {
     x <- unclass(x)
-    print(round(x, 2), ...)
+    print(round(x, digits = digits), ...)
 }
-
-
-

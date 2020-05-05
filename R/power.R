@@ -307,22 +307,30 @@ create_lmer_formula.plcp_nested <- function(object, n = NULL, ...) {
 }
 
 get_pars_short_name <- function(object) {
-    pars <- list()
-    pars["u0"] <- object$sigma_subject_intercept
-    pars["u1"] <- object$sigma_subject_slope
-    pars["u01"] <- object$cor_subject
-    pars["v0"] <- object$sigma_cluster_intercept
-    pars["v1"] <- object$sigma_cluster_slope
-    pars["v2"] <- object$sigma_cluster_intercept_crossed
-    pars["v3"] <- object$sigma_cluster_slope_crossed
-    pars["v01"] <- object$cor_cluster_intercept_slope
-    pars["v02"] <- object$cor_cluster_intercept_intercept_tx
-    pars["v03"] <- object$cor_cluster_intercept_slope_tx
-    pars["v12"] <- object$cor_cluster_slope_intercept_tx
-    pars["v13"] <- object$cor_cluster_slope_slope_tx
-    pars["v23"] <- object$cor_cluster_intercept_tx_slope_tx
+    p <- list()
+    p["u0"] <- object$sigma_subject_intercept
+    p["u1"] <- object$sigma_subject_slope
+    p["ru01"] <- object$cor_subject
+    p["v0"] <- object$sigma_cluster_intercept
+    p["v1"] <- object$sigma_cluster_slope
+    p["v2"] <- object$sigma_cluster_intercept_crossed
+    p["v3"] <- object$sigma_cluster_slope_crossed
+    p["r01"] <- object$cor_cluster_intercept_slope
+    p["r02"] <- object$cor_cluster_intercept_intercept_tx
+    p["r03"] <- object$cor_cluster_intercept_slope_tx
+    p["r12"] <- object$cor_cluster_slope_intercept_tx
+    p["r13"] <- object$cor_cluster_slope_slope_tx
+    p["r23"] <- object$cor_cluster_intercept_tx_slope_tx
+    #cov to cor
+    p["u01"] <- with(p, u0 * u1 * ru01)
+    p["v01"] <- with(p, v0 * v1 * r01)
+    p["v02"] <- with(p, v0 * v2 * r02)
+    p["v03"] <- with(p, v0 * v3 * r03)
+    p["v12"] <- with(p, v1 * v2 * r12)
+    p["v13"] <- with(p, v1 * v3 * r13)
+    p["v23"] <- with(p, v2 * v3 * r23)
 
-    pars
+    p
 }
 
 create_lmer_formula.plcp_crossed <- function(object, n = NULL, ...) {
@@ -630,12 +638,12 @@ setup_power_calc.plcp_crossed <- function(object, d, f) {
                  v1 = v1^2,
                  v2 = v2^2,
                  v3 = v3^2,
-                 v01 = v0 * v1 * v01,
-                 v02 = v0 * v2 * v02,
-                 v03 = v0 * v3 * v03,
-                 v12 = v1 * v2 * v12,
-                 v13 = v1 * v3 * v13,
-                 v23 = v2 * v3 * v23,
+                 v01 = v01,
+                 v02 = v02,
+                 v03 = v03,
+                 v12 = v12,
+                 v13 = v13,
+                 v23 = v23,
                  sigma = object$sigma_error^2)
                  )
 
