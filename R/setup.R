@@ -567,15 +567,15 @@ get_slope_diff <- function(object, ...) {
 #' @rdname get_slope_diff
 #' @export
 get_slope_diff.plcp <- function(object) {
-    object$sigma_subject_intercept[is.na(object$sigma_subject_intercept)] <- 0
-    object$sigma_cluster_intercept[is.na(object$sigma_cluster_intercept)] <- 0
+    #object$sigma_subject_intercept[is.na(object$sigma_subject_intercept)] <- 0
+    #object$sigma_cluster_intercept[is.na(object$sigma_cluster_intercept)] <- 0
+    #object <- NA_to_zero(object)
 
     if(inherits(object$effect_size[[1]], "plcp_cohend")) {
         slope <- object$effect_size[[1]]$set(object)
     } else if(is.numeric(unlist(object$effect_size))) {
         slope <- unlist(object$effect_size)
     }
-
     slope
 }
 #' @rdname get_slope_diff
@@ -759,13 +759,10 @@ cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
         f <- calc_slope_from_d(ES, time = "post", treatment = treatment)
     } else if(standardizer == "slope_SD") {
         f <- function(paras) {
-            p <- NA_to_zero(paras)
-            p <- prepare_paras(p)
-            if(treatment == "control") {
-                with(p$control, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
-            } else {
-                with(p$treatment, ES * sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
-            }
+            slope_SD <- get_slope_SD(paras, treatment = treatment)
+            T_end <- paras$T_end
+
+            ES * slope_SD * T_end
         }
     }
     get <- function() {
@@ -780,13 +777,35 @@ cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
     list(x)
 
 }
+
+get_slope_SD <- function(object, treatment = "control") {
+    UseMethod("get_slope_SD")
+}
+get_slope_SD.plcp_nested <- function(object, treatment = "control") {
+    p <- NA_to_zero(object)
+    p <- prepare_paras(p)
+    if (treatment == "control") {
+        with(p$control, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+    } else {
+        with(p$treatment, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+    }
+}
+get_slope_SD.plcp_crossed <- function(object, treatment = "control") {
+    p <- NA_to_zero(object)
+    p <- prepare_paras(p)
+    if (treatment == "control") {
+        with(p$control, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+    } else {
+        with(p$treatment, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+    }
+}
 # cohend
 calc_slope_from_d <- function(ES, time, treatment) {
     function(paras) {
         paras <- NA_to_zero(paras)
         SD <- get_sds(paras, treatment = treatment)
         ind <- ifelse(time == "post", nrow(SD), 1)
-        SD <- SD[ind, "SD_with_random_slopes"]
+        SD <- SD[ind, "SD"]
         ES * SD
     }
 }

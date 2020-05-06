@@ -384,7 +384,6 @@ get_correlation_matrix.plcp_crossed <- function(object, treatment = "treatment",
     )
     D2 <- matrix(Sigma_cluster, 4, 4)
     error <- paras$sigma_error
-    u01 <- paras$cor_subject * u0 * u1
     time <- get_time_vector(paras)
     n1 <- paras$n1
     n2 <- paras$n2
@@ -392,12 +391,13 @@ get_correlation_matrix.plcp_crossed <- function(object, treatment = "treatment",
     X <- matrix(c(rep(1, n1), time), ncol = 2)
     Z <- X
     Z2 <- cbind(Z, X * treatment)
-    D <- matrix(
-        c(
-            u0^2, u01,
-            u01, u1^2
-        ),
-        ncol = 2)
+    D <- with(p,
+        matrix(
+            c(
+                u0^2, u01,
+                u01, u1^2
+            ),
+            ncol = 2))
     V <- Z %*% D %*% t(Z) + Z2 %*% D2 %*% t(Z2) + error^2 * diag(n1)
     if(!cov) V <- cov2cor(V)
     time_rounded <- round(time, 1)

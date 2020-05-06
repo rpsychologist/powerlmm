@@ -269,18 +269,12 @@ study_parameters.plcp_design_crossed <- function(design,
                                      dropout = 0L,
                                      deterministic_dropout = TRUE,
                                      ...) {
-
-
-    
     print("crossed")
     # deprecated Cohen's d
     if(!is.null(cohend)) {
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
-
     if(is.per_treatment(n3)) stop("the number of clusters can't differ per preatment in a crossed design.", call. = FALSE)
-
-
     args <- list(
         n1 = n1,
         n2 = n2,
@@ -317,11 +311,7 @@ study_parameters.plcp_design_crossed <- function(design,
     )
     save_call <- args
     save_call$design <- design
-
     tmp_args <- args[!vapply(args, is.null, logical(1))]
-
-
-
     ## Default NA
     if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
         tmp_args$icc_pre_subject <- NA
