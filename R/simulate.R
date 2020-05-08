@@ -479,7 +479,8 @@ simulate_data.plcp_custom <- function(paras, n = NULL) {
 #'
 #' \Strong{RNG seed and reproducibility}
 #' For simulations that are run in parallel (\code{cores} > 1) the seed is set using
-#' \code{parallel::clusterSetRNGStream}, which uses the "L'Ecuyer-CMRG" RNG. 
+#' \code{parallel::clusterSetRNGStream}, which uses the "L'Ecuyer-CMRG" RNG. Thus 
+#' reproducible results will require that the same number of \code{cores} are used. 
 #' 
 #' \strong{Saving intermediate results for multi-sims}
 #'
