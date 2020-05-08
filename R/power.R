@@ -110,7 +110,7 @@
 #'
 #' # Satterthwaite DFs
 #' get_power(paras, df = "satterthwaite")
-#' @importFrom parallel makeCluster parLapply stopCluster
+#' @importFrom parallel makeCluster parLapply stopCluster clusterSetRNGStream
 get_power <- function(object, df = "between", alpha = 0.05, progress = TRUE, R = 1L, cores = 1L, ...) {
     UseMethod("get_power")
 }

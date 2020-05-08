@@ -796,7 +796,14 @@ get_slope_SD.plcp_crossed <- function(object, treatment = "control") {
     if (treatment == "control") {
         with(p$control, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
     } else {
-        with(p$treatment, sqrt(sigma_subject_slope^2 + sigma_cluster_slope^2) * T_end)
+        T_end <- p$treatment$T_end
+        lvl2 <- with(p$treatment, sigma_subject_slope^2)
+        lvl3 <- with(p$treatment,
+            sigma_cluster_slope^2 +
+                2 * sigma_cluster_slope * sigma_cluster_slope_crossed *
+                    cor_cluster_slope_slope_tx +
+                sigma_cluster_slope_crossed^2)
+        sqrt(lvl2 + lvl3) * T_end
     }
 }
 # cohend
@@ -1069,7 +1076,6 @@ prepare_paras <- function(paras) {
 }
 prepare_paras.default <- function(paras) {
     paras_tx <- paras
-
     per_tx_n2 <- FALSE
     if (is.per_treatment(paras$n3)) {
         n3_tx <- paras$n3[[1]]$treatment
@@ -1080,13 +1086,9 @@ prepare_paras.default <- function(paras) {
        attr(paras$n3, "per_treatment") <- TRUE
        attr(paras_tx$n3, "per_treatment") <- TRUE
     }
-
     if(is.per_treatment(paras$n2)) {
-
         paras_tx$n2 <- paras$n2[[1]]$treatment
         paras$n2 <- paras$n2[[1]]$control
-
-
         if(is.unequal_clusters(paras$n2)) {
             paras$n2 <- eval_n2(paras$n2)
             paras$n3 <- length(paras$n2)
@@ -1094,9 +1096,7 @@ prepare_paras.default <- function(paras) {
         if(is.unequal_clusters(paras_tx$n2)) {
             paras_tx$n2 <- eval_n2(paras_tx$n2)
             paras_tx$n3 <- length(paras_tx$n2)
-
         }
-
         per_tx_n2 <- TRUE
 
     } else {
@@ -1107,7 +1107,6 @@ prepare_paras.default <- function(paras) {
         paras$n3 <- length(unlist(paras$n2))
         paras_tx$n3 <-  paras$n3
     }
-
     if(is.per_treatment(paras$fixed_cluster_intercepts)) {
         paras_tx$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$treatment
         paras$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$control
@@ -1285,7 +1284,6 @@ is.unequal_clusters <- function(x) {
     if(is.per_treatment(x)) {
         tx <- x[[1]]$treatment[[1]]
         cc <- x[[1]]$control[[1]]
-
         res <- any(c(class(tx), class(cc)) == "plcp_unequal_clusters")
     } else res <- class(x[[1]]) == "plcp_unequal_clusters"
 

@@ -388,8 +388,7 @@ simulate_data.plcp_crossed <- function(paras, n = NULL) {
         paras <- paras$control
     }
 
-    # doesn't matter if tmp$control or tx
-    slope_diff <- get_slope_diff(tmp$control) / paras$T_end
+    slope_diff <- get_slope_diff(paras) / paras$T_end
     paras$effect_size <- NULL
 
     paras$n2 <- list(control = tmp$control$n2,
@@ -424,7 +423,7 @@ simulate_data.plcp_custom <- function(paras, n = NULL) {
 #'
 #' @param object An object created by \code{\link{study_parameters}}.
 #' @param nsim The number of simulations to run.
-#' @param seed Currently ignored.
+#' @param seed Numeric, optional value to set the seed of the random number generator, see \emph{Details}.
 #' @param formula Model formula(s) used to analyze the data, see \emph{Details}.
 #' Should be created using \code{\link{sim_formula}}. It is also possible to compare multiple
 #' models, e.g. a correct and a misspecified model, by combining the formulas using \code{\link{sim_formula_compare}}.
@@ -441,8 +440,8 @@ simulate_data.plcp_custom <- function(paras, n = NULL) {
 #' non-interactive Unix environment forking is utilized.
 #' @param progress \code{logical}; will display progress if \code{TRUE}. Currently
 #' ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress,
-#' which relies on forking. \strong{N.B} using a progress bar will noticeably
-#' increase the simulation time, due to the added overhead.
+#' which relies on forking. \strong{N.B} using a progress bar can sometimes noticeably
+#' increase the simulation time.
 #' @param batch_progress \code{logical}; if \code{TRUE} progress will be shown for
 #' simulations with multiple setups.
 #' @param ... Optional arguments, see \emph{Saving} in \emph{Details} section.
@@ -478,6 +477,10 @@ simulate_data.plcp_custom <- function(paras, n = NULL) {
 #' Confidence intervals are both calculated using profile likelihood and by
 #' the Wald approximation, using a 95 \% confidence level.
 #'
+#' \Strong{RNG seed and reproducibility}
+#' For simulations that are run in parallel (\code{cores} > 1) the seed is set using
+#' \code{parallel::clusterSetRNGStream}, which uses the "L'Ecuyer-CMRG" RNG. 
+#' 
 #' \strong{Saving intermediate results for multi-sims}
 #'
 #' Objects with multi-sims can be save after each batch is finished. This is highly
@@ -629,6 +632,7 @@ simulate.plcp <- function(object,
         simulate.plcp_list(
             object = object,
             nsim = nsim,
+            seed = seed,
             formula = formula,
             satterthwaite = satterthwaite,
             CI = CI,
@@ -640,6 +644,7 @@ simulate.plcp <- function(object,
         simulate.plcp_data_frame(
             object = object,
             nsim = nsim,
+            seed = seed,
             formula = formula,
             satterthwaite = satterthwaite,
             CI = CI,
@@ -651,6 +656,32 @@ simulate.plcp <- function(object,
     }
 }
 
+
+make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
+    # FORK
+    if (.Platform$OS.type == "unix" && !interactive()) {
+        if (is.null(cl)) {
+            cl <- parallel::makeCluster(min(cores, nsim), type = "FORK")
+        }
+    } else {
+        # PSOCK
+        if (is.null(cl)) {
+            cl <- parallel::makeCluster(min(cores, nsim), type = "PSOCK")
+            parallel::clusterEvalQ(cl, expr =
+                suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
+            # load brms if needed
+            requires_brms <- vapply(formula, inherits, what = "plcp_brmsformula", logical(1))
+            if (any(requires_brms)) {
+                check_installed("brms")
+                parallel::clusterEvalQ(cl, expr =
+                    suppressPackageStartupMessages(require(brms, quietly = TRUE)))
+            }
+        }
+    }
+    # seed
+    if (!is.null(seed) & is.numeric(seed)) parallel::clusterSetRNGStream(cl, iseed = seed)
+    cl
+}
 
 #' @rdname simulate.plcp
 #' @export
@@ -669,7 +700,7 @@ simulate.plcp_multi <- function(object,
     simulate.plcp(
         object = object,
         nsim = nsim,
-        seed = NULL,
+        seed = seed,
         satterthwaite = satterthwaite,
         CI = CI,
         formula = formula,
@@ -698,6 +729,9 @@ simulate.plcp_list <-
 
         if (progress & !is_windows) {
             check_installed("pbmcapply")
+            if(!is.null(seed) & is.numeric(seed)) {
+                 message("Seed is ignored if 'progress = TRUE'")
+            }
             res <-
                 pbmcapply::pbmclapply(
                     1:nsim,
@@ -709,45 +743,24 @@ simulate.plcp_list <-
                     mc.cores = cores,
                     ...
                 )
-        } else if (cores > 1 | !is.null(cl)) {
-            if(.Platform$OS.type == "unix" && !interactive()) {
-                res <- parallel::mclapply(X = 1:nsim,
-                                 FUN = simulate_,
-                                 paras = object,
-                                 formula = formula,
-                                 satterthwaite = satterthwaite,
-                                 CI = CI,
-                                 mc.cores = cores,
-                                 ...)
-            } else {
-                if(is.null(cl)) {
-                    cl <- parallel::makeCluster(min(cores, nsim))
-                    on.exit(parallel::stopCluster(cl))
-                }
-                parallel::clusterEvalQ(cl, expr =
-                                           suppressPackageStartupMessages(require(powerlmm, quietly = TRUE)))
-                requires_brms <- vapply(formula, inherits, what = "plcp_brmsformula", logical(1))
-                if(any(requires_brms)) {
-                    check_installed("brms")
-                    parallel::clusterEvalQ(cl, expr =
-                                               suppressPackageStartupMessages(require(brms, quietly = TRUE)))
-                }
-                clust_call <- (function(object, satterthwaite, formula, CI) {
-                    function(i) {
-                        simulate_(i,
-                                  paras = object,
-                                  satterthwaite = satterthwaite,
-                                  formula = formula,
-                                  CI = CI)
-                    }
-                })(object, satterthwaite, formula, CI)
-
-                res <- parLapply(cl,
-                                 X = 1:nsim,
-                                 clust_call
-                                )
+        } else if (cores > 1) {
+            if(is.null(cl)) {
+                cl <- make_cluster(cl = cl, cores = cores, nsim = nsim, seed = seed)
+                on.exit(parallel::stopCluster(cl))
             }
+      
+           
+            # perform sim
+            res <- parLapply(cl,
+                                X = 1:nsim,
+                                fun = simulate_,
+                                paras = object,
+                                satterthwaite = satterthwaite,
+                                formula = formula,
+                                CI = CI
+                            )
         } else {
+            if(!is.null(seed) & is.numeric(seed)) set.seed(seed)
             res <- lapply(1:nsim,
                              FUN = simulate_,
                              paras = object,
@@ -802,15 +815,12 @@ simulate.plcp_data_frame <-
                     stop("Directory '", save_folder, "' does not exist.")
                 }
             }
-
             output_dir <- format(Sys.time(), "%Y%m%d_%H%M_%S")
             output_dir <- file.path(save_folder, output_dir)
             dir.create(output_dir)
             if(!dir.exists(output_dir)) stop("Could not create save directory.")
-
             cat("Each batch is being saved to: ", output_dir, "\n", sep = "")
         }
-
         res <- lapply(1:nrow(object), function(i) {
             if (batch_progress) {
                 cat("\rBatch: ",
@@ -820,10 +830,9 @@ simulate.plcp_data_frame <-
                     rep(" ", options()$width - 13))
                 cat("\n")
             }
-
-            if(is.null(cl) & cores > 1 & interactive()) {
+            if(is.null(cl) & cores > 1) {
                 # to avoid init workers for each batch
-                cl <- parallel::makeCluster(cores)
+                cl <- make_cluster(cl = cl, cores = cores, nsim = nsim, seed = seed)
                 on.exit(parallel::stopCluster(cl))
             }
             x <- simulate.plcp_list(
@@ -834,11 +843,11 @@ simulate.plcp_data_frame <-
                 CI = CI,
                 cores = cores,
                 progress = progress,
-                cl = cl
+                cl = cl,
+                seed = NULL
             )
-
             if (save) {
-                fname <- paste("sim", i, ".rds", sep ="")
+                fname <- paste("sim", i, ".rds", sep = "")
                 f <- file.path(output_dir, fname)
                 saveRDS(x, f)
             }
