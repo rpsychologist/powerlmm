@@ -2028,21 +2028,20 @@ get_RE_thetas.plcp_nested <- function(paras, ...) {
 get_RE_thetas.plcp_crossed <- function(paras, ...) {
     list(
         "subject_intercept" = paras$sigma_subject_intercept^2,
-            "subject_slope" = paras$sigma_subject_slope^2,
-            "cluster_intercept" = paras$sigma_cluster_intercept^2,
-            "cluster_intercept_tx" = paras$sigma_cluster_intercept_crossed^2,
-            "cluster_slope" = paras$sigma_cluster_slope^2,
-            "cluster_slope_tx" = paras$sigma_cluster_slope_crossed^2,
-            "error" = paras$sigma_error^2,
-            "cor_subject" = paras$cor_subject,
-            "cor_cluster_intercept_slope" = paras$cor_cluster_intercept_slope,
-            "cor_cluster_intercept_intercept_tx" = paras$cor_cluster_intercept_intercept_tx,
-            "cor_cluster_intercept_slope_tx" = paras$cor_cluster_intercept_slope_tx,
-            "cor_cluster_intercept_tx_slope_tx" = paras$cor_cluster_intercept_tx_slope_tx,
-            "cor_cluster_slope_intercept_tx" = paras$cor_cluster_slope_intercept_tx,
-            "cor_cluster_slope_slope_tx" = paras$cor_cluster_slope_slope_tx
-        )
-
+        "subject_slope" = paras$sigma_subject_slope^2,
+        "cluster_intercept" = paras$sigma_cluster_intercept^2,
+        "cluster_intercept_tx" = paras$sigma_cluster_intercept_crossed^2,
+        "cluster_slope" = paras$sigma_cluster_slope^2,
+        "cluster_slope_tx" = paras$sigma_cluster_slope_crossed^2,
+        "error" = paras$sigma_error^2,
+        "cor_subject" = paras$cor_subject,
+        "cor_cluster_intercept_slope" = paras$cor_cluster_intercept_slope,
+        "cor_cluster_intercept_intercept_tx" = paras$cor_cluster_intercept_intercept_tx,
+        "cor_cluster_intercept_slope_tx" = paras$cor_cluster_intercept_slope_tx,
+        "cor_cluster_intercept_tx_slope_tx" = paras$cor_cluster_intercept_tx_slope_tx,
+        "cor_cluster_slope_intercept_tx" = paras$cor_cluster_slope_intercept_tx,
+        "cor_cluster_slope_slope_tx" = paras$cor_cluster_slope_slope_tx
+    )
 }
 get_RE_thetas.plcp_custom <- function(paras, ...) {
     list()
