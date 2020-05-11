@@ -659,6 +659,7 @@ simulate.plcp <- function(object,
 
 
 make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
+    print("Make cluster")
     # FORK
     if (.Platform$OS.type == "unix" && !interactive()) {
         if (is.null(cl)) {
@@ -680,8 +681,20 @@ make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
         }
     }
     # seed
-    if (!is.null(seed) & is.numeric(seed)) parallel::clusterSetRNGStream(cl, iseed = seed)
+    if (!is.null(seed) & is.numeric(seed)) {
+        set.seed(seed)
+        parallel::clusterSetRNGStream(cl)
+    }
+    # allow use  of '.Random.seed' from glob env, 
+    # e.g. if a multi-sim has crashed
+    if(seed == ".Random.seed") parallel::clusterSetRNGStream(cl)
     cl
+}
+get_random_seed <- function() {
+    save_seed <- if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
+        get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    else NULL
+    save_seed
 }
 
 #' @rdname simulate.plcp
@@ -696,7 +709,6 @@ simulate.plcp_multi <- function(object,
                                 progress = FALSE,
                                 batch_progress = TRUE,
                                 ...) {
-
     if(is.null(formula)) stop("Argument 'formula' is missing. Automatic formula creation is not yet supported for multi-sim objects")
     simulate.plcp(
         object = object,
@@ -724,6 +736,7 @@ simulate.plcp_list <-
              save_folder = NULL,
              save_folder_create = NULL,
              cl = NULL,
+             i = NULL,
              ...) {
         ptm <- proc.time()
         is_windows <- .Platform$OS.type == "windows"
@@ -748,9 +761,14 @@ simulate.plcp_list <-
             if(is.null(cl)) {
                 cl <- make_cluster(cl = cl, cores = cores, nsim = nsim, seed = seed)
                 on.exit(parallel::stopCluster(cl))
+            }        
+            if(!is.null(seed) && !is.null(i) && i > 1) {
+                # force update of global rng seed
+                # so that we can save a global seed for this run
+                sample.int(1)
+                parallel::clusterSetRNGStream(cl)
             }
-      
-           
+            save_seed <- get_random_seed()
             # perform sim
             res <- parLapply(cl,
                                 X = 1:nsim,
@@ -762,6 +780,7 @@ simulate.plcp_list <-
                             )
         } else {
             if(!is.null(seed) & is.numeric(seed)) set.seed(seed)
+            save_seed <- get_random_seed()
             res <- lapply(1:nsim,
                              FUN = simulate_,
                              paras = object,
@@ -772,15 +791,14 @@ simulate.plcp_list <-
 
         }
         time <- proc.time() - ptm
-
-
         out <-
             list(
                 res = res,
                 paras = object,
                 nsim = nsim,
                 time = time["elapsed"],
-                formula = formula
+                formula = formula,
+                seed = save_seed
             )
         out <- munge_results(out)
         if(inherits(formula, "plcp_compare_sim_formula")) {
@@ -822,6 +840,11 @@ simulate.plcp_data_frame <-
             if(!dir.exists(output_dir)) stop("Could not create save directory.")
             cat("Each batch is being saved to: ", output_dir, "\n", sep = "")
         }
+        if (is.null(cl) & cores > 1) {
+            # to avoid init workers for each batch
+            cl <- make_cluster(cl = cl, cores = cores, nsim = nsim, seed = seed)
+            on.exit(parallel::stopCluster(cl))
+        }
         res <- lapply(1:nrow(object), function(i) {
             if (batch_progress) {
                 cat("\rBatch: ",
@@ -830,11 +853,6 @@ simulate.plcp_data_frame <-
                     nrow(object),
                     rep(" ", options()$width - 13))
                 cat("\n")
-            }
-            if(is.null(cl) & cores > 1) {
-                # to avoid init workers for each batch
-                cl <- make_cluster(cl = cl, cores = cores, nsim = nsim, seed = seed)
-                on.exit(parallel::stopCluster(cl))
             }
             x <- simulate.plcp_list(
                 as.plcp(object[i,]),
@@ -845,7 +863,8 @@ simulate.plcp_data_frame <-
                 cores = cores,
                 progress = progress,
                 cl = cl,
-                seed = NULL
+                seed = TRUE,
+                i = i
             )
             if (save) {
                 fname <- paste("sim", i, ".rds", sep = "")
