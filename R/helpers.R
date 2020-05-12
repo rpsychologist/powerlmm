@@ -786,6 +786,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
 
 }
 
+#' @export
+plot.plcp_crossed <- plot.plcp_nested
 
 .plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
@@ -1342,4 +1344,48 @@ check_installed <- function(x) {
    x <- x[!pkg]
 
    if(length(x) > 0) stop(paste("Please install packages: ", paste(x, collapse = ", ")))
+}
+
+
+get_lvl2_vcov <- function(pars) {
+    UseMethod("get_lvl2_vcov")
+}
+get_lvl2_vcov.plcp_nested <- function(object) {
+    p <- object
+    m <- with(p,
+        c(
+            sigma_subject_intercept^2,
+            sigma_subject_intercept * sigma_subject_slope * cor_subject,
+            sigma_subject_intercept * sigma_subject_slope * cor_subject,
+            sigma_subject_slope^2
+        )
+    )
+    m <- matrix(m, 2, 2)
+    m
+}
+get_lvl2_vcov.plcp_crossed <- get_lvl2_vcov.plcp_nested
+
+
+get_lvl3_vcov <- function(object) {
+    UseMethod("get_lvl3_vcov")
+}
+get_lvl3_vcov.plcp_nested <- function(object) {
+
+}
+
+get_lvl3_vcov.plcp_crossed <- function(object) {
+    p <- object
+    cV0V1 <- with(p, sigma_cluster_intercept * sigma_cluster_slope * cor_cluster_intercept_slope)
+    cV0V2 <- with(p, sigma_cluster_intercept * sigma_cluster_intercept_crossed * cor_cluster_intercept_intercept_tx)
+    cV0V3 <- with(p, sigma_cluster_intercept * sigma_cluster_slope_crossed * cor_cluster_intercept_slope_tx)
+    cV1V2 <- with(p, sigma_cluster_slope * sigma_cluster_intercept_crossed * cor_cluster_slope_intercept_tx)
+    cV1V3 <- with(p, sigma_cluster_slope * sigma_cluster_slope_crossed * cor_cluster_slope_slope_tx)
+    cV2V3 <- with(p, sigma_cluster_intercept_crossed * sigma_cluster_slope_crossed * cor_cluster_intercept_tx_slope_tx)
+    m <- c(p$sigma_cluster_intercept^2, cV0V1, cV0V2, cV0V3,
+        cV0V1, p$sigma_cluster_slope^2, cV1V2, cV1V3,
+        cV0V2, cV1V2, p$sigma_cluster_intercept_crossed^2, cV2V3,
+        cV0V3, cV1V3, cV2V3, p$sigma_cluster_slope_crossed^2)
+    m <- matrix(m, 4, 4)
+    m
+
 }

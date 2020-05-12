@@ -35,21 +35,15 @@ marginalize.plcp_nested <- function(object,
     )
     R_cov3 <- matrix(Sigma_cluster, 2, 2)
     R_cov3[is.na(R_cov3)] <- 0
-
     d <- .create_dummy_d(pars)
-
     betas <- with(pars, c(fixed_intercept,
                           fixed_slope,
                           0,
                           get_slope_diff(pars)/pars$T_end))
-
-    Xmat <- model.matrix(~time * treatment,
+    X <- model.matrix(~time * treatment,
                          data = d)
-
-
-    Zmat <- model.matrix(~time,
+    Z <- model.matrix(~time,
                          data = d)
-
     if(pars$family == "gamma") {
         sigma_error <- NULL
         shape <- pars$shape
@@ -57,14 +51,14 @@ marginalize.plcp_nested <- function(object,
         sigma_error <- pars$sigma_error
         shape <- NULL
     }
-
     .func <- ifelse(vectorize,
                     ".marginalize_nested_sim_vec",
                     ".marginalize_nested_sim")
     out <- do.call(.func, list(d = d,
                                betas = betas,
-                               Xmat = Xmat,
-                               Zmat = Zmat,
+                               X = X,
+                               Z2 = Z,
+                               Z3 = Z,
                                R_cov2 = R_cov2,
                                R_cov3 = R_cov3,
                                sigma = sigma_error,
@@ -132,6 +126,9 @@ marginalize.plcp_nested <- function(object,
 # marginalize hurdle ests over random effects
 .marginalize_nested_sim <- function(d,
                              betas,
+                             X,
+                             Z2,
+                             Z3,
                              R_cov2,
                              R_cov3,
                              sigma,
@@ -142,28 +139,16 @@ marginalize.plcp_nested <- function(object,
                              link_scale = FALSE,
                              full = FALSE,
                              ...) {
-
-
-    sd2 <- MASS::mvrnorm(R, c(0,0), R_cov2)
-    sd3 <- MASS::mvrnorm(R, c(0,0), R_cov3)
-    sd0 <- sd2 + sd3
-    X <- model.matrix(~time * treatment,
-                      data = d)
-
+    sd2 <- MASS::mvrnorm(R, rep(0, ncol(R_cov2)), R_cov2)
+    sd3 <- MASS::mvrnorm(R, rep(0, ncol(R_cov3)), R_cov3)
     Xmat <- X %*% betas
-    Z <- model.matrix(~time,
-                      data = d)
-
     XtX <- crossprod(X)
-
     inv_link <- .get_inv_link(family, sigma)
     link <- .get_link(family, sigma)
-
     if(link_scale) {
         inv_link <- function(eta) eta
         link <- function(eta) eta
     }
-
     calc_eta <- function(i) {
         if(partially_nested) {
             tx <- d[i, "treatment"]
@@ -171,24 +156,21 @@ marginalize.plcp_nested <- function(object,
             sd0 <- sd2 + sd3
         }
         # level 2 (includes lvl 3)
-        mu2 <- Xmat[i, ] + c(Z[i, ] %*% t(sd0[, c(1,2)]))
+        v <- c(Z3[i, ] %*% t(sd3))
+        mu2 <- Xmat[i, ] + c(Z2[i, ] %*% t(sd2)) + v
         #level 3 only
-        mu3 <- Xmat[i, ] + c(Z[i, ] %*% t(sd3[, c(1,2)]))
-
+        mu3 <- Xmat[i, ] + v
         exp_mu2 <- inv_link(mu2)
         exp_mu3 <- inv_link(mu3)
-
         if(i %in% which(d$time == max(d$time))) {
             ps <- (1:99)/100
             post <- data.frame("percentile" = ps,
                                "value" = quantile(exp_mu2, ps),
                                "treatment" = d[i, "treatment"]
             )
-
         } else {
             post <- NULL
         }
-
         out <- list(marg_y2 = eta_sum(exp_mu2),
                     marg_y3 = eta_sum(exp_mu3),
                     post = post,
