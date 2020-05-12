@@ -902,17 +902,10 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
 
 
 # Checks ------------------------------------------------------------------
-
-# checks
-
-
 check_formula <- function(formula) {
     if(!inherits(formula, "plcp_sim_formula") & !inherits(formula, "plcp_compare_sim_formula")) {
         stop("`formula` should be created using `sim_formula` or `sim_formula_compare`", call. = FALSE)
     }
-    #if (!all(names(formula) %in% c("correct", "wrong")))
-    #    stop("Formula names must be either 'correct' or 'wrong'")
-
     if(inherits(formula, "plcp_sim_formula")) formula <- list("default" = formula)
     if (inherits(formula, "plcp_compare_sim_formula") & length(names(formula)) > 1) {
         if (length(names(formula)) != length(unique(names(formula)))) {
@@ -921,19 +914,13 @@ check_formula <- function(formula) {
             )
         }
     }
-
-    #for (f in formula)
-    #    check_formula_terms(f)
-
     formula
 }
 check_formula_terms <- function(f) {
     f <- as.formula(f$formula)
-
     x <- all.vars(f)
     ind <- x %in% c("y", "y_c", "treatment", "time", "subject", "cluster")
     wrong <- x[!ind]
-
     if (length(wrong) > 0) {
         stop(
             paste(
@@ -942,7 +929,6 @@ check_formula_terms <- function(f) {
             )
         )
     }
-
     # test functions
     x <- all.vars(f, functions = TRUE)
     ind <- x %in% c("y", "y_c", "treatment", "time", "subject", "cluster")
@@ -958,11 +944,7 @@ check_formula_terms <- function(f) {
         )
     }
 }
-
-
-
 # analyze -----------------------------------------------------------------
-
 fit_model <- function(formula, data, ...) {
     UseMethod("fit_model")
 }

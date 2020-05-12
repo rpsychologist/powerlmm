@@ -179,7 +179,7 @@ marginalize.plcp_nested <- function(object,
         exp_mu3 <- inv_link(mu3)
 
         if(i %in% which(d$time == max(d$time))) {
-            ps <- 1:99/100
+            ps <- (1:99)/100
             post <- data.frame("percentile" = ps,
                                "value" = quantile(exp_mu2, ps),
                                "treatment" = d[i, "treatment"]
@@ -226,7 +226,6 @@ marginalize.plcp_nested <- function(object,
     #
     names(coefs) <- c("median",
                       "marginal")
-
     coefs <- list("y" = coefs)
 
     # posttest
@@ -254,7 +253,6 @@ marginalize.plcp_nested <- function(object,
     )
     post <- data.frame(var = rownames(post),
                        est = post, row.names = NULL)
-
     list(coefs = coefs,
          y2 = marg_y,
          y3 = marg_y3,
@@ -263,8 +261,6 @@ marginalize.plcp_nested <- function(object,
          mu2_vec = tmp$exp_mu2_vec,
          mu3_vec = tmp$exp_mu3_vec
     )
-
-
 }
 
 
@@ -288,8 +284,8 @@ marginalize.plcp_nested <- function(object,
 
     Xeta <- Xmat %*% betas
     Xeta_hu <- Xmat %*% betas_hu
-    mu <- c(Xeta) + tcrossprod(Zmat, sd0[, c(1,2)])
-    hu <- c(Xeta_hu) + tcrossprod(Zmat, sd0[, c(3,4)])
+    mu <- c(Xeta) + tcrossprod(Zmat, sd0[, c(1, 2)])
+    hu <- c(Xeta_hu) + tcrossprod(Zmat, sd0[, c(3, 4)])
     p <- plogis(hu)
     if(marginal) {
         if(family == "gamma") {
@@ -299,19 +295,15 @@ marginalize.plcp_nested <- function(object,
             # Y
             mu_overall <- mu + sd_log^2/2
         }
-
     }  else {
         if(family == "gamma") {
             # Y
             mu_overall <- mu + log(1 - p)
-
         } else if(family == "lognormal") {
             # Y
             mu_overall <- mu + log(1 - p) + sd_log^2/2
         }
-
     }
-
     exp_mu_overall <- exp( mu_overall)
     d$marg_overall <- matrixStats::rowMeans2(exp_mu_overall)
     d$median_overall <- matrixStats::rowMedians(exp_mu_overall)

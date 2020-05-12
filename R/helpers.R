@@ -466,7 +466,7 @@ reshape_eta_sum <- function(x) {
 }
 
 
-# Calc linera predictor level 2 and 3
+# Calc linear predictor level 2 and 3
 #
 # @param d data.frame for tx group
 # @treatment treatment indicator
@@ -788,26 +788,20 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
 
 
 .plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
-
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
     Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
-
     if(overlay) {
         # Overlay L1 trajectory on L2 panel
         tmp <- x[x$var == "Within-subject", ]
-
         # silently ignore overlay when RE_level != 1
         if(nrow(tmp) > 0) {
             tmp$var <- "Subject"
             tmp$color <- "L1"
         }
-
-
         x$color <- NA
         x[x$var == "Within-subject", "color"] <- "L1"
         x[x$var == "Subject", "color"] <- "L2"
         x[x$var == "Cluster", "color"] <- "L3"
-
         x$color <- factor(x$color, levels = c("L1", "L2", "L3"))
 
         x <- rbind(x, tmp)
@@ -996,7 +990,7 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
                       linetype = "median",
                       fill = NULL,
                       group = interaction(treatment, var)), size = 1) +
-        geom_blank(data = lims, aes(x = mean, y=time)) +
+        geom_blank(data = lims, aes(x = mean, y = time)) +
         coord_flip() +
         theme_minimal() +
         #scale_x_continuous(expand = c(0, 0)) +
