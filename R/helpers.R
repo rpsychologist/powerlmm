@@ -786,6 +786,8 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
 
 }
 
+#' @export
+plot.plcp_crossed <- plot.plcp_nested
 
 .plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
