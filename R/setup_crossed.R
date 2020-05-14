@@ -269,7 +269,6 @@ study_parameters.plcp_design_crossed <- function(design,
                                      dropout = 0L,
                                      deterministic_dropout = TRUE,
                                      ...) {
-    print("crossed")
     # deprecated Cohen's d
     if(!is.null(cohend)) {
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")

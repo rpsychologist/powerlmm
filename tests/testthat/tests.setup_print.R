@@ -69,7 +69,7 @@ test_that("setup print 3-lvl nested", {
                           sigma_error = 1.44,
                           cohend = 0.5)
 
-    expect_output(str(print(p)),  "Study setup \\(three-level\\)")
+    expect_output(str(print(p)),  "Study setup \\(three-level, nested\\)")
     expect_output(str(print(p)), "n1 = 10")
     expect_output(str(print(p)), "n2 = 10000 x 5")
     expect_output(str(print(p)), "n3 = 5")
@@ -105,7 +105,7 @@ test_that("setup print 3-lvl nested", {
                           dropout = dropout_weibull(.3, 2),
                           cohend = 0.5)
 
-    expect_output(str(print(p)),  "Study setup \\(three-level\\)")
+    expect_output(str(print(p)),  "Study setup \\(three-level, nested\\)")
     expect_output(str(print(p)), "n2 = 10000 x 5")
     expect_output(str(print(p)), "50050")
     expect_output(str(print(p)), " 0,  0,  2,  4,  7, 10, 15, 19, 25, 30 \\(%, control\\)")
@@ -143,32 +143,34 @@ test_that("setup print 3-lvl crossed", {
         n3 = 5,
         icc_pre_subject = 0.5,
         icc_pre_cluster = 0.1,
-         icc_pre_cluster_crossed = 0.25,
+        icc_pre_cluster_crossed = 0.25,
         var_ratio = 0.03,
         icc_slope = 0.05,
         icc_slope_crossed = 0.5,
         sigma_error = 100,
         cohend = 0.5)
 
-    expect_output(str(print(p)),  "Study setup \\(three-level, crossed\\)")
+    expect_output(str(print(p)), "Study setup \\(three-level, crossed\\)")
     expect_output(str(print(p)), "n1 = 10")
     expect_output(str(print(p)), "n2 = 10000 x 5")
     expect_output(str(print(p)), "n3 = 5")
     expect_output(str(print(p)), "50050")
 
     # with dropout
-    p <- study_parameters(n1 = 10,
-                          n2 = per_treatment(10, 10000),
-                          n3 = 5,
-                          sigma_subject_intercept = 1.44,
-                          icc_pre_cluster = NA,
-                          sigma_subject_slope = 0.2,
-                          icc_slope = 0.05,
-                          sigma_error = 1.44,
-                          dropout = dropout_weibull(.3, 2),
-                          cohend = 0.5)
+    p <- study_parameters(
+        design = crossed,
+        n1 = 10,
+        n2 = per_treatment(10, 10000),
+        n3 = 5,
+        sigma_subject_intercept = 1.44,
+        icc_pre_cluster = NA,
+        sigma_subject_slope = 0.2,
+        icc_slope = 0.05,
+        sigma_error = 1.44,
+        dropout = dropout_weibull(.3, 2),
+        cohend = 0.5)
 
-    expect_output(str(print(p)),  "Study setup \\(three-level\\)")
+    expect_output(str(print(p)), "Study setup \\(three-level, crossed\\)")
     expect_output(str(print(p)), "n2 = 10000 x 5")
     expect_output(str(print(p)), "50050")
     expect_output(str(print(p)), " 0,  0,  2,  4,  7, 10, 15, 19, 25, 30 \\(%, control\\)")
