@@ -659,7 +659,6 @@ simulate.plcp <- function(object,
 
 
 make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
-    print("Make cluster")
     # FORK
     if (.Platform$OS.type == "unix" && !interactive()) {
         if (is.null(cl)) {
@@ -687,7 +686,7 @@ make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
     }
     # allow use  of '.Random.seed' from glob env, 
     # e.g. if a multi-sim has crashed
-    if(seed == ".Random.seed") parallel::clusterSetRNGStream(cl)
+    if(!is.null(seed) && seed == ".Random.seed") parallel::clusterSetRNGStream(cl)
     cl
 }
 get_random_seed <- function() {
@@ -986,8 +985,8 @@ analyze_data <- function(formula, d) {
                     d <- f$data_transform(d)
 
             #}
-            fit <- tryCatch(fit_model(f, data = d),
-                            error = fit_error)
+            fit <- suppressWarnings(suppressMessages(tryCatch(fit_model(f, data = d),
+                            error = fit_error)))
 
            list("fit" = fit,
                 "test" = f$test,
@@ -2066,7 +2065,7 @@ summarize_convergence <- function(paras, convergence) {
     UseMethod("summarize_convergence")
 }
 summarize_convergence.default <- function(paras, convergence) {
-    mean(convergence)
+    mean(unlist(convergence))
 }
 summarize_convergence.plcp_brmsformula <- function(paras, convergence) {
     # no divergent transition per sim

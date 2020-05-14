@@ -81,7 +81,6 @@ test_that("sim LRT", {
     f2 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
     f <- sim_formula_compare("m0" = f0, "m1" = f1, "m2" = f2)
 
-
     res <- simulate(p, formula = f, nsim = 4, satterthwaite = FALSE, cores = 1, CI = FALSE)
 
     x <-  summary(res)

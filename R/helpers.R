@@ -500,15 +500,16 @@ reshape_eta_sum <- function(x) {
                             var2 = "mu2_vec",
                             var3 = "mu3_vec",
                             tx_var = "y2",
-                            level1_func = .sample_level1_nested,
+                            level1_func = ".sample_level1_nested",
                             ...) {
+    #level1_func <- get(level1_func)
+    l1_fn <- get(level1_func)
     res1 <- NULL
     res2 <- NULL
     res3 <- NULL
 
     if(any(RE_level == 1)) {
-        x1 <- level1_func(x$paras,
-                                    ...)
+        x1 <- l1_fn(x$paras, ...)
         res1 <- lapply(1:nrow(x1[["y"]]), function(i) {
             tmp <- data.frame(y = x1[[var1]][[i]])
             tmp$treatment <- x1[["y"]][i, "treatment"]
@@ -608,7 +609,7 @@ reshape_eta_sum <- function(x) {
                       caption = caption) +
         ggplot2::theme_minimal()
 }
-.plot_link <- function(object, RE_level, show = TRUE, ...) {
+.plot_link <- function(object, RE_level, show = FALSE, ...) {
     # To get RE intervals
     m <- marginalize(object, link_scale = TRUE, ...)
     p <- plot.plcp_marginal_nested(m,
@@ -621,7 +622,7 @@ reshape_eta_sum <- function(x) {
     }
     return(invisible(p))
 }
-.plot_link_ridges <- function(object, RE_level, show = TRUE, ...) {
+.plot_link_ridges <- function(object, RE_level, show = FALSE, ...) {
     # To get RE intervals
     m <- marginalize(object, link_scale = TRUE, ...)
     p <- plot.plcp_marginal_nested(m,
@@ -680,7 +681,7 @@ reshape_eta_sum <- function(x) {
             )
         }
 
-        p0 <- ggplot(tmp, aes(percentile, diff, fill = fill)) +
+        p0 <- ggplot(tmp, ggplot2::aes(percentile, diff, fill = fill)) +
             geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
             #geom_hline(yintercept = 0, linetype = "solid", size = 0.75) +
             geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75) +
@@ -710,7 +711,7 @@ reshape_eta_sum <- function(x) {
             )
         }
 
-        p1 <- ggplot(tmp, aes(percentile, ratio)) +
+        p1 <- ggplot(tmp, ggplot2::aes(percentile, ratio)) +
             geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
             #geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
             geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
@@ -766,24 +767,24 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
      }
      if(type == "trend") {
          if(RE) {
-             .plot_link(paras,
+            p <- .plot_link(paras,
                         RE_level = RE_level,
                         ...) +
-                 labs(y = "y (link scale)")
+                 ggplot2::labs(y = "y (link scale)")
          } else {
-             .plot_trend(paras, ...)
+            p <- .plot_trend(paras, ...)
          }
      } else if(type == "trend_ridges") {
-         .plot_link_ridges(paras,
+         p <-.plot_link_ridges(paras,
                            RE_level = RE_level,
                            ...)
 
      } else if(type == "dropout") {
-         .plot_dropout(paras)
+        p <- .plot_dropout(paras)
      } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
-        .plot_diff(x, type = type, hu = hu)
+       p <- .plot_diff(x, type = type, hu = hu)
      }
-
+     p
 }
 
 #' @export
@@ -810,28 +811,28 @@ plot.plcp_crossed <- plot.plcp_nested
     }
 
     plot_struct <- list(
-                        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
-                        guides(color = guide_legend(override.aes = list(fill = NA))),
-                        scale_fill_brewer(palette = "PuBu"), # PuBu
-                        scale_color_manual(values = c("#192a56", "#e84118", "#e84118")),
-                        theme_minimal())
+                        ggplot2::scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
+                        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(fill = NA))),
+                        ggplot2::scale_fill_brewer(palette = "PuBu"), # PuBu
+                        ggplot2::scale_color_manual(values = c("#192a56", "#e84118", "#e84118")),
+                        ggplot2::theme_minimal())
 
     if(RE) {
-        ggplot(x, aes(time, mean, group = treatment)) +
-            geom_ribbon(data = Q_long, aes(ymin = min,
+       p <- ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment)) +
+            ggplot2::geom_ribbon(data = Q_long, ggplot2::aes(ymin = min,
                                            ymax = max,
                                            y = NULL,
                                            x = time,
                                            group = interaction(width, treatment),
                                            fill = width),
                         alpha = 0.75) +
-            geom_line(aes(y = Q50,
+            ggplot2::geom_line(ggplot2::aes(y = Q50,
                           color = color,
                           linetype = "median",
                           fill = NULL,
                           group = interaction(color, var, treatment)),
                       size = 1) +
-            geom_line(aes(color = color,
+            ggplot2::geom_line(ggplot2::aes(color = color,
                           linetype = "mean",
                           fill = NULL,
                           group = interaction(color, var, treatment)),
@@ -840,31 +841,32 @@ plot.plcp_crossed <- plot.plcp_nested
             #                color =
             #                    color)) +
             #scale_color_manual(values = c("median" = "red", "mean" = "red")) +
-            facet_wrap(~treatment, ncol = 2) +
+            ggplot2::facet_wrap(~treatment, ncol = 2) +
             plot_struct
     } else {
-        ggplot(x, aes(time, mean, group = treatment, color = treatment)) +
-            geom_line(aes(linetype = "mean", fill = NULL), size = 1) +
-            geom_line(aes(y = Q50, linetype = "median", fill = NULL), size = 1) +
-            geom_point(aes(y = Q50)) +
+      p <- ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment, color = treatment)) +
+            ggplot2::geom_line(ggplot2::aes(linetype = "mean", fill = NULL), size = 1) +
+            ggplot2::geom_line(ggplot2::aes(y = Q50, linetype = "median", fill = NULL), size = 1) +
+            ggplot2::geom_point(ggplot2::aes(y = Q50)) +
             plot_struct
     }
-
-
+    p
 }
 
 .make_nested_trend <- function(object, RE, RE_level,
                                var1 = "y",
                                var2 = "y2",
                                var3 = "y3",
-                               level1_func = .sample_level1_nested,
+                               level1_func = ".sample_level1_nested",
                                ...) {
+
+    l1_fn <- get(level1_func)
     y1 <- NULL
     y2 <- NULL
     y3 <- NULL
 
     if(any(RE_level == 1)) {
-        x1 <- do.call(level1_func, list(pars = object$paras, ...))
+        x1 <- do.call(l1_fn, list(pars = object$paras, ...))
         y1 <- x1[[var1]]
     }
     if(any(RE_level == 2)) {
@@ -936,16 +938,16 @@ plot.plcp_crossed <- plot.plcp_nested
 
     if(family != "binomial") res <- subset(res, y > lims$mean[1] & y < lims$mean[2])
 
-    p <- ggplot(res, aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment))
+    p <- ggplot2::ggplot(res, ggplot2::aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment))
 
     if(family == "binomial" & !link_scale) {
         p <- p +
             ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
                                           scale = 0.7, stat = "binline",
-                                          aes(height = ..count..),
+                                          ggplot2::aes(height = ..count..),
                                           bins = 20,
                                           rel_min_height = 0.01,
-                                          color = alpha("white", 0.33),
+                                          color = ggplot2::alpha("white", 0.33),
                                           alpha = 0.75,
                                           size = 0.3)
 
@@ -953,10 +955,10 @@ plot.plcp_crossed <- plot.plcp_nested
         p <- p +
             ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
                                           scale = 0.7, stat = "binline",
-                                          aes(height = ..count..),
+                                          ggplot2::aes(height = ..count..),
                                           binwidth = 1,
                                           rel_min_height = 0.01,
-                                          color = alpha("white", 0.33),
+                                          color = ggplot2::alpha("white", 0.33),
                                           alpha = 0.75,
                                           size = 0.3)
 
@@ -965,41 +967,41 @@ plot.plcp_crossed <- plot.plcp_nested
         p <- p +
             ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
                                           scale = 0.7, stat = stat,
-                                          aes(height = ..count..),
+                                          ggplot2::aes(height = ..count..),
                                           rel_min_height = 0.01,
-                                          color = alpha("white", 0.33),
+                                          color = ggplot2::alpha("white", 0.33),
                                           alpha = 0.75,
                                           size = 0.3)
     }
 
     p + ggridges::geom_density_ridges(data = subset(res, var  %in% c("Subject", "Cluster")), scale = 0.7, stat = stat,
-                                      aes(height = ..count..),
+                                      ggplot2::aes(height = ..count..),
                                       #binwidth = 1,
                                       rel_min_height = 0.01,
-                                      color = alpha("white", 0.33),
+                                      color = ggplot2::alpha("white", 0.33),
                                       alpha = 0.75,
                                       size = 0.3) +
-        geom_path(data = trend$x,
-                  aes(x = mean,
+        ggplot2::geom_path(data = trend$x,
+                  ggplot2::aes(x = mean,
                       y = time,
                       linetype = "mean",
                       fill = NULL,
                       group = interaction(treatment, var)),
                   size = 1) +
-        geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
-                  aes(x = Q50,
+        ggplot2::geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
+                  ggplot2::aes(x = Q50,
                       y = time,
                       linetype = "median",
                       fill = NULL,
                       group = interaction(treatment, var)), size = 1) +
-        geom_blank(data = lims, aes(x = mean, y = time)) +
-        coord_flip() +
-        theme_minimal() +
+        ggplot2::geom_blank(data = lims, ggplot2::aes(x = mean, y = time)) +
+        ggplot2::coord_flip() +
+        ggplot2::theme_minimal() +
         #scale_x_continuous(expand = c(0, 0)) +
-        scale_y_discrete(breaks = unique(sort(res$time))) +
-        facet_wrap(~var, ncol = 2) +
-        scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
-        scale_color_manual(values = c("#30394F", "#c0392b"))
+        ggplot2::scale_y_discrete(breaks = unique(sort(res$time))) +
+        ggplot2::facet_wrap(~var, ncol = 2) +
+        ggplot2::scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
+        ggplot2::scale_color_manual(values = c("#30394F", "#c0392b"))
 
 }
 
@@ -1017,9 +1019,9 @@ plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE
                                     ...)
 
         if(RE) {
-            facets <- list(facet_wrap(var ~ treatment, scales = "free", ncol = 2))
+            facets <- list(ggplot2::facet_wrap(var ~ treatment, scales = "free", ncol = 2))
         } else {
-            facets <- list(facet_wrap(~var, ncol = 1, scales = "free"))
+            facets <- list(ggplot2::facet_wrap(~var, ncol = 1, scales = "free"))
         }
         p <- .plot_marg(x = trend$x,
                         Q_long = trend$Q_long,
@@ -1027,14 +1029,14 @@ plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE
                         ymin = NA,
                         ymax = NA,
                         ...) +
-            geom_blank(data = trend$lims) +
-            labs(linetype = "",
+            ggplot2::geom_blank(data = trend$lims) +
+            ggplot2::labs(linetype = "",
                  color = "",
                  y = "Y",
                  title = "Change over time") +
             facets
 
-        plot(p)
+        #plot(p)
         return(invisible(p))
     ## POST
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {

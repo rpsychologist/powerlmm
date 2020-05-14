@@ -3,11 +3,14 @@
 \name{get_VPC}
 \alias{get_VPC}
 \alias{get_VPC.plcp}
+\alias{get_VPC.plcp_crossed}
 \title{Calculate the variance partitioning coefficient}
 \usage{
-get_VPC(object)
+get_VPC(object, ...)
 
 \method{get_VPC}{plcp}(object)
+
+\method{get_VPC}{plcp_crossed}(object, treatment = "treatment")
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}

@@ -36,7 +36,7 @@
 
 \item{nsim}{The number of simulations to run.}
 
-\item{seed}{Currently ignored.}
+\item{seed}{Numeric, optional value to set the seed of the random number generator, see \emph{Details}.}
 
 \item{formula}{Model formula(s) used to analyze the data, see \emph{Details}.
 Should be created using \code{\link{sim_formula}}. It is also possible to compare multiple
@@ -58,8 +58,8 @@ non-interactive Unix environment forking is utilized.}
 
 \item{progress}{\code{logical}; will display progress if \code{TRUE}. Currently
 ignored on \emph{Windows}. Package \code{pbmclapply} is used to display progress,
-which relies on forking. \strong{N.B} using a progress bar will noticeably
-increase the simulation time, due to the added overhead.}
+which relies on forking. \strong{N.B} using a progress bar can sometimes noticeably
+increase the simulation time.}
 
 \item{batch_progress}{\code{logical}; if \code{TRUE} progress will be shown for
 simulations with multiple setups.}
@@ -97,6 +97,11 @@ changed using the argument \code{test} in \code{\link{sim_formula}}.
 
 Confidence intervals are both calculated using profile likelihood and by
 the Wald approximation, using a 95 \% confidence level.
+
+\Strong{RNG seed and reproducibility}
+For simulations that are run in parallel (\code{cores} > 1) the seed is set using
+\code{parallel::clusterSetRNGStream}, which uses the "L'Ecuyer-CMRG" RNG. Thus 
+reproducible results will require that the same number of \code{cores} are used. 
 
 \strong{Saving intermediate results for multi-sims}
 

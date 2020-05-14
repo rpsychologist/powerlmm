@@ -97,18 +97,18 @@ plot_hurdle_time <- function(x) {
     tmp$width <- factor(tmp$width,
                         levels = rev(c(0.5, 0.8, 0.95, 0.99)))
 
-    ggplot(x, aes(time, mean, group = treatment)) +
-        geom_ribbon(data = tmp, aes(ymin = min, ymax = max, y = NULL, x = time, group = width, fill = width), alpha = 0.75) +
-        geom_line(aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
-        geom_line(aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
-        geom_point(aes(y = Q50), color = "red") +
-        scale_color_manual(values = c("median" = "red", "mean" = "red")) +
-        scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
-        labs(linetype = "", color = "") +
-        guides(color = guide_legend(override.aes = list(fill = NA))) +
-        facet_wrap(~treatment, ncol = 2) +
-        scale_fill_brewer() +
-        theme_minimal()
+    ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment)) +
+        ggplot2::geom_ribbon(data = tmp, ggplot2::aes(ymin = min, ymax = max, y = NULL, x = time, group = width, fill = width), alpha = 0.75) +
+        ggplot2::geom_line(ggplot2::aes(color = "mean", linetype = "mean", fill = NULL), size = 1) +
+        ggplot2::geom_line(ggplot2::aes(y = Q50, color = "median", linetype = "median", fill = NULL), size = 1) +
+        ggplot2::geom_point(ggplot2::aes(y = Q50), color = "red") +
+        ggplot2::scale_color_manual(values = c("median" = "red", "mean" = "red")) +
+        ggplot2::scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")) +
+        ggplot2::labs(linetype = "", color = "") +
+        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(fill = NA))) +
+        ggplot2::facet_wrap(~treatment, ncol = 2) +
+        ggplot2::scale_fill_brewer() +
+        ggplot2::theme_minimal()
 }
 
 

@@ -4,7 +4,7 @@
 \alias{print.plcp_ICC2}
 \title{Print method for \code{get_correlation_matrix}-objects}
 \usage{
-\method{print}{plcp_ICC2}(x, ...)
+\method{print}{plcp_ICC2}(x, digits = 2, ...)
 }
 \arguments{
 \item{x}{An object created by \code{\link{get_correlation_matrix}}}

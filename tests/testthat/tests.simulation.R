@@ -264,7 +264,7 @@ test_that("simulation random n2", {
                           cohend = -0.5)
     res <- simulate(p, nsim = 3, satterthwaite = FALSE,
                     progress = FALSE)
-    tmp <- res$res$default$tot_n[,1]
+    tmp <- unlist(res$res$default$tot_n)
     expect_gt(length(unique(tmp)), 1)
 
     # df_bw
@@ -290,7 +290,7 @@ test_that("simulation random n2 some zero", {
                           cohend = -0.5)
     res <- simulate(p, nsim = 3, satterthwaite = FALSE,
                     progress = FALSE)
-    tmp <- res$res$default$tot_n[,1]
+    tmp <- unlist(res$res$default$tot_n)
     expect_length(unique(tmp), 3)
 
     # df_bw

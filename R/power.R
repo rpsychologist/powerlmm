@@ -674,7 +674,6 @@ power_worker <- function(object, df, alpha, use_satterth, ...) {
         use_matrix_se <- is.unequal_clusters(object$n2) | is.list(object$dropout) | use_satterth
         prepped <- prepare_paras(object)
         if(use_matrix_se || use_matrix_manual) {
-            print("useMatrix")
             d <- simulate_data(prepped)
             f <- lme4::lFormula(formula = create_lmer_formula(object),
                                 data = d)

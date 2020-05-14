@@ -298,9 +298,6 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
                              deterministic_dropout = TRUE, ...) {
 
     #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
-
-    print("nested")
-
     # deprecated Cohen's d
     if(!is.null(cohend)) {
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
@@ -533,6 +530,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
 
 }
 
+#' @export
 study_parameters.default <- study_parameters.plcp_design_nested
 
 study_parameters.plcp_design_custom <- function(design, ..., data_gen = NULL) {
@@ -762,7 +760,7 @@ cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
             slope_SD <- get_slope_SD(paras, treatment = treatment)
             T_end <- paras$T_end
 
-            ES * slope_SD * T_end
+            ES * slope_SD
         }
     }
     get <- function() {
