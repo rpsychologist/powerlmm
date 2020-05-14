@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 # powerlmm
 [![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm)
 [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/powerlmm)](https://cran.r-project.org/package=powerlmm)
+[![](https://cranlogs.r-pkg.org/badges/grand-total/powerlmm)](https://cran.r-project.org/package=powerlmm)
 
 Power Analysis for Longitudinal Multilevel/Linear Mixed-Effects Models.
 

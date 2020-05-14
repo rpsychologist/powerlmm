@@ -2,33 +2,23 @@
 powerlmm
 ========
 
-[![Travis-CI Build
-Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm)
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/powerlmm)](https://cran.r-project.org/package=powerlmm)
+[![Travis-CI Build Status](https://travis-ci.org/rpsychologist/powerlmm.svg?branch=master)](https://travis-ci.org/rpsychologist/powerlmm) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/powerlmm)](https://cran.r-project.org/package=powerlmm) [![](https://cranlogs.r-pkg.org/badges/grand-total/powerlmm)](https://cran.r-project.org/package=powerlmm)
 
 Power Analysis for Longitudinal Multilevel/Linear Mixed-Effects Models.
 
 Overview
 --------
 
-The purpose of `powerlmm` is to help design longitudinal treatment
-studies (parallel groups), with or without higher-level clustering
-(e.g. longitudinally clustered by therapists, groups, or physician), and
-missing data. The main features of the package are:
+The purpose of `powerlmm` is to help design longitudinal treatment studies (parallel groups), with or without higher-level clustering (e.g. longitudinally clustered by therapists, groups, or physician), and missing data. The main features of the package are:
 
--   Longitudinal two- and three-level (nested) linear mixed-effects
-    models, and partially nested designs.
+-   Longitudinal two- and three-level (nested) linear mixed-effects models, and partially nested designs.
 -   Random slopes at the subject- and cluster-level.
 -   Missing data.
--   Unbalanced designs (both unequal cluster sizes, and treatment
-    groups).
--   Design effect, and estimated type I error when the third-level is
-    ignored.
+-   Unbalanced designs (both unequal cluster sizes, and treatment groups).
+-   Design effect, and estimated type I error when the third-level is ignored.
 -   Fast analytical power calculations for all designs.
--   Power for small samples sizes using Satterthwaite’s degrees of
-    freedom approximation.
--   Explore bias, Type I errors, model misspecification, and LRT model
-    selection using convenient simulation methods.
+-   Power for small samples sizes using Satterthwaite's degrees of freedom approximation.
+-   Explore bias, Type I errors, model misspecification, and LRT model selection using convenient simulation methods.
 
 Installation
 ------------
@@ -46,10 +36,7 @@ devtools::install_github("rpsychologist/powerlmm")
 Example usage
 -------------
 
-This is an example of setting up a three-level longitudinal model with
-random slopes at both the subject- and cluster-level, with different
-missing data patterns per treatment arm. Relative standardized inputs
-are used, but unstandardized raw parameters values can also be used.
+This is an example of setting up a three-level longitudinal model with random slopes at both the subject- and cluster-level, with different missing data patterns per treatment arm. Relative standardized inputs are used, but unstandardized raw parameters values can also be used.
 
 ``` r
 library(powerlmm)
@@ -68,7 +55,7 @@ p <- study_parameters(n1 = 11,
 
 p
 #> 
-#>      Study setup (three-level) 
+#>      Study setup (three-level, nested) 
 #> 
 #>               n1 = 11
 #>               n2 = 10 x 5 (treatment)
@@ -97,8 +84,9 @@ plot(p)
 
 ``` r
 get_power(p, df = "satterthwaite")
+#> NULL
 #> 
-#>      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
+#>      Power Analysis for Longitudinal Linear Mixed-Effects Models (3-level,)
 #>                   with missing data and unbalanced designs 
 #> 
 #>               n1 = 11
@@ -118,15 +106,37 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
-#>               df = 7.971459
+#>               df = 7.980828
 #>            alpha = 0.05
 #>            power = 68%
 ```
 
+More vizualisations
+-------------------
+
+``` r
+plot(p, 
+     RE_level = c(1, 2), 
+     type = "trend")
+```
+
+![](man/figures/README-unnamed-chunk-4-1.png)![](man/figures/README-unnamed-chunk-4-2.png)![](man/figures/README-unnamed-chunk-4-3.png)
+
+``` r
+
+plot(p, 
+     RE_level = c(1, 2), 
+     type = "trend_ridges")
+#> Warning in FUN(X[[i]], ...): no non-missing arguments to max; returning -Inf
+
+#> Warning in FUN(X[[i]], ...): no non-missing arguments to max; returning -Inf
+```
+
+![](man/figures/README-unnamed-chunk-4-4.png)
+
 ### Unequal cluster sizes
 
-Unequal cluster sizes is also supported, the cluster sizes can either be
-random (sampled), or the marginal distribution can be specified.
+Unequal cluster sizes is also supported, the cluster sizes can either be random (sampled), or the marginal distribution can be specified.
 
 ``` r
 p <- study_parameters(n1 = 11,
@@ -139,8 +149,9 @@ p <- study_parameters(n1 = 11,
                                            standardizer = "pretest_SD"))
 
 get_power(p)
+#> NULL
 #> 
-#>      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
+#>      Power Analysis for Longitudinal Linear Mixed-Effects Models (3-level,)
 #>                   with missing data and unbalanced designs 
 #> 
 #>               n1 = 11
@@ -176,8 +187,9 @@ p <- study_parameters(n1 = 11,
                                            standardizer = "pretest_SD"))
 
 get_power(p, R = 100, progress = FALSE) # expected power by averaging over R realizations
+#> NULL
 #> 
-#>      Power Analyis for Longitudinal Linear Mixed-Effects Models (three-level)
+#>      Power Analysis for Longitudinal Linear Mixed-Effects Models (3-level,)
 #>                   with missing data and unbalanced designs 
 #> 
 #>               n1 = 11
@@ -186,9 +198,9 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 24.96       (control)
-#>                    24.96       (treatment)
-#>                    49.92       (total)
+#>          total_n = 24.7        (control)
+#>                    24.7        (treatment)
+#>                    49.4        (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
@@ -197,15 +209,14 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 #>               df = 8
 #>            alpha = 0.05
-#>            power = 48% (MCSE: 1%)
+#>            power = 47% (MCSE: 1%)
 #> 
 #> NOTE: n2 is randomly sampled. Values are the mean from R = 100 realizations.
 ```
 
 ### Convenience functions
 
-Several convenience functions are also included, e.g. for creating power
-curves.
+Several convenience functions are also included, e.g. for creating power curves.
 
 ``` r
 x <- get_power_table(p, 
@@ -223,11 +234,7 @@ plot(x)
 Simulation
 ----------
 
-The package includes a flexible simulation method that makes it easy to
-investigate the performance of different models. As an example, let’s
-compare the power difference between the 2-level LMM with 11 repeated
-measures, to doing an ANCOVA at posttest. Using `sim_formula` different
-models can be fit to the same data set during the simulation.
+The package includes a flexible simulation method that makes it easy to investigate the performance of different models. As an example, let's compare the power difference between the 2-level LMM with 11 repeated measures, to doing an ANCOVA at posttest. Using `sim_formula` different models can be fit to the same data set during the simulation.
 
 ``` r
 p <- study_parameters(n1 = 11,
@@ -255,8 +262,7 @@ res <- simulate(p,
                 cores = parallel::detectCores(logical = FALSE))
 ```
 
-We then summarize the results using `summary`. Let’s look specifically
-at the treatment effects.
+We then summarize the results using `summary`. Let's look specifically at the treatment effects.
 
 ``` r
 summary(res, para = list("LMM" = "time:treatment",
@@ -266,8 +272,8 @@ summary(res, para = list("LMM" = "time:treatment",
 #> Fixed effects: 'time:treatment', 'treatment'
 #> 
 #>   model M_est theta M_se SD_est Power Power_bw Power_satt
-#>     LMM  -1.1  -1.1 0.32   0.32  0.93     0.93          .
-#>  ANCOVA -11.0   0.0 3.70   3.70  0.85     0.84       0.84
+#>     LMM  -1.1  -1.1 0.32   0.33  0.93     0.93        NaN
+#>  ANCOVA -11.0   0.0 3.70   3.80  0.85     0.85       0.85
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
@@ -280,8 +286,7 @@ summary(res, para = list("LMM" = "time:treatment",
 #> see 'help(summary.plcp_sim)'
 ```
 
-We can also look at a specific model, here’s the results for the 2-lvl
-LMM.
+We can also look at a specific model, here's the results for the 2-lvl LMM.
 
 ``` r
 summary(res, model = "LMM")
@@ -290,23 +295,24 @@ summary(res, model = "LMM")
 #> Random effects 
 #> 
 #>          parameter  M_est theta est_rel_bias prop_zero is_NA
-#>  subject_intercept  99.00 100.0     -0.00560         0     0
-#>      subject_slope   2.00   2.0     -0.00310         0     0
-#>              error 100.00 100.0      0.00086         0     0
-#>        cor_subject  -0.39  -0.4     -0.03200         0     0
+#>  subject_intercept 100.00 100.0         0.01         0     0
+#>      subject_slope   2.00   2.0         0.01         0     0
+#>              error 100.00 100.0         0.00         0     0
+#>        cor_subject  -0.39  -0.4        -0.01         0     0
 #> 
 #> Fixed effects 
 #> 
-#>       parameter   M_est theta M_se SD_est Power Power_bw Power_satt
-#>     (Intercept)  0.0048   0.0 1.30   1.30 0.050        .          .
-#>            time  0.0011   0.0 0.25   0.25 0.054        .          .
-#>  time:treatment -1.1000  -1.1 0.32   0.32 0.930     0.93          .
+#>       parameter M_est theta M_se SD_est Power Power_bw Power_satt
+#>     (Intercept)  0.04   0.0 1.30   1.30  0.05        .        NaN
+#>            time  0.00   0.0 0.25   0.26  0.07        .        NaN
+#>  time:treatment -1.10  -1.1 0.32   0.33  0.93     0.93        NaN
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
 #> Subjects per cluster (n2 x n3):  40 (treatment)
 #>                                  40 (control)
-#> Total number of subjects:  80 
+#> Total number of subjects:  80
+#> [Model: LMM] 14.3% of the models threw convergence warnings
 #> ---
 #> At least one of the models applied a data transformation during simulation,
 #> summaries that depend on the true parameter values will no longer be correct,
@@ -316,9 +322,7 @@ summary(res, model = "LMM")
 Launch interactive web application
 ----------------------------------
 
-The package’s basic functionality is also implemented in a Shiny web
-application, aimed at users that are less familiar with R. Launch the
-application by typing
+The package's basic functionality is also implemented in a Shiny web application, aimed at users that are less familiar with R. Launch the application by typing
 
 ``` r
 library(powerlmm)

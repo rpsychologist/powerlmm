@@ -4,7 +4,7 @@
 \alias{print.plcp_sds}
 \title{Print method for \code{get_sds}-objects}
 \usage{
-\method{print}{plcp_sds}(x, ...)
+\method{print}{plcp_sds}(x, digits = 2, ...)
 }
 \arguments{
 \item{x}{An object of class \code{plcp_sds}.}

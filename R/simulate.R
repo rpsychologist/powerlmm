@@ -659,7 +659,6 @@ simulate.plcp <- function(object,
 
 
 make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
-    print("Make cluster")
     # FORK
     if (.Platform$OS.type == "unix" && !interactive()) {
         if (is.null(cl)) {
@@ -687,7 +686,7 @@ make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
     }
     # allow use  of '.Random.seed' from glob env, 
     # e.g. if a multi-sim has crashed
-    if(seed == ".Random.seed") parallel::clusterSetRNGStream(cl)
+    if(!is.null(seed) && seed == ".Random.seed") parallel::clusterSetRNGStream(cl)
     cl
 }
 get_random_seed <- function() {

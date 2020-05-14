@@ -117,14 +117,14 @@ plot.plcp_marginal_hurdle <- function(object,
                                 var1 = "mu1_vec",
                                 var2 = "mu_overall_vec",
                                 tx_var = "y_overall",
-                                level1_func = .sample_level1_nested_hurdle,
+                                level1_func = ".sample_level1_nested_hurdle",
                                 ...)
          trend <- .make_nested_trend(object = object,
                                      RE = RE,
                                      RE_level = RE_level,
                                      var1 = "y",
                                      var2 = "y_overall",
-                                     level1_func = .sample_level1_nested_hurdle,
+                                     level1_func = ".sample_level1_nested_hurdle",
                                      ...)
 
          #res <- subset(res, y > trend$lims$mean[1] & y < trend$lims$mean[2])

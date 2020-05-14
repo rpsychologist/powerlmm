@@ -530,6 +530,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
 
 }
 
+#' @export
 study_parameters.default <- study_parameters.plcp_design_nested
 
 study_parameters.plcp_design_custom <- function(design, ..., data_gen = NULL) {

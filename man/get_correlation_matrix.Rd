@@ -5,7 +5,7 @@
 \alias{get_correlation_matrix.plcp_multi}
 \title{Calculate the subject-level (ICC) correlations among time points}
 \usage{
-get_correlation_matrix(object)
+get_correlation_matrix(object, ...)
 
 \method{get_correlation_matrix}{plcp_multi}(object)
 }
