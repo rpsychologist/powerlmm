@@ -609,7 +609,7 @@ reshape_eta_sum <- function(x) {
                       caption = caption) +
         ggplot2::theme_minimal()
 }
-.plot_link <- function(object, RE_level, show = TRUE, ...) {
+.plot_link <- function(object, RE_level, show = FALSE, ...) {
     # To get RE intervals
     m <- marginalize(object, link_scale = TRUE, ...)
     p <- plot.plcp_marginal_nested(m,
@@ -622,7 +622,7 @@ reshape_eta_sum <- function(x) {
     }
     return(invisible(p))
 }
-.plot_link_ridges <- function(object, RE_level, show = TRUE, ...) {
+.plot_link_ridges <- function(object, RE_level, show = FALSE, ...) {
     # To get RE intervals
     m <- marginalize(object, link_scale = TRUE, ...)
     p <- plot.plcp_marginal_nested(m,
@@ -767,24 +767,24 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
      }
      if(type == "trend") {
          if(RE) {
-             .plot_link(paras,
+            p <- .plot_link(paras,
                         RE_level = RE_level,
                         ...) +
                  ggplot2::labs(y = "y (link scale)")
          } else {
-             .plot_trend(paras, ...)
+            p <- .plot_trend(paras, ...)
          }
      } else if(type == "trend_ridges") {
-         .plot_link_ridges(paras,
+         p <-.plot_link_ridges(paras,
                            RE_level = RE_level,
                            ...)
 
      } else if(type == "dropout") {
-         .plot_dropout(paras)
+        p <- .plot_dropout(paras)
      } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
-        .plot_diff(x, type = type, hu = hu)
+       p <- .plot_diff(x, type = type, hu = hu)
      }
-
+     p
 }
 
 #' @export
@@ -818,7 +818,7 @@ plot.plcp_crossed <- plot.plcp_nested
                         ggplot2::theme_minimal())
 
     if(RE) {
-        ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment)) +
+       p <- ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment)) +
             ggplot2::geom_ribbon(data = Q_long, ggplot2::aes(ymin = min,
                                            ymax = max,
                                            y = NULL,
@@ -844,14 +844,13 @@ plot.plcp_crossed <- plot.plcp_nested
             ggplot2::facet_wrap(~treatment, ncol = 2) +
             plot_struct
     } else {
-        ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment, color = treatment)) +
+      p <- ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment, color = treatment)) +
             ggplot2::geom_line(ggplot2::aes(linetype = "mean", fill = NULL), size = 1) +
             ggplot2::geom_line(ggplot2::aes(y = Q50, linetype = "median", fill = NULL), size = 1) +
             ggplot2::geom_point(ggplot2::aes(y = Q50)) +
             plot_struct
     }
-
-
+    p
 }
 
 .make_nested_trend <- function(object, RE, RE_level,
@@ -1037,7 +1036,7 @@ plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE
                  title = "Change over time") +
             facets
 
-        plot(p)
+        #plot(p)
         return(invisible(p))
     ## POST
     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {

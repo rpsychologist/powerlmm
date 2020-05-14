@@ -45,6 +45,7 @@ d <- per_treatment(control = dropout_weibull(0.3, 2),
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 5,
+                      T_end = 10,
                       icc_pre_subject = 0.5,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
@@ -80,7 +81,7 @@ p
 plot(p)
 ```
 
-![](http://rpsychologist.com/img/powerlmm/README-three-level-setup-1.png)
+<img src="man/figures/README-trend-1.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
 get_power(p, df = "satterthwaite")
@@ -106,7 +107,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
-#>               df = 7.980828
+#>               df = 7.925644
 #>            alpha = 0.05
 #>            power = 68%
 ```
@@ -120,11 +121,10 @@ plot(p,
      type = "trend")
 ```
 
-![](man/figures/README-unnamed-chunk-4-1.png)![](man/figures/README-unnamed-chunk-4-2.png)![](man/figures/README-unnamed-chunk-4-3.png)
+<img src="man/figures/README-trends-varying-1.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
-
-plot(p, 
+plot(update(p, n1 = 3), 
      RE_level = c(1, 2), 
      type = "trend_ridges")
 #> Warning in FUN(X[[i]], ...): no non-missing arguments to max; returning -Inf
@@ -132,7 +132,7 @@ plot(p,
 #> Warning in FUN(X[[i]], ...): no non-missing arguments to max; returning -Inf
 ```
 
-![](man/figures/README-unnamed-chunk-4-4.png)
+<img src="man/figures/README-trend-ridges-1.png" width="60%" style="display: block; margin: auto;" />
 
 ### Unequal cluster sizes
 
@@ -198,9 +198,9 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 24.7        (control)
-#>                    24.7        (treatment)
-#>                    49.4        (total)
+#>          total_n = 25.18       (control)
+#>                    25.18       (treatment)
+#>                    50.36       (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
@@ -209,7 +209,7 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 #>               df = 8
 #>            alpha = 0.05
-#>            power = 47% (MCSE: 1%)
+#>            power = 48% (MCSE: 1%)
 #> 
 #> NOTE: n2 is randomly sampled. Values are the mean from R = 100 realizations.
 ```
@@ -222,14 +222,15 @@ Several convenience functions are also included, e.g. for creating power curves.
 x <- get_power_table(p, 
                      n2 = 5:10, 
                      n3 = c(4, 8, 12), 
-                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"))
+                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+                     cores = parallel::detectCores(logical = FALSE))
 ```
 
 ``` r
 plot(x)
 ```
 
-![](http://rpsychologist.com/img/powerlmm/README-three-level-power-curve-1.png)
+<img src="man/figures/README-power-curve-1.png" width="60%" style="display: block; margin: auto;" />
 
 Simulation
 ----------
@@ -272,8 +273,8 @@ summary(res, para = list("LMM" = "time:treatment",
 #> Fixed effects: 'time:treatment', 'treatment'
 #> 
 #>   model M_est theta M_se SD_est Power Power_bw Power_satt
-#>     LMM  -1.1  -1.1 0.32   0.33  0.93     0.93        NaN
-#>  ANCOVA -11.0   0.0 3.70   3.80  0.85     0.85       0.85
+#>     LMM  -1.1  -1.1 0.32   0.32  0.94     0.94        NaN
+#>  ANCOVA -11.0   0.0 3.70   3.70  0.86     0.85       0.85
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
@@ -298,21 +299,21 @@ summary(res, model = "LMM")
 #>  subject_intercept 100.00 100.0         0.01         0     0
 #>      subject_slope   2.00   2.0         0.01         0     0
 #>              error 100.00 100.0         0.00         0     0
-#>        cor_subject  -0.39  -0.4        -0.01         0     0
+#>        cor_subject  -0.39  -0.4        -0.02         0     0
 #> 
 #> Fixed effects 
 #> 
 #>       parameter M_est theta M_se SD_est Power Power_bw Power_satt
-#>     (Intercept)  0.04   0.0 1.30   1.30  0.05        .        NaN
-#>            time  0.00   0.0 0.25   0.26  0.07        .        NaN
-#>  time:treatment -1.10  -1.1 0.32   0.33  0.93     0.93        NaN
+#>     (Intercept)  0.00   0.0 1.30   1.30  0.04        .        NaN
+#>            time -0.01   0.0 0.25   0.25  0.05        .        NaN
+#>  time:treatment -1.10  -1.1 0.32   0.32  0.94     0.94        NaN
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
 #> Subjects per cluster (n2 x n3):  40 (treatment)
 #>                                  40 (control)
 #> Total number of subjects:  80
-#> [Model: LMM] 14.3% of the models threw convergence warnings
+#> [Model: LMM] 14% of the models threw convergence warnings
 #> ---
 #> At least one of the models applied a data transformation during simulation,
 #> summaries that depend on the true parameter values will no longer be correct,
@@ -329,6 +330,6 @@ library(powerlmm)
 shiny_powerlmm()
 ```
 
-![](http://rpsychologist.com/img/powerlmm/README-shiny-screenshot1.png)
+![](man/figures/README-shiny-screenshot1.png)
 
-![](http://rpsychologist.com/img/powerlmm/README-shiny-screenshot2.png)
+![](man/figures/README-shiny-screenshot1.png)

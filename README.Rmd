@@ -10,7 +10,13 @@ output:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "man/figures/README-"
+  fig.path = "man/figures/README-",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  fig.width = 5,
+  out.width = "60%",
+  fig.align = "center"
 )
 ```
 
@@ -58,6 +64,7 @@ d <- per_treatment(control = dropout_weibull(0.3, 2),
 p <- study_parameters(n1 = 11,
                       n2 = 10,
                       n3 = 5,
+                      T_end = 10,
                       icc_pre_subject = 0.5,
                       icc_pre_cluster = 0,
                       icc_slope = 0.05,
@@ -69,22 +76,22 @@ p <- study_parameters(n1 = 11,
 p
 ```
 
-```{r, eval=FALSE}
+```{r trend}
 plot(p)
 ```
-![](http://rpsychologist.com/img/powerlmm/README-three-level-setup-1.png)
 
 ```{r three-level-power, message= FALSE, warning=FALSE}
 get_power(p, df = "satterthwaite")
 ```
 
 ## More vizualisations
-```{r}
+```{r trends-varying}
 plot(p, 
      RE_level = c(1, 2), 
      type = "trend")
-
-plot(p, 
+```
+```{r trend-ridges}
+plot(update(p, n1 = 3), 
      RE_level = c(1, 2), 
      type = "trend_ridges")
 ```
@@ -123,17 +130,17 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 ### Convenience functions
 Several convenience functions are also included, e.g. for creating power curves.
 
-```{r three-level-power-curve, eval = FALSE}
+```{r three-level-power-curve}
 x <- get_power_table(p, 
                      n2 = 5:10, 
                      n3 = c(4, 8, 12), 
-                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"))
+                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+                     cores = parallel::detectCores(logical = FALSE))
 ```
 
-```{r, eval = FALSE}
+```{r power-curve}
 plot(x)
 ```
-![](http://rpsychologist.com/img/powerlmm/README-three-level-power-curve-1.png)
 
 ## Simulation
 The package includes a flexible simulation method that makes it easy to investigate the performance of different models. As an example, let's compare the power difference
@@ -187,6 +194,6 @@ library(powerlmm)
 shiny_powerlmm()
 ```
 
-![](http://rpsychologist.com/img/powerlmm/README-shiny-screenshot1.png)
+![](man/figures/README-shiny-screenshot1.png)
 
-![](http://rpsychologist.com/img/powerlmm/README-shiny-screenshot2.png)
+![](man/figures/README-shiny-screenshot1.png)
