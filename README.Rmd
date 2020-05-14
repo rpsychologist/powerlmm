@@ -13,11 +13,13 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   dev = "png",
   dpi = 150,
-  fig.asp = 0.8,
-  fig.width = 7,
-  out.width = "80%",
   fig.align = "center"
 )
+if (capabilities("cairo")) {
+  knitr::opts_chunk$set(
+    dev.args = list(png = list(type = "cairo"))
+  )
+}
 ```
 
 # powerlmm

@@ -81,7 +81,7 @@ p
 plot(p)
 ```
 
-<img src="man/figures/README-trend-1.png" width="80%" style="display: block; margin: auto;" />
+<img src="man/figures/README-trend-1.png" style="display: block; margin: auto;" />
 
 ``` r
 get_power(p, df = "satterthwaite")
@@ -107,7 +107,7 @@ get_power(p, df = "satterthwaite")
 #>        icc_slope = 0.05
 #>        var_ratio = 0.02
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
-#>               df = 7.943809
+#>               df = 7.921788
 #>            alpha = 0.05
 #>            power = 68%
 ```
@@ -121,7 +121,7 @@ plot(p,
      type = "trend")
 ```
 
-<img src="man/figures/README-trends-varying-1.png" width="80%" style="display: block; margin: auto;" />
+<img src="man/figures/README-trends-varying-1.png" style="display: block; margin: auto;" />
 
 ``` r
 plot(update(p, n1 = 3), 
@@ -132,7 +132,7 @@ plot(update(p, n1 = 3),
 #> Warning in FUN(X[[i]], ...): no non-missing arguments to max; returning -Inf
 ```
 
-<img src="man/figures/README-trend-ridges-1.png" width="80%" style="display: block; margin: auto;" />
+<img src="man/figures/README-trend-ridges-1.png" style="display: block; margin: auto;" />
 
 ### Unequal cluster sizes
 
@@ -198,9 +198,9 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>               n3 = 5           (treatment)
 #>                    5           (control)
 #>                    10          (total)
-#>          total_n = 25.17       (control)
-#>                    25.17       (treatment)
-#>                    50.34       (total)
+#>          total_n = 24.73       (control)
+#>                    24.73       (treatment)
+#>                    49.46       (total)
 #>          dropout = No missing data
 #> icc_pre_subjects = 0.5
 #> icc_pre_clusters = 0
@@ -209,7 +209,7 @@ get_power(p, R = 100, progress = FALSE) # expected power by averaging over R rea
 #>      effect_size = -0.8 (Cohen's d [SD: pretest_SD])
 #>               df = 8
 #>            alpha = 0.05
-#>            power = 48% (MCSE: 1%)
+#>            power = 47% (MCSE: 1%)
 #> 
 #> NOTE: n2 is randomly sampled. Values are the mean from R = 100 realizations.
 ```
@@ -230,7 +230,7 @@ x <- get_power_table(p,
 plot(x)
 ```
 
-<img src="man/figures/README-power-curve-1.png" width="80%" style="display: block; margin: auto;" />
+<img src="man/figures/README-power-curve-1.png" style="display: block; margin: auto;" />
 
 Simulation
 ----------
@@ -273,8 +273,8 @@ summary(res, para = list("LMM" = "time:treatment",
 #> Fixed effects: 'time:treatment', 'treatment'
 #> 
 #>   model M_est theta M_se SD_est Power Power_bw Power_satt
-#>     LMM  -1.1  -1.1 0.32   0.32  0.94     0.93        NaN
-#>  ANCOVA -11.0   0.0 3.70   3.70  0.86     0.85       0.85
+#>     LMM  -1.1  -1.1 0.32   0.33  0.93     0.93        NaN
+#>  ANCOVA -11.0   0.0 3.70   3.80  0.84     0.83       0.83
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
@@ -297,23 +297,23 @@ summary(res, model = "LMM")
 #> 
 #>          parameter  M_est theta est_rel_bias prop_zero is_NA
 #>  subject_intercept 100.00 100.0         0.00         0     0
-#>      subject_slope   2.00   2.0        -0.01         0     0
+#>      subject_slope   2.00   2.0         0.00         0     0
 #>              error 100.00 100.0         0.00         0     0
 #>        cor_subject  -0.39  -0.4        -0.02         0     0
 #> 
 #> Fixed effects 
 #> 
 #>       parameter M_est theta M_se SD_est Power Power_bw Power_satt
-#>     (Intercept) -0.07   0.0 1.30   1.30  0.05        .        NaN
-#>            time  0.00   0.0 0.25   0.24  0.04        .        NaN
-#>  time:treatment -1.10  -1.1 0.32   0.32  0.94     0.93        NaN
+#>     (Intercept) -0.03   0.0 1.30   1.30  0.05        .        NaN
+#>            time  0.00   0.0 0.25   0.26  0.06        .        NaN
+#>  time:treatment -1.10  -1.1 0.32   0.33  0.93     0.93        NaN
 #> ---
 #> Number of simulations: 2000  | alpha:  0.05
 #> Time points (n1):  11
 #> Subjects per cluster (n2 x n3):  40 (treatment)
 #>                                  40 (control)
 #> Total number of subjects:  80
-#> [Model: LMM] 13.35% of the models threw convergence warnings
+#> [Model: LMM] 12.65% of the models threw convergence warnings
 #> ---
 #> At least one of the models applied a data transformation during simulation,
 #> summaries that depend on the true parameter values will no longer be correct,
