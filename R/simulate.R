@@ -375,46 +375,6 @@ simulate_data.plcp <- function(paras, ...) {
     NextMethod("simulate_data")
 }
 
-# Crossed data simulate  --------------------------------------------------
-#' @rdname simulate_data
-#' @export
-simulate_data.plcp_crossed <- function(paras, n = NULL) {
-   # if (is.data.frame(paras))
-    #    paras <- as.list(paras)
-    if(is.null(paras$prepared)) {
-        tmp <- prepare_paras(paras)
-    } else {
-        tmp <- paras
-        paras <- paras$control
-    }
-
-    slope_diff <- get_slope_diff(paras) / paras$T_end
-    paras$effect_size <- NULL
-
-    paras$n2 <- list(control = tmp$control$n2,
-                     treatment = tmp$treatment$n2)
-    paras$fixed_slope_time_tx <- slope_diff
-
-    # replace NA
-    paras[is.na(paras)] <- 0
-
-    d <- simulate_3lvl_data_crossed(paras)
-
-    # # drop outs
-
-    if (is.list(paras$dropout) |
-        is.function(paras$dropout) |
-        length(paras$dropout) > 1) {
-
-        miss_c <- create_dropout_indicator(tmp$control)
-        miss_tx <- create_dropout_indicator(tmp$treatment)
-
-        d <- add_NA_values_from_indicator(d, c(miss_tx, miss_c))
-    }
-
-    d
-}
-
 simulate_data.plcp_custom <- function(paras, n = NULL) {
     do.call(paras$data_gen, paras)
 

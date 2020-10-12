@@ -70,24 +70,6 @@ get_VPC.plcp <- function(object) {
     res
 }
 
-#' @rdname get_VPC
-#' @export
-get_VPC.plcp_crossed <- function(object, treatment = "treatment") {
-    v <- calc_crossed_VPC(object, treatment)
-    lvl3 <- v$v_3 / v$v_tot
-    lvl2 <- v$v_2 / v$v_tot
-    lvl1 <- v$v_1 / v$v_tot
-    tot_var <- v$v_tot / v$v_tot[1]
-
-    res <- data.frame(
-        time = v$time,
-        between_clusters = lvl3 * 100,
-        between_subjects = lvl2 * 100,
-        within_subjects = lvl1 * 100,
-        tot_var = (tot_var - 1) * 100)
-    class(res) <- append("plcp_VPC", class(res))
-    res
-}
 #' @export
 get_VPC.plcp_multi <- function(object) {
     warning("Multiple study designs used, only the first is shown")
@@ -212,50 +194,6 @@ get_sds.plcp <- function(object, treatment = "treatment", n = NULL) {
      class(res) <- append(c("plcp_sds"), class(res))
 
      res
-}
-
-
-calc_crossed_lvl2_var <- function(p, time) {
-    with(p, u0^2 + 2 * u01 * time + u1^2 * time^2)
-}
-calc_crossed_lvl3_var <- function(p, treatment, time) {
-    with(p,
-        v0^2 +
-            2 * v01 * time +
-            v1^2 * time^2 +
-            (
-                v2^2 +
-                    2 * v02 +
-                    2 * v03 * time +
-                    2 * v12 * time +
-                    2 * v13 * time^2 +
-                    2 * v23 * time +
-                    v3^2 * time^2
-            ) * treatment
-    )
-}
-calc_crossed_VPC <- function(object, treatment) {
-    p <- get_pars_short_name(object)
-    time <- get_time_vector(object)
-    treatment <- as.numeric(treatment == "treatment")
-    v_2 <- calc_crossed_lvl2_var(p = p, time = time)
-    v_3 <- calc_crossed_lvl3_var(p = p, treatment = treatment, time = time)
-    v_1 <- object$sigma_error^2
-    v_tot <- v_2 + v_3 + v_1
-
-    list(v_1 = v_1, v_2 = v_2, v_3 = v_3, v_tot = v_tot, time = time)
-}
-
-#' @export
-get_sds.plcp_crossed <- function(object, treatment = "treatment", n = NULL) {
-    v <- calc_crossed_VPC(object, treatment)
-    sds <- sqrt(v$v_tot)
-    res <- data.frame(
-        time = v$time,
-        SD = sds,
-        SD_no_random_slopes = sds[1])
-    class(res) <- append(c("plcp_sds"), class(res))
-    res
 }
 
 #' @export
@@ -400,41 +338,7 @@ get_correlation_matrix.plcp <- function(object) {
 
     V
 }
-#' @export
-get_correlation_matrix.plcp_crossed <- function(object, treatment = "treatment", cov = FALSE) {
-    treatment = as.numeric(treatment == "treatment")
-    paras <- NA_to_zero(object)
-    p <- get_pars_short_name(paras)
-    Sigma_cluster <- with(p,
-        c(
-            v0^2, v01, v02, v03,
-            v01, v1^2, v12, v13,
-            v02, v12, v2^2, v23,
-            v03, v13, v23, v3^2)
-    )
-    D2 <- matrix(Sigma_cluster, 4, 4)
-    error <- paras$sigma_error
-    time <- get_time_vector(paras)
-    n1 <- paras$n1
-    n2 <- paras$n2
-    sx2 <- sum((time - mean(time))^2) / n1
-    X <- matrix(c(rep(1, n1), time), ncol = 2)
-    Z <- X
-    Z2 <- cbind(Z, X * treatment)
-    D <- with(p,
-        matrix(
-            c(
-                u0^2, u01,
-                u01, u1^2
-            ),
-            ncol = 2))
-    V <- Z %*% D %*% t(Z) + Z2 %*% D2 %*% t(Z2) + error^2 * diag(n1)
-    if(!cov) V <- cov2cor(V)
-    time_rounded <- round(time, 1)
-    dimnames(V) <- list(time_rounded, time_rounded)
-    class(V) <- append(class(V), "plcp_ICC2")
-    V
-}
+
 #' @rdname get_correlation_matrix
 #' @export
 get_correlation_matrix.plcp_multi <- function(object) {

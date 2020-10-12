@@ -41,32 +41,9 @@ get_ICC_slope.plcp <- function(object, ...) {
                       v1 = object$sigma_cluster_slope)
 }
 #' @export
-get_ICC_slope.plcp_crossed <- function(object, interaction = FALSE) {
-    u1 <- object$sigma_subject_slope
-    v2 <- object$sigma_cluster_slope
-    v3 <- object$sigma_cluster_slope_crossed
-
-    if(interaction) {
-        # the propoprtion of 3-lvl slope variance
-        # caused by the interaction
-        v3^2/(v2^2 + v3^2)
-    } else {
-        # proportion of total re slope variance
-        # at the 3rd level
-        (v2^2 + v3^2)/(u1^2 + v2^2 + v3^2)
-    }
-   
-}
-
-#' @export
 get_ICC_slope.plcp_multi <- function(object, ...) {
     get_ICC_slope.plcp(object)
 }
-#' @export
-get_ICC_slope.plcp_multi_crossed <- function(object, ...) {
-    get_ICC_slope.plcp_crossed(object, ...)
-}
-
 
 #' Calculates the ratio of the slope variance to the within-subjects error variance
 #'
@@ -154,23 +131,10 @@ get_ICC_pre_subjects.plcp <- function(object, ...) {
                             v0 = object$sigma_cluster_intercept,
                             error = object$sigma_error)
 }
-#' @export
-get_ICC_pre_subjects.plcp_crossed <- function(object, ...) {
-    u0 <- object$sigma_subject_intercept
-    v0 <- object$sigma_cluster_intercept
-    v1 <- object$sigma_cluster_intercept_crossed
-    error <- object$sigma_error
-
-    (u0^2 +  v0^2 + v1^2)/(u0^2 + v0^2 + v1^2 + error^2)
-}
 
 #' @export
 get_ICC_pre_subjects.plcp_multi <- function(object, ...) {
     get_ICC_pre_subjects.plcp(object)
-}
-#' @export
-get_ICC_pre_subjects.plcp_multi_crossed <- function(object, ...) {
-    get_ICC_pre_subjects.plcp_crossed(object)
 }
 
 ##
@@ -216,26 +180,10 @@ get_ICC_pre_clusters.plcp <- function(object, ...) {
                             v0 = object$sigma_cluster_intercept,
                             error = object$sigma_error)
 }
-#' @export
-get_ICC_pre_clusters.plcp_crossed <- function(object, interaction = FALSE) {
-    u0 <- object$sigma_subject_intercept
-    v0 <- object$sigma_cluster_intercept
-    v1 <- object$sigma_cluster_intercept_crossed
-    error <- object$sigma_error
 
-    if(interaction) {
-        v1^2/(v0^2 + v1^2)
-    } else {
-        (v0^2 + v1^2)/(u0^2 + v0^2 + v1^2 + error^2)
-    }
-}
 #' @export
 get_ICC_pre_clusters.plcp_multi <- function(object, ...) {
     get_ICC_pre_clusters.plcp(object)
-}
-#' @export
-get_ICC_pre_clusters.plcp_multi_crossed <- function(object, ...) {
-    get_ICC_pre_clusters.plcp_crossed(object)
 }
 
 var_T <- function(n1, T_end) {
@@ -786,9 +734,6 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
      }
      p
 }
-
-#' @export
-plot.plcp_crossed <- plot.plcp_nested
 
 .plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
@@ -1365,29 +1310,10 @@ get_lvl2_vcov.plcp_nested <- function(object) {
     m <- matrix(m, 2, 2)
     m
 }
-get_lvl2_vcov.plcp_crossed <- get_lvl2_vcov.plcp_nested
-
 
 get_lvl3_vcov <- function(object) {
     UseMethod("get_lvl3_vcov")
 }
 get_lvl3_vcov.plcp_nested <- function(object) {
-
-}
-
-get_lvl3_vcov.plcp_crossed <- function(object) {
-    p <- object
-    cV0V1 <- with(p, sigma_cluster_intercept * sigma_cluster_slope * cor_cluster_intercept_slope)
-    cV0V2 <- with(p, sigma_cluster_intercept * sigma_cluster_intercept_crossed * cor_cluster_intercept_intercept_tx)
-    cV0V3 <- with(p, sigma_cluster_intercept * sigma_cluster_slope_crossed * cor_cluster_intercept_slope_tx)
-    cV1V2 <- with(p, sigma_cluster_slope * sigma_cluster_intercept_crossed * cor_cluster_slope_intercept_tx)
-    cV1V3 <- with(p, sigma_cluster_slope * sigma_cluster_slope_crossed * cor_cluster_slope_slope_tx)
-    cV2V3 <- with(p, sigma_cluster_intercept_crossed * sigma_cluster_slope_crossed * cor_cluster_intercept_tx_slope_tx)
-    m <- c(p$sigma_cluster_intercept^2, cV0V1, cV0V2, cV0V3,
-        cV0V1, p$sigma_cluster_slope^2, cV1V2, cV1V3,
-        cV0V2, cV1V2, p$sigma_cluster_intercept_crossed^2, cV2V3,
-        cV0V3, cV1V3, cV2V3, p$sigma_cluster_slope_crossed^2)
-    m <- matrix(m, 4, 4)
-    m
 
 }

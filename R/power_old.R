@@ -268,43 +268,6 @@ get_se_classic.plcp_nested <- function(object) {
 
 }
 
-get_se_classic.plcp_crossed <- function(object) {
-    if(is.null(object$prepared)) {
-        p_tx <- prepare_paras(object)
-    } else {
-        p_tx <- object
-        object <- p_tx$treatment
-    }
-
-    p_cc <- p_tx$control
-    p_tx <- p_tx$treatment
-
-    n1 <- object$n1
-    T_end <- object$T_end
-    sx <- Vectorize(var_T)(n1, T_end)
-
-    n2_tx <- unique(unlist(p_tx$n2))
-    n3_tx <- unlist(p_tx$n3)
-    n2_cc <- unique(unlist(p_cc$n2))
-    n3_cc <- unlist(p_cc$n3)
-
-    error <- object$sigma_error
-    u1 <- object$sigma_subject_slope
-    u1[is.na(u1)] <- 0
-    v1 <- object$sigma_cluster_slope_crossed
-    v1[is.na(v1)] <- 0
-
-
-    var_cc <- (error^2 + n1 * u1^2 * sx + 1/2 * n1 * n2_cc * v1^2 * sx)/(n1 * n2_cc * n3_cc * sx)
-    var_tx <- (error^2 + n1 * u1^2 * sx + 1/2 * n1 * n2_tx * v1^2 * sx)/(n1 * n2_tx * n3_tx * sx)
-    se <- sqrt(var_cc + var_tx)
-    
-
-
-    se
-
-}
-
 
 # Matrix power ------------------------------------------------------------
 
