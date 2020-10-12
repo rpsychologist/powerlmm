@@ -22,8 +22,8 @@ solve_subject_slope <- function(sigma_subject_slope, tmp) {
     tmp
 }
 
-#' @param crossed logical; indicates if design is three-level crossed. If true
-#' also solves for sigma_cluster_intercept_crossed
+# @param crossed logical; indicates if design is three-level crossed. If true
+# also solves for sigma_cluster_intercept_crossed
 solve_cluster_intercept <- function(
     sigma_subject_intercept,
     sigma_cluster_intercept,
