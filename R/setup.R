@@ -558,7 +558,7 @@ sim_parameters <- function(...) {
 #' @return A \code{numeric} indicating the mean difference between the treatment and
 #' control group at posttest.
 #' @export
-get_slope_diff <- function(object, ...) {
+get_slope_diff <- function(object) {
     UseMethod("get_slope_diff")
 }
 

@@ -38,7 +38,7 @@
 #' # Plot
 #' plot(res)
 #' @export
-get_VPC <- function(object, ...) {
+get_VPC <- function(object) {
      UseMethod("get_VPC")
 }
 
@@ -298,7 +298,7 @@ print.plcp_sds <- function(x, digits = 2, ...) {
 #'                           icc_slope = 0.05,
 #'                           var_ratio = 0.03)
 #' get_correlation_matrix(paras)
-get_correlation_matrix <- function(object, ...) {
+get_correlation_matrix <- function(object) {
     UseMethod("get_correlation_matrix")
 }
 
