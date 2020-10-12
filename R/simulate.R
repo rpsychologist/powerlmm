@@ -477,7 +477,7 @@ simulate_data.plcp_custom <- function(paras, n = NULL) {
 #' Confidence intervals are both calculated using profile likelihood and by
 #' the Wald approximation, using a 95 \% confidence level.
 #'
-#' \Strong{RNG seed and reproducibility}
+#' \strong{RNG seed and reproducibility}
 #' For simulations that are run in parallel (\code{cores} > 1) the seed is set using
 #' \code{parallel::clusterSetRNGStream}, which uses the "L'Ecuyer-CMRG" RNG. Thus 
 #' reproducible results will require that the same number of \code{cores} are used. 
