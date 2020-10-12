@@ -6,3 +6,5 @@
 powerlmm.pdf
 .vscode/
 dev/
+powerlmm_*.tar.gz
+powerlmm.Rcheck/
