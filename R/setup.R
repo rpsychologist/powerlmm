@@ -865,15 +865,6 @@ get_dropout_post <- function(object) {
     list(out = out,
          out_dense = out_dense)
 }
-.add_ES_multi.plcp_multi_hurdle <- function(object, out, out_dense, ..) {
-    #ES <- get_effect_size(object)
-    out_dense$effect_size <- 0
-    out_dense$ES_sd <- 0
-    out$effect_size <- 0
-
-    list(out = out,
-         out_dense = out_dense)
-}
 
 prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     paras <- object
@@ -1022,31 +1013,6 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
 
     invisible(x)
 }
-
-#' Print method for \code{study_parameters}-multiobjects
-#' @rdname print.plcp_multi
-print.plcp_multi_hurdle <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
-    nr <- nrow(x)
-    if(nr <= print_max) rmax <- nr else rmax <- print_max
-    hidden_row <- nr - print_max
-    x <- x[1:rmax, ]
-    family <- unique(as.character(x$family))
-    x$family <- NULL
-    pp <- prepare_multi_setup(x, empty = empty, digits = digits)
-    out <- pp$out
-    out <- as.data.frame(out)
-    cat(paste0("# Multi-study setup (two-level hurdle ", family, ")"), "\n")
-
-    out <- out[, select_setup_cols(out)]
-    colnames(out) <- gsub("_lab", "", colnames(out))
-    print(out)
-    if(hidden_row > 0) {
-        cat("# ...", hidden_row, "setups not shown.")
-    }
-
-    invisible(x)
-}
-
 
 
 # helpers -----------------------------------------------------------------

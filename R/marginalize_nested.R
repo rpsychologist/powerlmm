@@ -123,7 +123,7 @@ marginalize.plcp_nested <- function(object,
 }
 
 
-# marginalize hurdle ests over random effects
+# marginalize ests over random effects
 .marginalize_nested_sim <- function(d,
                              betas,
                              X,

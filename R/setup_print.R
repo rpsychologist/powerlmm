@@ -164,41 +164,6 @@ prepare_print_plcp_2lvl <- function(x) {
 
     res
 }
-prepare_print_plcp_hurdle_2lvl <- function(x) {
-    res <- prepare_print_plcp(x, two_level = TRUE, hanging = 18)
-    if(!is.list(x$dropout)) res$dropout <- "No missing data"
-
-    if(x$marginal) marginal <- " marginal" else marginal <- NULL
-    res$method <- paste0("Study setup (two-level,", marginal, " hurdle-", x$family, ")")
-    res$icc_slope <- NULL
-    res$icc_pre_clusters <- NULL
-    res$n2 <- res$total_n
-    res$n3 <- NULL
-    res$total_n <- NULL
-    res$icc_pre_subjects <- NULL
-    res$var_ratio <- NULL
-
-
-    ES_cont <- paste0("Continuous (multiplicative): ", x$RR_cont)
-    res$effect_size <- paste0("Zeros (OR): ", x$OR_hu,
-                              "\n", paste0(rep(" ", 18), collapse = ""),
-                              ES_cont)
-
-    names(res)[names(res) == "effect_size_2"] <- ""
-
-    # attrs <- attributes(res)
-    #
-    # # reorder
-    # res <- structure(res[c("n1", "n2", "dropout", "family", "effect_size", "method")],
-    #                  class = "power.htest")
-    # attr(res, "width") <- attrs$width
-    #
-
-
-
-    res
-
-}
 
 prepare_print_plcp_3lvl <- function(x, crossed = FALSE) {
     res <- prepare_print_plcp(x, crossed = crossed)
@@ -251,14 +216,4 @@ print.plcp_crossed <- function(x, ...) {
 print.plcp_2lvl <- function(x, ...) {
    res <- prepare_print_plcp_2lvl(x)
    print(res, digits = 2, ...)
-}
-
-#' Print method for two-part/hurdle \code{study_parameters}-objects
-#' @param x An object of class \code{plcp_hurdle}.
-#' @param ... Optional arguments.
-#' @method print plcp_2lvl
-#' @export
-print.plcp_hurdle <- function(x, ...) {
-    res <- prepare_print_plcp_hurdle_2lvl(x)
-    print(res, digits = 2, ...)
 }
