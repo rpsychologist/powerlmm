@@ -590,8 +590,7 @@ reshape_eta_sum <- function(x) {
     .plot_diff_marg(m, ...)
 }
 .plot_diff_marg <- function(x, type = "post_diff", hu = FALSE, fixed_overall = NULL) {
-
-    if(hu) {
+    if (hu) {
         tmp <- x$post_hu_ps$effect
         ES <- x$post_hu[x$post_hu$var == "marg_hu_post_diff", "est"]
         ES_med <- x$post_hu[x$post_hu$var == "median_hu_post_diff", "est"]
@@ -601,7 +600,7 @@ reshape_eta_sum <- function(x) {
         tmp <- x$post_ps$effect
         ES <- x$post[x$post$var == "marg_post_diff", "est"]
         ES_med <- x$post[x$post$var == "median_post_diff", "est"]
-        if(x$paras$family == "binomial") {
+        if (x$paras$family == "binomial") {
             # Use OR
             ES_ratio <- x$post[x$post$var == "marg_OR", "est"]
             ES_ratio_med <- x$post[x$post$var == "median_OR", "est"]
@@ -610,83 +609,75 @@ reshape_eta_sum <- function(x) {
             ES_ratio <- x$post[x$post$var == "marg_RR", "est"]
             ES_ratio_med <- x$post[x$post$var == "median_RR", "est"]
         }
-
     }
+    if (type == "post_diff" | type == "post_diff_ratio") {
 
-    #tmp$fill <- ifelse(tmp$percentile == 0.5, "median", "other")
-    #tmp$fill[which.min(abs(tmp$diff - ES))] <- "mean"
-
-
-    if(type == "post_diff" | type == "post_diff_ratio") {
-
-        if(abs(ES_med - ES) < 0.0001) {
+        if (abs(ES_med - ES) < 0.0001) {
             breaks <- ES
             labels <- paste(round(ES, 2), " \n(mean,\nmedian)")
         } else {
             breaks <- c(ES_med, ES)
             labels <- c(paste(round(ES_med, 2), " (median)"),
-                        paste(round(ES, 2), " (mean)")
+                paste(round(ES, 2), " (mean)")
             )
         }
-
-        p0 <- ggplot(tmp, ggplot2::aes(percentile, diff, fill = fill)) +
+        p0 <- ggplot(tmp, ggplot2::aes_string("percentile", "diff", fill = "fill")) +
             geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
-            #geom_hline(yintercept = 0, linetype = "solid", size = 0.75) +
             geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75) +
             geom_hline(yintercept = ES_med, linetype = "dashed", alpha = 0.75, size = 0.75) +
-            scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,
-                                                   labels = labels
+            scale_y_continuous(sec.axis = sec_axis(~., breaks = breaks,
+                labels = labels
             )
             ) + theme_minimal() +
             theme(legend.position = "none")
 
-        if(!is.null(fixed_overall)) {
+        if (!is.null(fixed_overall)) {
             p0 <- p0 + geom_hline(yintercept = fixed_overall$diff, color = "#e74c3c")
         }
     }
 
 
     # Ratio
-    if(type == "post_ratio" | type == "post_diff_ratio") {
-        if(hu) tmp$ratio <- tmp$OR
-        if(abs(ES_ratio_med - ES_ratio) < 0.0001) {
+    if (type == "post_ratio" | type == "post_diff_ratio") {
+        if (hu) tmp$ratio <- tmp$OR
+        if (abs(ES_ratio_med - ES_ratio) < 0.0001) {
             breaks <- ES_ratio
             labels <- paste(round(ES_ratio, 2), " \n(mean,\nmedian)")
         } else {
             breaks <- c(ES_ratio_med, ES_ratio)
             labels <- c(paste(round(ES_ratio_med, 2), " (median)"),
-                        paste(round(ES_ratio, 2), " (mean)")
+                paste(round(ES_ratio, 2), " (mean)")
             )
         }
 
-        p1 <- ggplot(tmp, ggplot2::aes(percentile, ratio)) +
+        p1 <- ggplot(tmp, ggplot2::aes_string("percentile", "ratio")) +
             geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
-            #geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
+            # geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
             geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
             geom_hline(yintercept = ES_ratio_med, linetype = "dashed", size = 0.75) +
-            scale_y_continuous(sec.axis = sec_axis(~ ., breaks = breaks,
-                                                   labels = labels
+            scale_y_continuous(sec.axis = sec_axis(~., breaks = breaks,
+                labels = labels
             )) +
             theme_minimal() +
             theme(legend.position = "none")
 
-        if(!is.null(fixed_overall)) {
+        if (!is.null(fixed_overall)) {
             p1 <- p1 + geom_hline(yintercept = fixed_overall$ratio, color = "#e74c3c")
         }
 
     }
 
     # Return
-    if(type == "post_diff") {
+    if (type == "post_diff") {
         plot(p0)
         return(invisible(list("post_diff" = p0)))
-    } else if(type == "post_ratio") {
+    } else if (type == "post_ratio") {
         plot(p1)
         return(invisible(list("post_ratio" = p1)))
-    } else if(type == "post_diff_ratio") {
+    } else if (type == "post_diff_ratio") {
         gridExtra::grid.arrange(p0, p1)
         return(invisible(list("post_diff" = p0,
-                              "post_ratio" = p1)))
+            "post_ratio" = p1)))
     }
 
 }
@@ -705,6 +696,7 @@ reshape_eta_sum <- function(x) {
 #'
 #' @param ... Optional arguments.
 #' @export
+#' @import ggplot2
 plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
     check_installed("ggplot2")
     paras <- x
@@ -738,11 +730,11 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
 .plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
     x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
     Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
-    if(overlay) {
+    if (overlay) {
         # Overlay L1 trajectory on L2 panel
         tmp <- x[x$var == "Within-subject", ]
         # silently ignore overlay when RE_level != 1
-        if(nrow(tmp) > 0) {
+        if (nrow(tmp) > 0) {
             tmp$var <- "Subject"
             tmp$color <- "L1"
         }
@@ -756,43 +748,102 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
     }
 
     plot_struct <- list(
-                        ggplot2::scale_linetype_manual(values = c("median" = "solid", "mean" = "dotted")),
-                        ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(fill = NA))),
-                        ggplot2::scale_fill_brewer(palette = "PuBu"), # PuBu
-                        ggplot2::scale_color_manual(values = c("#192a56", "#e84118", "#e84118")),
-                        ggplot2::theme_minimal())
+        ggplot2::scale_linetype_manual(
+            values = c("median" = "solid", "mean" = "dotted")
+        ),
+        ggplot2::guides(
+            color = ggplot2::guide_legend(
+                override.aes = list(fill = NA)
+            )
+        ),
+        ggplot2::scale_fill_brewer(
+            palette = "PuBu"
+        ), # PuBu
+        ggplot2::scale_color_manual(
+            values = c("#192a56", "#e84118", "#e84118")
+        ),
+        ggplot2::theme_minimal()
+    )
 
-    if(RE) {
-       p <- ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment)) +
-            ggplot2::geom_ribbon(data = Q_long, ggplot2::aes(ymin = min,
-                                           ymax = max,
-                                           y = NULL,
-                                           x = time,
-                                           group = interaction(width, treatment),
-                                           fill = width),
-                        alpha = 0.75) +
-            ggplot2::geom_line(ggplot2::aes(y = Q50,
-                          color = color,
-                          linetype = "median",
-                          fill = NULL,
-                          group = interaction(color, var, treatment)),
-                      size = 1) +
-            ggplot2::geom_line(ggplot2::aes(color = color,
-                          linetype = "mean",
-                          fill = NULL,
-                          group = interaction(color, var, treatment)),
-                      size = 1) +
-            # geom_point(aes(y = Q50,
-            #                color =
-            #                    color)) +
-            #scale_color_manual(values = c("median" = "red", "mean" = "red")) +
-            ggplot2::facet_wrap(~treatment, ncol = 2) +
+    if (RE) {
+        p <- ggplot2::ggplot(
+            data = x,
+            ggplot2::aes_string(
+                "time",
+                "mean",
+                group = "treatment")
+        ) +
+            ggplot2::geom_ribbon(
+                data = Q_long,
+                ggplot2::aes_string(
+                    ymin = "min",
+                    ymax = "max",
+                    y = NULL,
+                    x = "time",
+                    group = interaction(
+                        Q_long$width,
+                        Q_long$treatment
+                    ),
+                    fill = "width"),
+                alpha = 0.75) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    y = "Q50",
+                    color = "color",
+                    linetype = "'median'",
+                    fill = NULL,
+                    group = interaction(
+                        x$color,
+                        x$var, x$treatment
+                    )
+                ),
+                size = 1) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    color = "color",
+                    linetype = "'mean'",
+                    fill = NULL,
+                    group = interaction(
+                        x$color,
+                        x$var,
+                        x$treatment
+                    )
+                ),
+                size = 1) +
+            ggplot2::facet_wrap(
+                ~"treatment",
+                ncol = 2
+            ) +
             plot_struct
     } else {
-      p <- ggplot2::ggplot(x, ggplot2::aes(time, mean, group = treatment, color = treatment)) +
-            ggplot2::geom_line(ggplot2::aes(linetype = "mean", fill = NULL), size = 1) +
-            ggplot2::geom_line(ggplot2::aes(y = Q50, linetype = "median", fill = NULL), size = 1) +
-            ggplot2::geom_point(ggplot2::aes(y = Q50)) +
+        p <- ggplot2::ggplot(
+            data = x,
+            ggplot2::aes_string(
+                x = "time",
+                y = "mean",
+                group = "treatment",
+                color = "treatment")
+        ) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    linetype = "'mean'",
+                    fill = NULL
+                ),
+                size = 1
+            ) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    y = "Q50",
+                    linetype = "'median'",
+                    fill = NULL
+                ),
+                size = 1
+            ) +
+            ggplot2::geom_point(
+                ggplot2::aes_string(
+                    y = "Q50"
+                )
+            ) +
             plot_struct
     }
     p
@@ -873,81 +924,135 @@ plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level 
          lims = lims)
 }
 
-.plot_nested_trend_ridges <- function(res, trend, RE, RE_level, stat = "density", family, link_scale = FALSE, ...) {
-
+.plot_nested_trend_ridges <- function(
+                                      res,
+                                      trend,
+                                      RE,
+                                      RE_level,
+                                      stat = "density",
+                                      family,
+                                      link_scale = FALSE,
+                                      ...
+) {
     lims <- trend$lims
+    lims$int <- interaction(lims$time, lims$treatment, lims$var)
     tmp <- lims[lims$var %in% c("Within-subject", "Subject", "Cluster"), ]
-    lims[lims$var == "Within-subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
-    lims[lims$var == "Subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
-    lims[lims$var == "Cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
-
-    if(family != "binomial") res <- subset(res, y > lims$mean[1] & y < lims$mean[2])
-
-    p <- ggplot2::ggplot(res, ggplot2::aes(x = y, y = time, group = interaction(time, treatment, var), fill = treatment, color = treatment))
-
-    if(family == "binomial" & !link_scale) {
+    lims[lims$var == "Within-subject", "mean"] <- c(
+        min(tmp$mean),
+        max(tmp$mean)
+    )
+    lims[lims$var == "Subject", "mean"] <- c(
+        min(tmp$mean),
+        max(tmp$mean)
+    )
+    lims[lims$var == "Cluster", "mean"] <- c(
+        min(tmp$mean),
+        max(tmp$mean)
+    )
+    if (family != "binomial") {
+        res <- res[res$y > lims$mean[1] & res$y < lims$mean[2], ]
+    }
+    res$int <- interaction(res$time, res$treatment, res$var)
+    p <- ggplot2::ggplot(
+        data = res,
+        ggplot2::aes_string(
+            x = "y",
+            y = "time",
+            group = "int",
+            fill = "treatment",
+            color = "treatment"
+        )
+    )
+    if (family == "binomial" & !link_scale) {
+        d <- res[res$var == "Within-subject", ]
         p <- p +
-            ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
-                                          scale = 0.7, stat = "binline",
-                                          ggplot2::aes(height = ..count..),
-                                          bins = 20,
-                                          rel_min_height = 0.01,
-                                          color = ggplot2::alpha("white", 0.33),
-                                          alpha = 0.75,
-                                          size = 0.3)
-
-    } else if(family == "poisson") {
+            ggridges::geom_density_ridges(
+                data = d,
+                scale = 0.7,
+                stat = "binline",
+                ggplot2::aes_string(height = "'..count..'"),
+                bins = 20,
+                rel_min_height = 0.01,
+                color = ggplot2::alpha("white", 0.33),
+                alpha = 0.75,
+                size = 0.3
+            )
+    } else if (family == "poisson") {
+        d <- res[res$var == "Within-subject", ]
         p <- p +
-            ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
-                                          scale = 0.7, stat = "binline",
-                                          ggplot2::aes(height = ..count..),
-                                          binwidth = 1,
-                                          rel_min_height = 0.01,
-                                          color = ggplot2::alpha("white", 0.33),
-                                          alpha = 0.75,
-                                          size = 0.3)
-
+            ggridges::geom_density_ridges(
+                data = d,
+                scale = 0.7, stat = "binline",
+                ggplot2::aes(height = "..count.."),
+                binwidth = 1,
+                rel_min_height = 0.01,
+                color = ggplot2::alpha("white", 0.33),
+                alpha = 0.75,
+                size = 0.3
+            )
     }
     else {
+        d <- res[res$var == "Within-subject", ]
         p <- p +
-            ggridges::geom_density_ridges(data = subset(res, var == "Within-subject"),
-                                          scale = 0.7, stat = stat,
-                                          ggplot2::aes(height = ..count..),
-                                          rel_min_height = 0.01,
-                                          color = ggplot2::alpha("white", 0.33),
-                                          alpha = 0.75,
-                                          size = 0.3)
+            ggridges::geom_density_ridges(
+                data = d,
+                scale = 0.7,
+                stat = stat,
+                ggplot2::aes_string(height = "..count.."),
+                rel_min_height = 0.01,
+                color = ggplot2::alpha("white", 0.33),
+                alpha = 0.75,
+                size = 0.3
+            )
     }
-
-    p + ggridges::geom_density_ridges(data = subset(res, var  %in% c("Subject", "Cluster")), scale = 0.7, stat = stat,
-                                      ggplot2::aes(height = ..count..),
-                                      #binwidth = 1,
-                                      rel_min_height = 0.01,
-                                      color = ggplot2::alpha("white", 0.33),
-                                      alpha = 0.75,
-                                      size = 0.3) +
-        ggplot2::geom_path(data = trend$x,
-                  ggplot2::aes(x = mean,
-                      y = time,
-                      linetype = "mean",
-                      fill = NULL,
-                      group = interaction(treatment, var)),
-                  size = 1) +
-        ggplot2::geom_path(data = subset(trend$x, var %in% c("Subject", "Cluster")),
-                  ggplot2::aes(x = Q50,
-                      y = time,
-                      linetype = "median",
-                      fill = NULL,
-                      group = interaction(treatment, var)), size = 1) +
-        ggplot2::geom_blank(data = lims, ggplot2::aes(x = mean, y = time)) +
+    d_lvl_2_3 <- trend$x[trend$x$var %in% c("Subject", "Cluster"),]
+    d_lvl_2_3$int <- interaction(d_lvl_2_3$treatment, d_lvl_2_3$var)
+    res_lvl_2_3 <- res[res$var %in% c("Subject", "Cluster"), ]
+    trend$x$int <- interaction(trend$x$treatment, trend$x$var)
+    p + ggridges::geom_density_ridges(
+        data = res_lvl_2_3,
+        scale = 0.7,
+        stat = stat,
+        ggplot2::aes_string(
+            height = "..count.."
+        ),
+        rel_min_height = 0.01,
+        color = ggplot2::alpha("white", 0.33),
+        alpha = 0.75,
+        size = 0.3) +
+        ggplot2::geom_path(
+            data = trend$x,
+            ggplot2::aes_string(
+                x = "mean",
+                y = "time",
+                linetype = "'mean'",
+                fill = NULL,
+                group = "int"
+            ),
+            size = 1) +
+        ggplot2::geom_path(
+            data = d_lvl_2_3,
+            ggplot2::aes_string(
+                x = "Q50",
+                y = "time",
+                linetype = "'median'",
+                fill = NULL,
+                group = "int"),
+            size = 1
+        ) +
+        ggplot2::geom_blank(
+            data = lims,
+            ggplot2::aes_string(
+                x = "mean",
+                y = "time"
+            )
+        ) +
         ggplot2::coord_flip() +
         ggplot2::theme_minimal() +
-        #scale_x_continuous(expand = c(0, 0)) +
         ggplot2::scale_y_discrete(breaks = unique(sort(res$time))) +
-        ggplot2::facet_wrap(~var, ncol = 2) +
-        ggplot2::scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
+        ggplot2::facet_wrap("~var", ncol = 2) +
+        ggplot2::scale_fill_manual(values = c("#30394F", "#203338")) +
         ggplot2::scale_color_manual(values = c("#30394F", "#c0392b"))
-
 }
 
 plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {

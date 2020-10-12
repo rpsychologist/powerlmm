@@ -5,7 +5,7 @@
 \alias{get_VPC.plcp}
 \title{Calculate the variance partitioning coefficient}
 \usage{
-get_VPC(object, ...)
+get_VPC(object)
 
 \method{get_VPC}{plcp}(object)
 }

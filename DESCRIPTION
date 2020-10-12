@@ -44,6 +44,7 @@ Suggests: testthat,
     viridis,
     gridExtra,
     shiny (>= 1.0),
-    shinydashboard
+    shinydashboard,
+    matrixStats
 ByteCompile: true
 VignetteBuilder: knitr
