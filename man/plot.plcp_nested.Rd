@@ -4,12 +4,10 @@
 \alias{plot.plcp_nested}
 \title{Plot method for \code{study_parameters}-objects}
 \usage{
-\method{plot}{plcp_nested}(x, n = 1, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE)
+\method{plot}{plcp_nested}(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE)
 }
 \arguments{
 \item{x}{An object of class \code{plcp}.}
-
-\item{n}{specifies which row \code{n} should be used if \code{object}}
 
 \item{type}{indicated what plot to show. If \code{effect} the plot showing the treatment groups
 change over time will be shown, if \code{dropout} the missing data pattern will be shown,

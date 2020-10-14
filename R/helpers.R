@@ -685,7 +685,6 @@ reshape_eta_sum <- function(x) {
 # Plot design
 #' Plot method for \code{study_parameters}-objects
 #' @param x An object of class \code{plcp}.
-#' @param n specifies which row \code{n} should be used if \code{object}
 #' @param type ...
 #' @param fixed_subject_percentiles ...
 #' @param fixed_cluster_percentiles ...
@@ -697,14 +696,9 @@ reshape_eta_sum <- function(x) {
 #' @param ... Optional arguments.
 #' @export
 #' @import ggplot2
-plot.plcp_nested <- function(x, n = 1, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
+plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
     check_installed("ggplot2")
     paras <- x
-     if(is.data.frame(paras)) {
-          paras <- as.list(paras[n,])
-          paras <- do.call(study_parameters, paras)
-          #class(paras) <- append(c("plcp"), class(paras))
-     }
      if(type == "trend") {
          if(RE) {
             p <- .plot_link(paras,
@@ -1110,9 +1104,12 @@ plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE
     }
 
 }
+
+#' @param n specifies which row \code{n} should be used if \code{object}
 #' @export
-plot.plcp_multi <- function(x, n = 1, type = "both", ...) {
-    plot.plcp(x, n = n, type = type)
+plot.plcp_multi_nested <- function(x, n = 1, type = "trend", ...) {
+    p <- as.plcp(x[n, ])
+    plot.plcp_nested(p, type = type, ...)
 }
 
 # power curve

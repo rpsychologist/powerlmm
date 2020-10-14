@@ -264,6 +264,7 @@ create_lmer_formula.plcp_multi <- function(object, n = 1, ...) {
     create_lmer_formula(as.plcp(object[n, ]))
 }
 
+#' @importFrom stats binomial poisson Gamma gaussian
 #' @export
 create_lmer_formula.plcp <- function(object, n = NULL, ...) {
     NextMethod("create_lmer_formula")

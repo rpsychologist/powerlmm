@@ -618,6 +618,7 @@ simulate.plcp <- function(object,
 }
 
 
+#' @importFrom stats formula
 make_cluster <- function(cl = NULL, cores, nsim, seed = NULL) {
     # FORK
     if (.Platform$OS.type == "unix" && !interactive()) {
@@ -1462,7 +1463,7 @@ munge_results_ <- function(model, res, effect) {
     })
     if(effect %in% c("RE", "FE") ) {
         res <- dplyr::bind_rows(res)
-        res <- dplyr::filter(res, !is.na(parameter))
+        res <- res[!is.na(res$parameter), ]
     } else do.call(rbind, res)
 
     res

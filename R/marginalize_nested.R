@@ -7,10 +7,12 @@
 # @param p1 prob tx
 # @param p0 prob control
 get_OR <- function(p1, p0) {
-    (p1/(1-p1)) / (p0 / (1-p0))
+    (p1 / (1 - p1)) / (p0 / (1 - p0))
 }
 
 #' @export
+#' @importFrom stats quantile plogis qlogis model.matrix 
+#' rnorm rlogis rpois rgamma rlnorm rbinom
 marginalize.plcp_nested <- function(object,
                                     R = 1e4,
                                     vectorize = FALSE,
