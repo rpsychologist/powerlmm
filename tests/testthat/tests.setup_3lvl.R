@@ -236,7 +236,7 @@ test_that("NA and zero", {
                                   n3 = 6,
                                   icc_pre_subject = 0.5,
                                   icc_slope = 0,
-                                  sigma_subject_slope = c(NA,0,1),
+                                  sigma_subject_slope = c(NA, 0, 1),
                                   cohend = -0.8), msgNA)
 
 

@@ -384,7 +384,11 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
     if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
         tmp_args$icc_pre_subject <- NA
     }
-    if(is.null(var_ratio) & (is.null(sigma_subject_slope) || is.na(sigma_subject_slope)) & is.null(sigma_cluster_slope)) {
+    if(
+        is.null(var_ratio) & 
+        (is.null(sigma_subject_slope) || any(is.na(sigma_subject_slope))) &
+        is.null(sigma_cluster_slope)
+    ) {
         tmp_args$var_ratio <- NA
     }
     if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
@@ -405,7 +409,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
 
     # check cluster slope variance exists when var ratio is NA or zero.
     if(!is.null(tmp$var_ratio)) {
-        if(is.na(tmp$var_ratio) && any(tmp$icc_slope >= 0, na.rm=TRUE)) {
+        if(any(is.na(tmp$var_ratio) & tmp$icc_slope >= 0, na.rm = TRUE)) {
             stop("'icc_slope' can't be >= 0 when 'var_ratio' or 'sigma_subject_slope' is NA", call. = FALSE)
         }
         if((any(tmp$var_ratio == 0, na.rm=TRUE) | any(sigma_subject_slope == 0)) &&

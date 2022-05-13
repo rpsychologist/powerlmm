@@ -266,7 +266,7 @@ test_that("satterth df 2lvl", {
 # power calc
 test_that("satterth df 2lvl", {
 p <- study_parameters(n1 = 5,
-                      n2 = c(4,5),
+                      n2 = c(4, 5),
                       n3 = 4,
                       T_end = 10,
                       icc_pre_subject = 0.5,
