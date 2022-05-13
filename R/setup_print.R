@@ -113,8 +113,9 @@ prepare_print_plcp <- function(x, two_level = FALSE, crossed = FALSE, hanging = 
 
     gd <- get_dropout(x)
     gd$time <- format(gd$time, nsmall = 0, digits = 3, width = 2)
-    gd$control <-  format(gd$control*100, nsmall = 0, digits = 0, width = 2)
-    gd$treatment <- format(gd$treatment*100, nsmall = 0, digits = 0, width = 2)
+    gd$control <-  format(round(gd$control*100), width = 2)
+    gd$treatment <- format(round(gd$treatment*100), width = 2)
+ 
     colnames(gd) <- c("time", "%, control", "%, treatment")
     gd <- print_per_treatment(gd,
                               hanging = hanging)

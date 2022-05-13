@@ -304,7 +304,7 @@ shinyServer(function(input, output, session) {
     output$table_n2 <- renderTable({
         if(p$run == FALSE) return()
         get_sample_size(p$paras)
-    }, digits = 0)
+    }, digits = 1)
 
     output$total_n <- renderValueBox({
         if(p$run == FALSE) {
