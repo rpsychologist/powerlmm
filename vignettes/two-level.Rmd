@@ -121,19 +121,19 @@ Here's an example of specifying the "same" model using standardized or unstandar
 
 ```{r}
 p1 <- study_parameters(n1 = 11,
-                      n2 = 25,
-                      sigma_subject_intercept = 1.44,
-                      sigma_subject_slope = 0.2,
-                      sigma_error = 1.44,
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
+  n2 = 25,
+  sigma_subject_intercept = 1.44,
+  sigma_subject_slope = 0.2,
+  sigma_error = 1.44,
+  effect_size = cohend(-0.5,
+    standardizer = "pretest_SD"))
 
 p2 <- study_parameters(n1 = 11,
-                      n2 = 25,
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.019,
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
+  n2 = 25,
+  icc_pre_subject = 0.5,
+  var_ratio = 0.019,
+  effect_size = cohend(-0.5,
+    standardizer = "pretest_SD"))
 p1
 ```
 
@@ -147,14 +147,20 @@ Missing data can be accounted for in the power calculations by the argument `dro
 data is not currently supported, thus missing data is monotonically increasing. Two helper functions are used to define the dropout pattern; either `dropout_manual` or `dropout_weibull`. Here I will use `dropout_weibull`.
 
 ```{r}
-p2 <- study_parameters(n1 = 11,
-                      n2 = 25,
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.019,
-                      dropout = dropout_weibull(proportion = 0.3, 
-                                                rate = 1/2),
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
+p2 <- study_parameters(
+  n1 = 11,
+  n2 = 25,
+  icc_pre_subject = 0.5,
+  var_ratio = 0.019,
+  dropout = dropout_weibull(
+    proportion = 0.3,
+    rate = 1 / 2
+  ),
+  effect_size = cohend(
+    ES = -0.5,
+    standardizer = "pretest_SD"
+  )
+)
 ```
 
 Here I've chosen to have a total of 30 % of the participant dropout during the study, with more dropout occurring earlier in the study period. We can plot the model and missing data pattern using `plot`.
@@ -173,18 +179,28 @@ Not surprisingly, power is decreased compared to the model with no missing data.
 The helper function `per_treatment` allows some options to differ by treatment arm, here we will use it to specify a different dropout pattern in each treatment group.
 ```{r, fig.width=4}
 
-d <- per_treatment(control = dropout_weibull(proportion = 0.3, 
-                                                rate = 1/2),
-                   treatment = dropout_weibull(proportion = 0.5, 
-                                                rate = 2))
+d <- per_treatment(
+  control = dropout_weibull(
+    proportion = 0.3,
+    rate = 1 / 2
+  ),
+  treatment = dropout_weibull(
+    proportion = 0.5,
+    rate = 2
+    )
+  )
 
-p2 <- study_parameters(n1 = 11,
-                      n2 = 25,
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.019,
-                      dropout = d,
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
+p2 <- study_parameters(
+  n1 = 11,
+  n2 = 25,
+  icc_pre_subject = 0.5,
+  var_ratio = 0.019,
+  dropout = d,
+  effect_size = cohend(
+    ES = -0.5,
+    standardizer = "pretest_SD"
+  )
+)
 
 plot(p2, type = "dropout")
 ```
@@ -194,19 +210,29 @@ The amount of subjects per treatment group can also be specified per treatment. 
 that both have a total of 60 participants. The first have equal allocation (30 per group), and the second unequal allocation.
 
 ```{r}
-p1 <- study_parameters(n1 = 11,
-                      n2 = 30,
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.019,
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
-p2 <- study_parameters(n1 = 11,
-                      n2 = per_treatment(control = 10,
-                                         treatment = 50),
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.019,
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
+p1 <- study_parameters(
+  n1 = 11,
+  n2 = 30,
+  icc_pre_subject = 0.5,
+  var_ratio = 0.019,
+  effect_size = cohend(
+    ES = -0.5,
+    standardizer = "pretest_SD"
+    )
+  )
+p2 <- study_parameters(
+  n1 = 11,
+  n2 = per_treatment(
+    control = 10,
+    treatment = 50
+  ),
+  icc_pre_subject = 0.5,
+  var_ratio = 0.019,
+  effect_size = cohend(
+    ES = -0.5,
+    standardizer = "pretest_SD"
+  )
+)
 
 p1
 p2
@@ -221,16 +247,25 @@ get_power(p2)$power
 # Power curves
 Since power is influenced by many different parameters, the function `get_power_table` lets you compare the effect of up to 3 different parameters, and visualize the relationships. Let's see how the number of subjects and the variance ratio influences power. 
 ```{r}
-p1 <- study_parameters(n1 = 11,
-                      n2 = 30,
-                      icc_pre_subject = 0.5,
-                      var_ratio = 0.019,
-                      effect_size = cohend(-0.5, 
-                                           standardizer = "pretest_SD"))
+p1 <- study_parameters(
+  n1 = 11,
+  n2 = 30,
+  icc_pre_subject = 0.5,
+  var_ratio = 0.019,
+  effect_size = cohend(
+    ES = -0.5,
+    standardizer = "pretest_SD"
+  )
+)
 
-x <- get_power_table(p1, n2 = seq(10, 30, by = 5), var_ratio = c(0.01, 0.02, 0.05))
+x <- get_power_table(
+  p1, 
+  n2 = seq(10, 30, by = 5), 
+  var_ratio = c(0.01, 0.02, 0.05)
+)
 x
 ```
+
 ```{r, fig.width = 5}
 plot(x)
 ```

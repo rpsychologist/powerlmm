@@ -21,7 +21,7 @@ VIGNETTE_EVAL <- identical(tolower(Sys.getenv("VIGNETTE_EVAL")), "true")
 RUN_SIM <- identical(tolower(Sys.getenv("RUN_SIM")), "true")
 
 # avoid inline eval error
-if(!VIGNETTE_EVAL) {
+if (!VIGNETTE_EVAL) {
     round2 <- function(...) NA
 } else {
     round2 <- round
@@ -31,7 +31,7 @@ options(width = 90)
 knitr::opts_chunk$set(
     eval = VIGNETTE_EVAL,
     purl = VIGNETTE_EVAL
-    )
+)
 ```
 
 This vignette shows how you can further investigate your models using Monte Carlo simulations. In addition to reporting power, simulations allows you to investigate parameter bias, model misspecification, Type I errors and convergence issues. For instance, even if the analytical power calculations work well, it can be useful to check the small sample properties of the model, e.g. estimates of cluster-level random effects with only a few clusters. 
@@ -40,14 +40,16 @@ This vignette shows how you can further investigate your models using Monte Carl
 The simulation-function accepts the same study setup-object that we have used in the two- and three-level power vignettes. The simulation-function supports all models that are available in **powerlmm**.
 
 ```{r}
-#cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
+# cores <- parallel::detectCores(logical = FALSE) # use all physical CPU cores
 cores <- 16
 nsim <- 1000
 ```
 
 ```{r, echo = FALSE}
-if(!RUN_SIM & file.exists("../dev/vignette_cache/sim_res.Rdata")) load("../dev/vignette_cache/sim_res.Rdata")
-if(!RUN_SIM & file.exists("dev/vignette_cache/sim_res.Rdata")) load("dev/vignette_cache/sim_res.Rdata")
+if (!RUN_SIM & file.exists("../dev/vignette_cache/sim_res.Rdata"))
+    load("../dev/vignette_cache/sim_res.Rdata")
+if (!RUN_SIM & file.exists("dev/vignette_cache/sim_res.Rdata"))
+    load("dev/vignette_cache/sim_res.Rdata")
 ```
 
 
@@ -55,22 +57,28 @@ if(!RUN_SIM & file.exists("dev/vignette_cache/sim_res.Rdata")) load("dev/vignett
 We will start with an example of how to evaluate the partially nested three-level model. When doing simulations it can be a good idea to specify the model using raw values, to ensure all parameters are reasonable. Here I use estimates from a real clinical trial. 
 ```{r}
 library(powerlmm)
-p <- study_parameters(n1 = 11,
-                      n2 = 10,
-                      n3 = 6,
-                      fixed_intercept = 37,
-                      fixed_slope = -0.64,
-                      sigma_subject_intercept = 2.8,
-                      sigma_subject_slope = 0.4,
-                      sigma_cluster_intercept = 0,
-                      cor_subject = -0.2,
-                      icc_slope = 0.05,
-                      sigma_error = 2.6,
-                      dropout = dropout_weibull(proportion = 0.3, 
-                                                rate = 1/2),
-                      partially_nested = TRUE,
-                      effect_size = cohend(-0.8, 
-                                           standardizer = "pretest_SD"))
+p <- study_parameters(
+    n1 = 11,
+    n2 = 10,
+    n3 = 6,
+    fixed_intercept = 37,
+    fixed_slope = -0.64,
+    sigma_subject_intercept = 2.8,
+    sigma_subject_slope = 0.4,
+    sigma_cluster_intercept = 0,
+    cor_subject = -0.2,
+    icc_slope = 0.05,
+    sigma_error = 2.6,
+    dropout = dropout_weibull(
+        proportion = 0.3,
+        rate = 1 / 2
+    ),
+    partially_nested = TRUE,
+    effect_size = cohend(
+        ES = -0.8,
+        standardizer = "pretest_SD"
+    )
+)
 p
 ```
 
@@ -85,20 +93,21 @@ We would need about 5000 simulation if we want our empirical power to be +/- 1% 
 Now, let's run the simulation. First we need to write the **lme4**-formula, since the simulated data sets are analyzed using `lme4::lmer`. Then we pass the `study_parameters`-object to the `simulate` function, and when the simulation is finished we use `summary` to view the results. You can run the simulation in parallel by settings `cores` > 1. The parallel computations will be done using the **parallel** package. If performed on a Windows machine *or* inside a GUI, then PSOCK clusters are used, if on Unix/macOS and the simulation is run non-interactively in a terminal then forking is used. 
 
 ```{r}
-f <- sim_formula("y ~ treatment * time + 
-                 (1 + time | subject) + 
-                 (0 + treatment:time | cluster)")
-
-if(RUN_SIM) {
-    res <- simulate(object = p,
-                    nsim = nsim,
-                    formula = f,
-                    satterthwaite = TRUE,
-                    cores = cores,
-                    save = FALSE)
-    
+f <- sim_formula(
+    "y ~ treatment * time +
+        (1 + time | subject) +
+        (0 + treatment:time | cluster)"
+)
+if (RUN_SIM) {
+    res <- simulate(
+        object = p,
+        nsim = nsim,
+        formula = f,
+        satterthwaite = TRUE,
+        cores = cores,
+        save = FALSE
+    )
 }
-
 summary(res)
 ```
 
@@ -109,26 +118,29 @@ It is also possible to automatically create the `formula` by leaving it blank. T
 Let's compare the correct partially nested model to a two-level linear mixed-effects model. The `sim_formula_compare` function lets us fit multiple models to each simulated data set, by passing the model formulas as named arguments. By setting `effect_size` to 0 the simulation results tells us the empirical Type I errors for the correct and misspecified model.
 
 ```{r}
-p <- update(p, effect_size = 0)
-
-f <- sim_formula_compare("correct" = "y ~ treatment * time + 
-                                      (1 + time | subject) + 
-                                      (0 + treatment:time | cluster)",
-                         "wrong" = "y ~ treatment * time + 
-                                    (1 + time | subject)")
-if(RUN_SIM) {
-    res2 <- simulate(object = p,
-                     nsim = nsim,
-                     formula = f,
-                     satterthwaite = TRUE,
-                     cores = cores,
-                     save = FALSE)
+p <- update(
+    p,
+    effect_size = 0
+)
+f <- sim_formula_compare(
+    "correct" = "y ~ treatment * time +
+                    (1 + time | subject) +
+                    (0 + treatment:time | cluster)",
+    "wrong" = "y ~ treatment * time +
+                   (1 + time | subject)"
+)
+if (RUN_SIM) {
+    res2 <- simulate(
+        object = p,
+        nsim = nsim,
+        formula = f,
+        satterthwaite = TRUE,
+        cores = cores,
+        save = FALSE
+    )
 }
-
-
 summary(res2)
 ```
-
 
 All the parameters are summarized and presented for both models. Since we specified `satterthwaite = TRUE`, empirical power is both based on the Wald Z test and the Wald *t* test using Satterthwaite's *df* approximation (from the **lmerTest** package).
 
@@ -136,150 +148,194 @@ All the parameters are summarized and presented for both models. Since we specif
 We can also simulate multiple designs and compare them. Let's compare 6 vs 12 clusters in the treatment arm, and a `ìcc_slope` of 0.05 and 0.1, and a Cohen's d of 0.5 and 0.8. 
 
 ```{r}
-p <- study_parameters(n1 = 11,
-                      n2 = 10,
-                      n3 = c(6, 12),
-                      fixed_intercept = 37,
-                      fixed_slope = -0.64,
-                      sigma_subject_intercept = 2.8,
-                      sigma_subject_slope = 0.4,
-                      sigma_cluster_intercept = 0,
-                      cor_subject = -0.2,
-                      icc_slope = c(0.05, 0.1),
-                      sigma_error = 2.6,
-                      dropout = dropout_weibull(proportion = 0.3, 
-                                                rate = 1/2),
-                      partially_nested = TRUE,
-                      effect_size = cohend(c(0.5, 0.8), 
-                                           standardizer = "pretest_SD"))
-
-
-f <- sim_formula("y ~ treatment * time + (1 + time | subject) + 
-                 (0 + treatment:time | cluster)")
-if(RUN_SIM) {
-    res3 <- simulate(object = p,
-                     nsim = nsim,
-                     formula = f,
-                     satterthwaite = TRUE,
-                     cores = cores,
-                     batch_progress = FALSE)
+p <- study_parameters(
+    n1 = 11,
+    n2 = 10,
+    n3 = c(6, 12),
+    fixed_intercept = 37,
+    fixed_slope = -0.64,
+    sigma_subject_intercept = 2.8,
+    sigma_subject_slope = 0.4,
+    sigma_cluster_intercept = 0,
+    cor_subject = -0.2,
+    icc_slope = c(0.05, 0.1),
+    sigma_error = 2.6,
+    dropout = dropout_weibull(
+        proportion = 0.3,
+        rate = 1 / 2
+    ),
+    partially_nested = TRUE,
+    effect_size = cohend(
+        ES = c(0.5, 0.8),
+        standardizer = "pretest_SD"
+    )
+)
+f <- sim_formula(
+    "y ~ treatment * time +
+        (1 + time | subject) +
+        (0 + treatment:time | cluster)"
+)
+if (RUN_SIM) {
+    res3 <- simulate(
+        object = p,
+        nsim = nsim,
+        formula = f,
+        satterthwaite = TRUE,
+        cores = cores,
+        batch_progress = FALSE
+    )
 }
-
 ```
 
 The setup and simulation is the same, except that we define vectors of values for some parameters. In this scenario we have a total of 2 * 2 * 2 = 8 different combination of parameter values. For each of the 8 setups `nsim` number of simulations will be performed. With multiple designs `summary` works a bit differently. Instead of summarizing all parameters, we now have to choose which parameters to summarize.
 
 ```{r}
-# Summarize the 'time:treatment' results 
-x <- summary(res3, para = "treatment:time")
-
+# Summarize the 'time:treatment' results
+x <- summary(
+    res3,
+    para = "treatment:time"
+)
 # customize what to print
-print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"),
-      estimates = FALSE)
-
-# Summarize the cluster-level random slope 
-x <- summary(res3, para = "cluster_slope")
-print(x, add_cols = c("n3_tx", "icc_slope", "effect_size"))
+print(
+    x,
+    add_cols = c("n3_tx", "icc_slope", "effect_size"),
+    estimates = FALSE
+)
+# Summarize the cluster-level random slope
+x <- summary(
+    res3,
+    para = "cluster_slope"
+)
+print(
+    x,
+    add_cols = c("n3_tx", "icc_slope", "effect_size")
+)
 ```
-
 
 # ANCOVA vs 2-level LMM---data transformations
 Sometimes it is useful to compare if the full longitudinal model is preferred over just analyzing posttest data. In this example we will compare the 2-level LMM to models that analyze the results as a cross-sectional model at posttest. This can be accomplished by using the `data_transform` argument, note that we must specify `test = "treatment"` for the OLS posttest models. 
 
 ```{r}
-p <- study_parameters(n1 = 11,
-                      n2 = 40,
-                      icc_pre_subject = 0.5,
-                      cor_subject = -0.5,
-                      var_ratio = c(0, 0.01, 0.02, 0.03),
-                      dropout = c(0, dropout_weibull(0.3, 1)),
-                      effect_size = cohend(c(0, 0.8)))
+p <- study_parameters(
+    n1 = 11,
+    n2 = 40,
+    icc_pre_subject = 0.5,
+    cor_subject = -0.5,
+    var_ratio = c(0, 0.01, 0.02, 0.03),
+    dropout = c(0, dropout_weibull(0.3, 1)),
+    effect_size = cohend(c(0, 0.8))
+)
 
 # Formulas --------------------------------------------------------------------
 # OLS "t-test"
-f_PT <- sim_formula("y ~ treatment",
-                    test = "treatment",
-                    data_transform = transform_to_posttest)
-
+f_PT <- sim_formula(
+    "y ~ treatment",
+    test = "treatment",
+    data_transform = transform_to_posttest
+)
 # ANCOVA
-f_PT_pre <- sim_formula("y ~ treatment + pretest",
-                        test = "treatment",
-                        data_transform = transform_to_posttest)
-
+f_PT_pre <- sim_formula(
+    "y ~ treatment + pretest",
+    test = "treatment",
+    data_transform = transform_to_posttest
+)
 # analyze as 2-level longitudinal
-f_LMM <- sim_formula("y ~ time * treatment +
-                         (1 + time | subject)")
-
+f_LMM <- sim_formula(
+    "y ~ time * treatment + (1 + time | subject)"
+)
 # constrain treatment differences at pretest
-f_LMM_c <- sim_formula("y ~ time + time:treatment +
-                         (1 + time | subject)")
+f_LMM_c <- sim_formula(
+    "y ~ time + time:treatment + (1 + time | subject)")
 
 # combine formulas
-f <- sim_formula_compare("posttest" = f_PT,
-                         "ANCOVA" = f_PT_pre,
-                         "LMM" = f_LMM,
-                         "LMM_c" = f_LMM_c)
+f <- sim_formula_compare(
+    "posttest" = f_PT,
+    "ANCOVA" = f_PT_pre,
+    "LMM" = f_LMM,
+    "LMM_c" = f_LMM_c
+)
 
 # Run sim --------------------------------------------------------------------
-if(RUN_SIM) {
-    res4 <- simulate(p,
-                     formula = f,
-                     nsim = nsim,
-                     cores = cores,
-                     satterthwaite = TRUE,
-                     batch_progress = FALSE) 
+if (RUN_SIM) {
+    res4 <- simulate(
+        p,
+        formula = f,
+        nsim = nsim,
+        cores = cores,
+        satterthwaite = TRUE,
+        batch_progress = FALSE
+    )
 }
 ```
 
 We are mostly interested in the treatment effect, so we use the `para` argument. Since the treatment effect is represented by different terms in the cross-sectional and longitudinal model we specify the name of the treatment effect for each model. 
 ```{r}
-tests <-  list("posttest" = "treatment",
-               "ANCOVA" = "treatment",
-               "LMM" = "time:treatment",
-               "LMM_c" = "time:treatment")
-
+tests <- list(
+    "posttest" = "treatment",
+    "ANCOVA" = "treatment",
+    "LMM" = "time:treatment",
+    "LMM_c" = "time:treatment"
+)
 x <- summary(res4, para = tests)
-print(head(x, 5), 
-      add_cols = c("var_ratio", 
-                   "effect_size"))
-
+print(
+    head(x, 5),
+    add_cols = c(
+        "var_ratio",
+        "effect_size"
+    )
+)
 ```
 
 We only show the first 5 results, for these data a figure will show the results better.
 
 ```{r, dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center", warnings = FALSE, message = FALSE}
 library(ggplot2)
-x$model <- factor(x$model, levels = c("posttest",
-                                      "ANCOVA", 
-                                      "LMM", 
-                                      "LMM_c")) 
-
-d_limits <- data.frame(effect_size = c(0), 
-                       Power_satt = c(0.025, 0.075),
-                       var_ratio = 0, 
-                       model = 0,
-                       dropout = 0)
-
-d_hline <- data.frame(effect_size = c(0, 0.8), 
-                      x = c(0.05, 0.8))
-
-ggplot(x, aes(model, 
-               Power_satt,
-               group = interaction(var_ratio, dropout), 
-               color = factor(var_ratio),
-               linetype = factor(dropout))) + 
-    geom_hline(data = d_hline,  aes(yintercept = x)) +
-    geom_point() + 
+x$model <- factor(
+    x$model,
+    levels = c(
+        "posttest",
+        "ANCOVA",
+        "LMM",
+        "LMM_c"
+    )
+)
+d_limits <- data.frame(
+    effect_size = c(0),
+    Power_satt = c(0.025, 0.075),
+    var_ratio = 0,
+    model = 0,
+    dropout = 0
+)
+d_hline <- data.frame(
+    effect_size = c(0, 0.8),
+    x = c(0.05, 0.8)
+)
+ggplot(
+    data = x,
+    aes(
+        model,
+        Power_satt,
+        group = interaction(var_ratio, dropout),
+        color = factor(var_ratio),
+        linetype = factor(dropout)
+    )
+) +
+    geom_hline(data = d_hline, aes(yintercept = x)) +
+    geom_point() +
     geom_blank(data = d_limits) +
     geom_line() +
-    labs(y = "Power (Satterthwaite)",
-         linetype = "Dropout",
-         color = "Variance ratio",
-         title = "Power and Type I errors",
-         subtitle = 'Comparing "cross-sectional" and longitudinal models\nunder various amounts of heterogeneity and dropout') +
-    facet_grid(dropout ~ effect_size, 
-               scales = "free", 
-               labeller = "label_both") +
+    labs(
+        y = "Power (Satterthwaite)",
+        linetype = "Dropout",
+        color = "Variance ratio",
+        title = "Power and Type I errors",
+        subtitle = 'Comparing "cross-sectional" and longitudinal models\nunder various amounts of heterogeneity and dropout'
+    ) +
+    facet_grid(
+        dropout ~ effect_size,
+        scales = "free",
+        labeller = "label_both"
+    ) +
     coord_flip()
 ```
 
@@ -289,43 +345,53 @@ More information about this simulation can be found in this blog post [http://rp
 ## Do we need a 3-level model?
 A common strategy when analyzing (longitudinal) data is to build the model in a data driven fashion. We can investigate how well such a strategy works using  `sim_formula_compare`. We'll define four model formulas, starting with a 2-level random intercept model and working up to a 3-level random intercept and slope model. The true model is a 3-level model with only a random slope at the third level. Let's first setup the model
 ```{r}
-p <- study_parameters(n1 = 11,
-                      n2 = 40,
-                      n3 = 3,
-                      icc_pre_subject = 0.5,
-                      cor_subject = -0.5,
-                      icc_slope = 0.05,
-                      var_ratio = 0.03)
-
+p <- study_parameters(
+    n1 = 11,
+    n2 = 40,
+    n3 = 3,
+    icc_pre_subject = 0.5,
+    cor_subject = -0.5,
+    icc_slope = 0.05,
+    var_ratio = 0.03
+)
 f0 <- sim_formula("y ~ time * treatment + (1 | subject)")
 f1 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
-f2 <- sim_formula("y ~ time * treatment + (1 + time | subject) + (0 + time | cluster)")
-f3 <- sim_formula("y ~ time * treatment + (1 + time | subject) + (1 + time | cluster)")
-
-f <- sim_formula_compare("subject-intercept" = f0, 
-                         "subject-slope" = f1, 
-                         "cluster-slope" = f2,
-                         "cluster-intercept" = f3)
-
+f2 <- sim_formula(
+    "y ~ time * treatment + (1 + time | subject) + (0 + time | cluster)"
+)
+f3 <- sim_formula(
+    "y ~ time * treatment + (1 + time | subject) + (1 + time | cluster)"
+)
+f <- sim_formula_compare(
+    "subject-intercept" = f0,
+    "subject-slope" = f1,
+    "cluster-slope" = f2,
+    "cluster-intercept" = f3)
 ```
 
 Then we run the simulation, the four model formulas in `f` will be fit the each data set.
 
 ```{r}
-if(RUN_SIM) {
-    res5 <- simulate(p, formula = f, 
-                     nsim = nsim, 
-                     satterthwaite = TRUE, 
-                     cores = cores,
-                     CI = FALSE)    
+if (RUN_SIM) {
+    res5 <- simulate(
+        p,
+        formula = f,
+        nsim = nsim,
+        satterthwaite = TRUE,
+        cores = cores,
+        CI = FALSE
+    )
 }
-
 ```
 
 During each simulation the REML log-likelihood is saved for each model, we can therefore perform the model selection using the summary method, as a post-processing step. Since REML is used it is assumed the fixed effects are the same, and that we compare a "full model" to a "reduced model". Let's try a forward selection strategy, where start with the first model and compare it to the next. If the comparison is significant we continue testing models, else we stop. The summary function performs this model comparison for each of the `nsim` simulations and returns the results from the "winning" model in each simulation replication.
 
 ```{r}
-x <- summary(res5, model_selection = "FW", LRT_alpha = 0.05)
+x <- summary(
+    res5,
+    model_selection = "FW",
+    LRT_alpha = 0.05
+)
 x
 ```
 
@@ -333,23 +399,47 @@ The point of the model selection algorithm is to mimic a type of data driven mod
 
 ```{r, dpi = 150, fig.asp = 0.8, fig.width = 7, out.width = "100%", fig.align = "center", warnings = FALSE, message = FALSE}
 alphas <- seq(0.01, 0.5, length.out = 50)
-x <- vapply(alphas, function(a) {
-    type1 <- summary(res5, model_selection = "FW", LRT_alpha = a)
-    type1$summary$model_selection$FE$Power_satt[4]
-    }, numeric(1))
-
-d <- data.frame(LRT_alpha = alphas, type1 = x)
-ggplot(d, aes(LRT_alpha, type1)) + 
+x <- vapply(
+    alphas,
+    function(a) {
+        type1 <- summary(
+            res5,
+            model_selection = "FW",
+            LRT_alpha = a
+        )
+        type1$summary$model_selection$FE$Power_satt[4]
+    },
+    numeric(1)
+)
+d <- data.frame(
+    LRT_alpha = alphas,
+    type1 = x
+)
+ggplot(
+    data = d,
+    aes(
+        x = LRT_alpha,
+        y = type1
+    )
+) +
     geom_line() +
-    geom_hline(yintercept = 0.05, linetype = "dotted") +
-    labs(y = "Type I errors (time:treatment)",
-         title = "Impact of the alpha level when using LRT for model selection")
+    geom_hline(
+        yintercept = 0.05,
+        linetype = "dotted"
+    ) +
+    labs(
+        y = "Type I errors (time:treatment)",
+        title = "Impact of the alpha level when using LRT for model selection"
+    )
 ```
 
 We can also see the results from each of the four models. Here we will look at the `time:treatment` effect.
 
 ```{r}
-x1 <- summary(res5, para = "time:treatment")
+x1 <- summary(
+    res5,
+    para = "time:treatment"
+)
 x1
 ```
 
@@ -359,19 +449,26 @@ When choosing a strategy Type I errors is not only factor we want to minimize, p
 
 ```{r}
 # See if power is impacted
-p1 <- update(p, effect_size = cohend(0.8))
-if(RUN_SIM) {
-    res6 <- simulate(p1, 
-                     formula = f, 
-                     nsim = nsim, 
-                     satterthwaite = TRUE,
-                     cores = cores, 
-                     CI = FALSE) 
+p1 <- update(
+    p,
+    effect_size = cohend(0.8)
+)
+if (RUN_SIM) {
+    res6 <- simulate(
+        p1,
+        formula = f,
+        nsim = nsim,
+        satterthwaite = TRUE,
+        cores = cores,
+        CI = FALSE
+    )
 }
-
-
-# we can also summary a fixed effect for convenience
-x <- summary(res6, model_selection = "FW", para = "time:treatment")
+# we can also summarize a fixed effect for convenience
+x <- summary(
+    res6,
+    model_selection = "FW",
+    para = "time:treatment"
+)
 print(x, verbose = FALSE)
 x1 <- summary(res6, para = "time:treatment")
 print(x1, verbose = FALSE)
@@ -382,48 +479,67 @@ print(x1, verbose = FALSE)
 We already investigated the consequences of ignoring the cluster-level. We can also investigate the consequences of ignoring higher-level clustering in a posttest only analysis, by using the `data_transform` argument in `sim_formula`. 
 ```{r}
 # simulation formulas
-
 # analyze as a posttest only 1-level OLS model
-f0 <- sim_formula("y ~ treatment",
-                 test = "treatment",
-                 data_transform = transform_to_posttest)
-
+f0 <- sim_formula(
+    "y ~ treatment",
+    test = "treatment",
+    data_transform = transform_to_posttest
+)
 # analyze as a posttest only 2-level model
-f1 <- sim_formula("y ~ treatment + (1 | cluster)",
-                 test = "treatment",
-                 data_transform = transform_to_posttest)
-
-f <- sim_formula_compare("post_ignore" = f0, 
-                         "post_2lvl" = f1)
-
-if(RUN_SIM) {
-    res7 <- simulate(p,
-                     formula = f,
-                     nsim = nsim,
-                     cores = cores,
-                     satterthwaite = TRUE,
-                     batch_progress = FALSE) 
+f1 <- sim_formula(
+    "y ~ treatment + (1 | cluster)",
+    test = "treatment",
+    data_transform = transform_to_posttest
+)
+f <- sim_formula_compare(
+    "post_ignore" = f0,
+    "post_2lvl" = f1
+)
+if (RUN_SIM) {
+    res7 <- simulate(
+        p,
+        formula = f,
+        nsim = nsim,
+        cores = cores,
+        satterthwaite = TRUE,
+        batch_progress = FALSE
+    )
 }
-
-
 # Type I error
-print(summary(res7, para = "treatment"), verbose = FALSE)
+print(
+    summary(
+        res7,
+        para = "treatment"
+    ),
+    verbose = FALSE
+)
 ```
 
 We see that the Type I errors is substantially increased when clustering is ignored.
 
 ```{r}
 # model selection
-summary(res7,
-        model_selection = "FW", 
-        para = "treatment", 
-        LRT_alpha = 0.1)
+summary(
+    res7,
+    model_selection = "FW",
+    para = "treatment",
+    LRT_alpha = 0.1
+)
 ```
 
 Just as with the longitudinal model, the LRT model selection strategy rejects the 2-level model too often leading to inflated Type I errors.
 
 ```{r, echo = FALSE}
-if(RUN_SIM) save(res, res2, res3, res4, res5, res6, res7, 
-                 file = "../dev/vignette_cache/sim_res.Rdata")
+if (RUN_SIM) {
+    save(
+        res,
+        res2,
+        res3,
+        res4,
+        res5,
+        res6,
+        res7,
+        file = "../dev/vignette_cache/sim_res.Rdata"
+    )
+}
 ```
-

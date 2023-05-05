@@ -22,6 +22,8 @@ The lme4 formula will correspond to the model implied by the specified parameter
 the \code{\link{study_parameters}}-object. Thus, if e.g. \code{cor_subject} is \code{NA} or \code{NULL} the
 corresponding term is removed from the lmer formula. Parameters that are 0 are retained.
 
+For crossed design if all correlations involving an effect is NA then that random effect will be modeled as uncorelated.
+
 
 Currently only objects with one study design are supported, i.e. objects with class \code{plcp},
 and not \code{plcp_multi}; \code{data.frame} with multiple designs are currently not supported.

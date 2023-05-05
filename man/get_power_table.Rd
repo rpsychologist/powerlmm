@@ -4,8 +4,15 @@
 \alias{get_power_table}
 \title{Create a power table for a combination of parameter values}
 \usage{
-get_power_table(object, n2, ..., df = "between", alpha = 0.05,
-  R = 1L, cores = 1L)
+get_power_table(
+  object,
+  n2,
+  ...,
+  df = "between",
+  alpha = 0.05,
+  R = 1L,
+  cores = 1L
+)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}

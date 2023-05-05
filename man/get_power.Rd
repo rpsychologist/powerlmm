@@ -4,8 +4,15 @@
 \alias{get_power}
 \title{Calculate power for two- and three-level models with missing data.}
 \usage{
-get_power(object, df = "between", alpha = 0.05, progress = TRUE,
-  R = 1L, cores = 1L, ...)
+get_power(
+  object,
+  df = "between",
+  alpha = 0.05,
+  progress = TRUE,
+  R = 1L,
+  cores = 1L,
+  ...
+)
 }
 \arguments{
 \item{object}{An object created by \code{\link{study_parameters}}}

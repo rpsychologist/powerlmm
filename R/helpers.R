@@ -1250,7 +1250,7 @@ plot.plcp_power_table <- function(x, ...) {
         ggplot2::theme_minimal() +
         ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(10)) +
         ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(10)) +
-        ggplot2::scale_alpha_manual(values = c("with missing" = 0, "no missing" = 1), guide = FALSE) +
+        ggplot2::scale_alpha_manual(values = c("with missing" = 0, "no missing" = 1), guide = "none") +
         ggplot2::geom_hline(yintercept = 0.8, linetype = "dotted") +
         ggplot2::labs(linetype = "missing data",
              color = colnames(.d)[2],
