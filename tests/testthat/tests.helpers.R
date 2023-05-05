@@ -270,7 +270,7 @@ test_that("get_SDS", {
 
     x <- get_sds(p)
     expect_identical(nrow(x), 11L)
-    expect_equal(x$SD_with_random_slopes, rep(sqrt(1^2 + 1^2), 11))
+    expect_equal(x$SD, rep(sqrt(1^2 + 1^2), 11))
     expect_error(x, NA)
 
     # varying slope
@@ -279,7 +279,7 @@ test_that("get_SDS", {
     expect_identical(nrow(x), 11L)
     expect_equal(x$SD_no_random_slopes, rep(sqrt(1^2 + 1^2), 11))
 
-    expect_length(unique(x$SD_with_random_slopes), 11)
+    expect_length(unique(x$SD), 11)
 
     expect_error(plot(x), NA)
 
@@ -296,7 +296,7 @@ test_that("get_SDS", {
 
     x <- get_sds(p)
     expect_identical(nrow(x), 11L)
-    expect_equal(x$SD_with_random_slopes, rep(sqrt(1^2 + 1^2), 11))
+    expect_equal(x$SD, rep(sqrt(1^2 + 1^2), 11))
     expect_error(x, NA)
 
 
@@ -309,8 +309,8 @@ test_that("get_SDS", {
                           sigma_error = 10,
                           partially_nested = TRUE)
 
-    expect_true(all(get_sds(p, treatment = "treatment")$SD_with_random_slopes == sqrt(10^2 + 5^2 + 10^2)))
-    expect_true(all(get_sds(p, treatment = "control")$SD_with_random_slopes == sqrt(10^2 + 10^2)))
+    expect_true(all(get_sds(p, treatment = "treatment")$SD == sqrt(10^2 + 5^2 + 10^2)))
+    expect_true(all(get_sds(p, treatment = "control")$SD == sqrt(10^2 + 10^2)))
 
 })
 

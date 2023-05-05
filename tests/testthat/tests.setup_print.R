@@ -2,7 +2,7 @@
 
 
 # two level ---------------------------------------------------------------
-test_that("setup print", {
+test_that("setup print 2-lvl", {
 
     p <- study_parameters(n1 = 10,
                           n2 = per_treatment(10, 10000),
@@ -57,7 +57,7 @@ test_that("setup print", {
 
 
 # three-level -------------------------------------------------------------
-test_that("setup print", {
+test_that("setup print 3-lvl nested", {
 
     p <- study_parameters(n1 = 10,
                           n2 = per_treatment(10, 10000),
@@ -69,7 +69,7 @@ test_that("setup print", {
                           sigma_error = 1.44,
                           cohend = 0.5)
 
-    expect_output(str(print(p)),  "Study setup \\(three-level\\)")
+    expect_output(str(print(p)),  "Study setup \\(three-level, nested\\)")
     expect_output(str(print(p)), "n1 = 10")
     expect_output(str(print(p)), "n2 = 10000 x 5")
     expect_output(str(print(p)), "n3 = 5")
@@ -105,7 +105,7 @@ test_that("setup print", {
                           dropout = dropout_weibull(.3, 2),
                           cohend = 0.5)
 
-    expect_output(str(print(p)),  "Study setup \\(three-level\\)")
+    expect_output(str(print(p)),  "Study setup \\(three-level, nested\\)")
     expect_output(str(print(p)), "n2 = 10000 x 5")
     expect_output(str(print(p)), "50050")
     expect_output(str(print(p)), " 0,  0,  2,  4,  7, 10, 15, 19, 25, 30 \\(%, control\\)")

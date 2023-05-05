@@ -112,7 +112,7 @@ test_that("simulation summary", {
     tmp2 <- summary(res, para = "cluster_slope")
     expect_output(print(tmp2), "Model:  summary")
     expect_output(print(tmp2), "Random effects: 'cluster_slope'")
-    expect_output(print(tmp2), "model  M_est  theta")
+    expect_output(print(tmp2), "model M_est theta")
     expect_output(print(tmp2), "Total number of subjects:  100")
 
     # params
@@ -264,7 +264,7 @@ test_that("simulation random n2", {
                           cohend = -0.5)
     res <- simulate(p, nsim = 3, satterthwaite = FALSE,
                     progress = FALSE)
-    tmp <- res$res$default$tot_n[,1]
+    tmp <- unlist(res$res$default$tot_n)
     expect_gt(length(unique(tmp)), 1)
 
     # df_bw
@@ -290,7 +290,7 @@ test_that("simulation random n2 some zero", {
                           cohend = -0.5)
     res <- simulate(p, nsim = 3, satterthwaite = FALSE,
                     progress = FALSE)
-    tmp <- res$res$default$tot_n[,1]
+    tmp <- unlist(res$res$default$tot_n)
     expect_length(unique(tmp), 3)
 
     # df_bw

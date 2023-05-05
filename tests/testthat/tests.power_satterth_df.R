@@ -134,7 +134,9 @@ test_that("satterth df 3lvl", {
     f <- lme4::lFormula(formula = create_lmer_formula(object),
                         data = d)
 
-    pc <- setup_power_calc(d, f, object)
+    pc <- setup_power_calc.plcp_nested(object = object,
+                                       d = d,
+                                       f = f)
     X <- pc$X
     Zt <- pc$Zt
     L0 <- pc$L0
@@ -168,7 +170,9 @@ test_that("satterth df 3lvl ZERO", {
     f <- lme4::lFormula(formula = create_lmer_formula(object),
                         data = d)
 
-    pc <- setup_power_calc(d, f, object)
+    pc <- setup_power_calc.plcp_nested(object = object,
+                                       d = d,
+                                       f = f)
     X <- pc$X
     Zt <- pc$Zt
     L0 <- pc$L0
@@ -203,7 +207,9 @@ test_that("satterth df 3lvl", {
     f <- lme4::lFormula(formula = create_lmer_formula(object),
                         data = d)
 
-    pc <- setup_power_calc(d, f, object)
+    pc <- setup_power_calc.plcp_nested(object = object,
+                                       d = d,
+                                       f = f)
     X <- pc$X
     Zt <- pc$Zt
     L0 <- pc$L0
@@ -239,7 +245,10 @@ test_that("satterth df 2lvl", {
     f <- lme4::lFormula(formula = create_lmer_formula(object),
                         data = d)
 
-    pc <- setup_power_calc(d, f, object)
+
+    pc <- setup_power_calc.plcp_nested(object = object,
+                                       d = d,
+                                       f = f)
     X <- pc$X
     Zt <- pc$Zt
     L0 <- pc$L0

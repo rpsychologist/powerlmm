@@ -74,13 +74,12 @@ test_that("sim LRT", {
                           n2 = 5,
                           icc_pre_subject = 0.5,
                           cor_subject = -0.5,
-                          var_ratio = 0.03)
+                          var_ratio = 0.02)
 
     f0 <- sim_formula("y ~ time * treatment + (1 | subject)")
     f1 <- sim_formula("y ~ time * treatment + (1 + time || subject)")
     f2 <- sim_formula("y ~ time * treatment + (1 + time | subject)")
     f <- sim_formula_compare("m0" = f0, "m1" = f1, "m2" = f2)
-
 
     res <- simulate(p, formula = f, nsim = 4, satterthwaite = FALSE, cores = 1, CI = FALSE)
 

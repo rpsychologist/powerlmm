@@ -444,7 +444,7 @@ test_that("proportion of dropout, per_treatment", {
     d <- simulate_data(p)
     n <- d %>%
         group_by(treatment) %>%
-        summarise(n = length(unique(slope_cluster))) %>%
+        summarise(n = length(unique(cluster_slope))) %>%
         .$n
 
     expect_equal(n, c(1,5))
@@ -455,7 +455,7 @@ test_that("proportion of dropout, per_treatment", {
     d <- simulate_data(p)
     n <- d %>%
         group_by(treatment) %>%
-        summarise(n = length(unique(slope_cluster))) %>%
+        summarise(n = length(unique(cluster_slope))) %>%
         .$n
     expect_equal(n, c(5,5))
 
@@ -580,7 +580,7 @@ test_that("proportion of dropout, per_treatment", {
     d <- simulate_data(p)
     n <- d %>%
         group_by(treatment) %>%
-        summarise(n = length(unique(slope_cluster))) %>%
+        summarise(n = length(unique(cluster_slope))) %>%
         .$n
 
     expect_equal(n, c(1,5))
@@ -599,7 +599,7 @@ test_that("proportion of dropout, per_treatment", {
     d <- simulate_data(p)
     n <- d %>%
         group_by(treatment) %>%
-        summarise(n = length(unique(slope_cluster))) %>%
+        summarise(n = length(unique(cluster_slope))) %>%
         .$n
     expect_equal(n, c(5,5))
 
@@ -618,7 +618,7 @@ test_that("proportion of dropout, per_treatment", {
     d <- simulate_data(prepped)
     n <- d %>%
         group_by(treatment) %>%
-        summarise(n = length(unique(slope_cluster))) %>%
+        summarise(n = length(unique(cluster_slope))) %>%
         .$n
     expect_equal(n, c(5,5))
 

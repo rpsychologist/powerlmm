@@ -46,38 +46,34 @@ get_VPC <- function(object) {
 #' @export
 get_VPC.plcp <- function(object) {
     paras <- NA_to_zero(object)
-     u0 <- paras$sigma_subject_intercept
-     u1 <- paras$sigma_subject_slope
-     v0 <- paras$sigma_cluster_intercept
-     v1 <- paras$sigma_cluster_slope
-     v01 <- v0 * v1 * paras$cor_cluster
-     error <- paras$sigma_error
+    u0 <- paras$sigma_subject_intercept
+    u1 <- paras$sigma_subject_slope
+    v0 <- paras$sigma_cluster_intercept
+    v1 <- paras$sigma_cluster_slope
+    v01 <- v0 * v1 * paras$cor_cluster
+    error <- paras$sigma_error
+    u01 <- paras$cor_subject * u0 * u1
+    time <- get_time_vector(paras)
+    tot_var <- (u0^2 + 2 * u01 * time + u1^2 * time^2 +
+        v0^2 + 2 * v01 * time + v1^2 * time^2 + error^2)
+    lvl3 <- (v0^2 + 2 * v01 * time + v1^2 * time^2) / tot_var
+    lvl2 <- (u0^2 + 2 * u01 * time + u1^2 * time^2) / tot_var
+    lvl1 <- error^2 / tot_var
+    tot_var <- tot_var / tot_var[1]
+    res <- data.frame(time,
+        between_clusters = lvl3 * 100,
+        between_subjects = lvl2 * 100,
+        within_subjects = lvl1 * 100,
+        tot_var = (tot_var - 1) * 100)
+    class(res) <- append("plcp_VPC", class(res))
 
-     u01 <- paras$cor_subject * u0 * u1
-
-     time <- get_time_vector(paras)
-
-     tot_var <- (u0^2 + 2*u01*time + u1^2*time^2 +
-                     v0^2 + 2*v01*time + v1^2*time^2 + error^2)
-     lvl3 <- (v0^2 + 2*v01*time + v1^2*time^2)/tot_var
-     lvl2 <- (u0^2 + 2*u01*time + u1^2*time^2)/tot_var
-     lvl1 <- error^2/tot_var
-
-     tot_var <- tot_var/tot_var[1]
-     res <- data.frame(time,
-                       between_clusters = lvl3*100,
-                       between_subjects = lvl2*100,
-                       within_subjects = lvl1*100,
-                       tot_var = (tot_var-1)*100)
-
-     class(res) <- append("plcp_VPC", class(res))
-
-     res
+    res
 }
+
 #' @export
 get_VPC.plcp_multi <- function(object) {
     warning("Multiple study designs used, only the first is shown")
-    get_VPC.plcp(object[1, ])
+    get_VPC(as.plcp(object[1, ]))
 }
 
 
@@ -111,7 +107,7 @@ plot.plcp_VPC <- function(x, ...) {
         ggplot2::geom_point() +
         ggplot2::labs(title = "Variance partitioning",
                x = "Time point",
-               y = "Proportion of total variance")
+               y = "Percentage of total variance (%)")
 
     if(requireNamespace("ggsci", quietly = TRUE)) {
        p <- p + ggsci::scale_fill_d3() +
@@ -129,6 +125,7 @@ plot.plcp_VPC <- function(x, ...) {
 print.plcp_VPC <- function(x, digits = 2, ...) {
     cat("# Percentage (%) of total variance at each level and time point\n")
     print.data.frame(x, digits = digits, scientific = FALSE, ...)
+    cat("# 'tot_var' is the increase in variance compared to time = 0.\n")
     invisible(x)
 }
 
@@ -229,13 +226,11 @@ get_sds_ <- function(sigma_subject_intercept,
      sds_lvl2 <- sqrt((u0^2 + 2*u01*time + u1^2*time^2 + v0^2 + error^2))
 
      res <- data.frame(time = time,
-                       SD_with_random_slopes = sds,
+                       SD = sds,
                        SD_no_cluster_random_slope = sds_lvl2,
                        SD_no_random_slopes = sqrt(u0^2 + v0^2 + error^2))
 
      res
-
-
 }
 
 
@@ -251,7 +246,7 @@ plot.plcp_sds <- function(x, ...) {
      res <- .res
      res$time <- round(res$time,1)
 
-     p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "SD_with_random_slopes")) +
+     p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "SD")) +
          ggplot2::geom_hline(ggplot2::aes_string(color = "'Random slopes = 0'",
                          yintercept = "SD_no_random_slopes")) +
          ggplot2::geom_line(ggplot2::aes(color = "With random slopes")) +
@@ -273,8 +268,8 @@ plot.plcp_sds <- function(x, ...) {
 #' @param ... Optional arguments.
 #' @export
 #' @method print plcp_sds
-print.plcp_sds <- function(x, ...) {
-    print.data.frame(x, digits = 2, ...)
+print.plcp_sds <- function(x, digits = 2, ...) {
+    print.data.frame(x, digits = digits, ...)
 }
 
 
@@ -311,7 +306,6 @@ get_correlation_matrix <- function(object) {
 get_correlation_matrix.plcp <- function(object) {
     paras <- NA_to_zero(object)
 
-
     u0 <- paras$sigma_subject_intercept
     u1 <- paras$sigma_subject_slope
     v0 <- paras$sigma_cluster_intercept
@@ -344,6 +338,7 @@ get_correlation_matrix.plcp <- function(object) {
 
     V
 }
+
 #' @rdname get_correlation_matrix
 #' @export
 get_correlation_matrix.plcp_multi <- function(object) {
@@ -402,10 +397,7 @@ plot.plcp_ICC2 <- function(x, ...) {
 #'
 #' @method print plcp_ICC2
 #' @export
-print.plcp_ICC2 <- function(x, ...) {
+print.plcp_ICC2 <- function(x, digits = 2, ...) {
     x <- unclass(x)
-    print(round(x, 2), ...)
+    print(round(x, digits = digits), ...)
 }
-
-
-
