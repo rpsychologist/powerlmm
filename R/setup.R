@@ -372,7 +372,7 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
         effect_size = effect_size,
         partially_nested = partially_nested,
         dropout = dropout,
-        deterministic_dropout = deterministic_dropout,
+        deterministic_dropout = deterministic_dropout
     )
     save_call <- args
     save_call$design <- design
