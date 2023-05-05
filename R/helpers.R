@@ -40,12 +40,10 @@ get_ICC_slope.plcp <- function(object, ...) {
     get_ICC_slope.default(u1 = object$sigma_subject_slope,
                       v1 = object$sigma_cluster_slope)
 }
-
 #' @export
 get_ICC_slope.plcp_multi <- function(object, ...) {
     get_ICC_slope.plcp(object)
 }
-
 
 #' Calculates the ratio of the slope variance to the within-subjects error variance
 #'
@@ -133,6 +131,7 @@ get_ICC_pre_subjects.plcp <- function(object, ...) {
                             v0 = object$sigma_cluster_intercept,
                             error = object$sigma_error)
 }
+
 #' @export
 get_ICC_pre_subjects.plcp_multi <- function(object, ...) {
     get_ICC_pre_subjects.plcp(object)
@@ -181,12 +180,11 @@ get_ICC_pre_clusters.plcp <- function(object, ...) {
                             v0 = object$sigma_cluster_intercept,
                             error = object$sigma_error)
 }
+
 #' @export
 get_ICC_pre_clusters.plcp_multi <- function(object, ...) {
     get_ICC_pre_clusters.plcp(object)
 }
-
-
 
 var_T <- function(n1, T_end) {
     time <- seq(0, T_end, length.out = n1)
@@ -230,11 +228,22 @@ NA_or_zero <- function(x) {
 # convert NA paras to 0
 # used e.g. in get_SDS()
 NA_to_zero <- function(object) {
-    ind <- c("sigma_subject_intercept", "sigma_subject_slope", "cor_subject",
-             "sigma_cluster_intercept", "sigma_cluster_slope", "cor_cluster",
-             "sigma_error")
+    ind <- c(
+        "sigma_subject_intercept",
+        "sigma_subject_slope",
+        "cor_subject",
+        "sigma_cluster_intercept",
+        "sigma_cluster_slope",
+        "cor_cluster",
+        "cor_cluster_intercept_slope",
+        "cor_cluster_intercept_intercept_tx",
+        "cor_cluster_intercept_slope_tx",
+        "cor_cluster_slope_intercept_tx",
+        "cor_cluster_slope_slope_tx",
+        "cor_cluster_intercept_tx_slope_tx",
+        "sigma_error")
 
-    for(i in ind) {
+    for (i in ind) {
         x <- object[[i]]
         object[[i]][is.na(x)] <- 0
     }
@@ -311,11 +320,374 @@ sum_missing_tx_time <- function(.d) {
 
 }
 
+# Calculate RE intervals
+#
+# @param d simulate_data data.frame
+# @param var variable to summarise
+# @param treatment treatment group indicator
+#
+# @keywords internal
+eta_sum_d <- function(d, var, treatment) {
+    x <- lapply(unique(d$time), function(i) {
+        x <- eta_sum(d[d$treatment == treatment & d$time == i, var])
+        x <- as.data.frame(x)
+        x$treatment <- treatment
+        x$time <- i
+
+        x
+    })
+    x <- do.call(rbind, x)
+
+    x
+}
+
+# Reshape eta_sum output from wide to long
+#
+# @keywords internal
+# @param x eta_sum_* data.frame
+#
+# @return data.frame in long format
+reshape_eta_sum <- function(x) {
+
+    tmp <- x[, !colnames(x) %in% c("var","mean", "sd", "Q50")]
+    tmp <- lapply(list(c("Q0.5", "Q99.5"),
+                       c("Q2.5", "Q97.5"),
+                       c("Q10", "Q90"),
+                       c("Q25", "Q75")),
+                  function(Q) {
+                      d <- tmp[, c("treatment","time", Q)]
+                      data.frame(treatment = x$treatment,
+                                 time = x$time,
+                                 min = x[, Q[1]],
+                                 max = x[, Q[2]],
+                                 width = switch(Q[1],
+                                                "Q0.5" = 0.99,
+                                                "Q2.5" = 0.95,
+                                                "Q10" = 0.8,
+                                                "Q25" = 0.5)
+                      )
+                  })
+    tmp <- do.call(rbind, tmp)
+    tmp$width <- factor(tmp$width,
+                        levels = rev(c(0.5, 0.8, 0.95, 0.99)))
+
+    tmp
+}
+
+.rbind_lists <- function(args, func = NULL) {
+    x <- lapply(seq_along(args), function(i) {
+        if(is.null(func)) {
+            tmp <- args[[i]]
+        } else {
+            tmp <- func(args[[i]])
+        }
+
+        tmp$var <- names(args)[i]
+
+        tmp
+    })
+    x <- do.call(rbind, x)
+
+    x
+}
+.get_facet_lims <- function(d, var_names, min_cols, max_cols, trim = c(0, 1)) {
+    lims <- lapply(var_names, function(x) {
+        tmp <- d[d$var == x, ]
+
+        if(is.null(dim(tmp[, min_cols]))) {
+            mean <- c(quantile(tmp[, min_cols], trim[1]),
+                 quantile(tmp[, max_cols], trim[2]))
+        } else {
+            mean <- c(apply(tmp[, min_cols], 2, quantile, probs = trim[1]),
+                     apply(tmp[, max_cols], 2, quantile, probs  = trim[2]))
+        }
+
+        data.frame(var = x,
+                   #mean = c(min(tmp[, min_cols]), max(tmp[, max_cols])),
+                   mean = mean,
+                   treatment = "Treatment",
+                   time = 0)
+    })
+    lims <- do.call(rbind, lims)
+
+    lims
+}
+
+
+# Calc linear predictor level 2 and 3
+#
+# @param d data.frame for tx group
+# @treatment treatment indicator
+#
+# @return a data.frame with the extra cols mu2 and mu3
+# @keywords internal
+.calc_mu <- function(d, p, treatment = 1) {
+    d$treatment <- treatment
+
+    if(treatment == 1) {
+        slope_diff <- get_slope_diff(p)/p$T_end
+    } else slope_diff <- 0
+
+    # partialyl nested
+    if(p$partially_nested & treatment == 0) {
+        d$cluster_intercept <- 0
+        d$cluster_slope <- 0
+    }
+
+    # level 2
+    d$mu2 <- with(d, (p$fixed_intercept + subject_intercept + cluster_intercept) + (p$fixed_slope + slope_diff + subject_slope + cluster_slope) * time)
+
+    # level 3
+    d$mu3 <- with(d, p$fixed_intercept + cluster_intercept + (p$fixed_slope  + slope_diff + cluster_slope) * time)
+
+    d
+}
+
+.mu_vec_to_long <- function(x, RE_level,
+                            var1 = "mu1_vec",
+                            var2 = "mu2_vec",
+                            var3 = "mu3_vec",
+                            tx_var = "y2",
+                            level1_func = ".sample_level1_nested",
+                            ...) {
+    #level1_func <- get(level1_func)
+    l1_fn <- get(level1_func)
+    res1 <- NULL
+    res2 <- NULL
+    res3 <- NULL
+
+    if(any(RE_level == 1)) {
+        x1 <- l1_fn(x$paras, ...)
+        res1 <- lapply(1:nrow(x1[["y"]]), function(i) {
+            tmp <- data.frame(y = x1[[var1]][[i]])
+            tmp$treatment <- x1[["y"]][i, "treatment"]
+            tmp$time <- x1[["y"]][i, "time"]
+            tmp$var <- "within-subject"
+            tmp
+        })
+        res1 <- do.call(rbind, res1)
+    }
+    if(any(RE_level == 2)) {
+        res2 <- lapply(1:nrow(x[[tx_var]]), function(i) {
+            tmp <- data.frame(y = x[[var2]][[i]])
+            tmp$treatment <- x[[tx_var]][i, "treatment"]
+            tmp$time <- x[[tx_var]][i, "time"]
+            tmp$var <- "subject"
+            tmp
+        })
+        res2 <- do.call(rbind, res2)
+    }
+    if(any(RE_level == 3)) {
+        res3 <- lapply(1:nrow(x[[tx_var]]), function(i) {
+            tmp <- data.frame(y = x[[var3]][[i]])
+            tmp$treatment <- x[[tx_var]][i, "treatment"]
+            tmp$time <- x[[tx_var]][i, "time"]
+            tmp$var <- "cluster"
+            tmp
+        })
+        res3 <- do.call(rbind, res3)
+    }
+
+    res <- rbind(res1, res2, res3)
+    res$var <- factor(res$var, labels = c("Within-subject","Subject", "Cluster"),
+                      levels = c("within-subject","subject", "cluster"))
+    res$treatment <- factor(res$treatment, labels = c("Control", "Treatment"))
+
+    res
+}
+
+.plot_dropout <- function(paras) {
+    d <- simulate_data(paras)
+    d <- sum_missing_tx_time(d)
+    d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
+
+    #theoretical_missing <- get_dropout(update(paras, n1 = 100))
+    theoretical_missing <- get_dropout(paras)
+
+    theoretical_missing_tx <- theoretical_missing[ , c("time", "treatment")]
+    colnames(theoretical_missing_tx)[2] <- "missing"
+    theoretical_missing_tx$treatment <- 1
+    theoretical_missing_cc <- theoretical_missing[ , c("time", "control")]
+    theoretical_missing_cc$treatment <- 0
+    colnames(theoretical_missing_cc)[2] <- "missing"
+    theoretical_missing <- rbind(theoretical_missing_cc,
+                                 theoretical_missing_tx)
+    theoretical_missing$treatment <- factor(theoretical_missing$treatment,
+                                            labels = c("Control", "Treatment"))
+
+   ggplot2::ggplot(d, ggplot2::aes_string("time", "missing", color = "treatment", group = "treatment")) +
+        ggplot2::geom_point() +
+        ggplot2::geom_line(data = theoretical_missing,
+                           ggplot2::aes_string("time", "missing",
+                                               color = "treatment", group = "treatment"),
+                           linetype = "dashed") +
+        ggplot2::labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
+        ggplot2::ylim(0,1) +
+       ggplot2::theme_minimal()
+
+
+}
+.plot_trend <- function(paras) {
+    time <- get_time_vector(paras)
+
+    ES <- get_effect_size(paras)
+    subtitle <- paste("The treatment effect at posttest",
+                      ifelse(ES$standardizer == "raw", "", " (Cohen's d)"),
+                      " = ",
+                      ES$ES,
+                      sep = "")
+
+    caption <- ifelse(ES$standardizer == "raw",
+                      "N.B.: The treatment effect is the raw (unstandardized) difference",
+                      paste("N.B.: Cohen's d is calculated using the", ES$standardizer))
+
+    y <- paras$fixed_intercept + paras$fixed_slope * time
+    y1 <-  paras$fixed_intercept + (paras$fixed_slope + get_slope_diff(paras)/paras$T_end) * time
+
+    d <- data.frame(y = c(y, y1),
+                    time = rep(time, 2),
+                    treatment = rep(c(0, 1), each = length(y)))
+    d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
+
+    ggplot2::ggplot(d, ggplot2::aes_string("time", "y", color = "treatment")) +
+        ggplot2::geom_line(show.legend = TRUE) +
+        ggplot2::geom_point(show.legend = FALSE) +
+        ggplot2::labs(title = "Treatment effects", y = "Outcome", x = "Time point",
+                      subtitle = subtitle,
+                      caption = caption) +
+        ggplot2::theme_minimal()
+}
+.plot_link <- function(object, RE_level, show = FALSE, ...) {
+    # To get RE intervals
+    m <- marginalize(object, link_scale = TRUE, ...)
+    p <- plot.plcp_marginal_nested(m,
+                                   RE = TRUE,
+                                   RE_level = RE_level,
+                                   link_scale = TRUE,
+                                   ...)
+    if(show) {
+        plot(p)
+    }
+    return(invisible(p))
+}
+.plot_link_ridges <- function(object, RE_level, show = FALSE, ...) {
+    # To get RE intervals
+    m <- marginalize(object, link_scale = TRUE, ...)
+    p <- plot.plcp_marginal_nested(m,
+                                   type = "trend_ridges",
+                                   RE = TRUE,
+                                   RE_level = RE_level,
+                                   link_scale = TRUE,
+                                   ...)
+    if(show) {
+        plot(p)
+    }
+    return(invisible(p))
+}
+
+.plot_diff <- function(x, ...) {
+    m <- marginalize(x, link_scale = TRUE)
+    .plot_diff_marg(m, ...)
+}
+.plot_diff_marg <- function(x, type = "post_diff", hu = FALSE, fixed_overall = NULL) {
+    if (hu) {
+        tmp <- x$post_hu_ps$effect
+        ES <- x$post_hu[x$post_hu$var == "marg_hu_post_diff", "est"]
+        ES_med <- x$post_hu[x$post_hu$var == "median_hu_post_diff", "est"]
+        ES_ratio <- x$post_hu[x$post_hu$var == "marg_OR", "est"]
+        ES_ratio_med <- x$post_hu[x$post_hu$var == "median_OR", "est"]
+    } else {
+        tmp <- x$post_ps$effect
+        ES <- x$post[x$post$var == "marg_post_diff", "est"]
+        ES_med <- x$post[x$post$var == "median_post_diff", "est"]
+        if (x$paras$family == "binomial") {
+            # Use OR
+            ES_ratio <- x$post[x$post$var == "marg_OR", "est"]
+            ES_ratio_med <- x$post[x$post$var == "median_OR", "est"]
+            tmp$ratio <- tmp$OR
+        } else {
+            ES_ratio <- x$post[x$post$var == "marg_RR", "est"]
+            ES_ratio_med <- x$post[x$post$var == "median_RR", "est"]
+        }
+    }
+    if (type == "post_diff" | type == "post_diff_ratio") {
+
+        if (abs(ES_med - ES) < 0.0001) {
+            breaks <- ES
+            labels <- paste(round(ES, 2), " \n(mean,\nmedian)")
+        } else {
+            breaks <- c(ES_med, ES)
+            labels <- c(paste(round(ES_med, 2), " (median)"),
+                paste(round(ES, 2), " (mean)")
+            )
+        }
+        p0 <- ggplot(tmp, ggplot2::aes_string("percentile", "diff", fill = "fill")) +
+            geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
+            geom_hline(yintercept = ES, linetype = "dotted", alpha = 0.75, size = 0.75) +
+            geom_hline(yintercept = ES_med, linetype = "dashed", alpha = 0.75, size = 0.75) +
+            scale_y_continuous(sec.axis = sec_axis(~., breaks = breaks,
+                labels = labels
+            )
+            ) + theme_minimal() +
+            theme(legend.position = "none")
+
+        if (!is.null(fixed_overall)) {
+            p0 <- p0 + geom_hline(yintercept = fixed_overall$diff, color = "#e74c3c")
+        }
+    }
+
+
+    # Ratio
+    if (type == "post_ratio" | type == "post_diff_ratio") {
+        if (hu) tmp$ratio <- tmp$OR
+        if (abs(ES_ratio_med - ES_ratio) < 0.0001) {
+            breaks <- ES_ratio
+            labels <- paste(round(ES_ratio, 2), " \n(mean,\nmedian)")
+        } else {
+            breaks <- c(ES_ratio_med, ES_ratio)
+            labels <- c(paste(round(ES_ratio_med, 2), " (median)"),
+                paste(round(ES_ratio, 2), " (mean)")
+            )
+        }
+
+        p1 <- ggplot(tmp, ggplot2::aes_string("percentile", "ratio")) +
+            geom_histogram(stat = "identity", color = "white", fill = "#3498db", alpha = .75) +
+            # geom_hline(yintercept = 0, linetype = "dotted", size = 0.75) +
+            geom_hline(yintercept = ES_ratio, linetype = "dotted", size = 0.75) +
+            geom_hline(yintercept = ES_ratio_med, linetype = "dashed", size = 0.75) +
+            scale_y_continuous(sec.axis = sec_axis(~., breaks = breaks,
+                labels = labels
+            )) +
+            theme_minimal() +
+            theme(legend.position = "none")
+
+        if (!is.null(fixed_overall)) {
+            p1 <- p1 + geom_hline(yintercept = fixed_overall$ratio, color = "#e74c3c")
+        }
+
+    }
+
+    # Return
+    if (type == "post_diff") {
+        plot(p0)
+        return(invisible(list("post_diff" = p0)))
+    } else if (type == "post_ratio") {
+        plot(p1)
+        return(invisible(list("post_ratio" = p1)))
+    } else if (type == "post_diff_ratio") {
+        gridExtra::grid.arrange(p0, p1)
+        return(invisible(list("post_diff" = p0,
+            "post_ratio" = p1)))
+    }
+
+}
 
 # Plot design
 #' Plot method for \code{study_parameters}-objects
 #' @param x An object of class \code{plcp}.
-#' @param n specifies which row \code{n} should be used if \code{object}
+#' @param type ...
+#' @param fixed_subject_percentiles ...
+#' @param fixed_cluster_percentiles ...
 #'  is a \code{data.frame} containing multiple setups.
 #' @param type indicated what plot to show. If \code{effect} the plot showing the treatment groups
 #' change over time will be shown, if \code{dropout} the missing data pattern will be shown,
@@ -323,87 +695,421 @@ sum_missing_tx_time <- function(.d) {
 #'
 #' @param ... Optional arguments.
 #' @export
-plot.plcp <- function(x, n = 1, type = "both", ...) {
+#' @import ggplot2
+plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
     check_installed("ggplot2")
     paras <- x
-     if(is.data.frame(paras)) {
-          paras <- as.list(paras[n,])
-          paras <- do.call(study_parameters, paras)
-          #class(paras) <- append(c("plcp"), class(paras))
-     }
+     if(type == "trend") {
+         if(RE) {
+            p <- .plot_link(paras,
+                        RE_level = RE_level,
+                        ...) +
+                 ggplot2::labs(y = "y (link scale)")
+         } else {
+            p <- .plot_trend(paras, ...)
+         }
+     } else if(type == "trend_ridges") {
+         p <-.plot_link_ridges(paras,
+                           RE_level = RE_level,
+                           ...)
 
-     time <- get_time_vector(paras)
-
-     ES <- get_effect_size(paras)
-     subtitle <- paste("The treatment effect at posttest",
-                       ifelse(ES$standardizer == "raw", "", " (Cohen's d)"),
-                       " = ",
-                       ES$ES,
-                       sep = "")
-
-     caption <- ifelse(ES$standardizer == "raw",
-                       "N.B.: The treatment effect is the raw (unstandardized) difference",
-                       paste("N.B.: Cohen's d is calculated using the", ES$standardizer))
-
-     y <- paras$fixed_intercept + paras$fixed_slope * time
-     y1 <-  paras$fixed_intercept + (paras$fixed_slope + get_slope_diff(paras)/paras$T_end) * time
-
-     d <- data.frame(y = c(y, y1),
-                     time = rep(time, 2),
-                     treatment = rep(c(0, 1), each = length(y)))
-     d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
-
-     p1 <- ggplot2::ggplot(d, ggplot2::aes_string("time", "y", color = "treatment")) +
-         ggplot2::geom_line(show.legend = TRUE) +
-         ggplot2::geom_point(show.legend = FALSE) +
-         ggplot2::labs(title = "Treatment effects", y = "Outcome", x = "Time point",
-               subtitle = subtitle,
-               caption = caption)
-
-     d <- simulate_data(paras)
-     d <- sum_missing_tx_time(d)
-     d$treatment <- factor(d$treatment, labels = c("Control", "Treatment"))
-
-
-
-     #theoretical_missing <- get_dropout(update(paras, n1 = 100))
-     theoretical_missing <- get_dropout(paras)
-
-     theoretical_missing_tx <- theoretical_missing[ , c("time", "treatment")]
-     colnames(theoretical_missing_tx)[2] <- "missing"
-     theoretical_missing_tx$treatment <- 1
-     theoretical_missing_cc <- theoretical_missing[ , c("time", "control")]
-     theoretical_missing_cc$treatment <- 0
-     colnames(theoretical_missing_cc)[2] <- "missing"
-     theoretical_missing <- rbind(theoretical_missing_cc,
-                                  theoretical_missing_tx)
-     theoretical_missing$treatment <- factor(theoretical_missing$treatment,
-                                             labels = c("Control", "Treatment"))
-
-
-    p2 <- ggplot2::ggplot(d, ggplot2::aes_string("time", "missing", color = "treatment", group = "treatment")) +
-            ggplot2::geom_point() +
-            ggplot2::geom_line(data = theoretical_missing,
-                        ggplot2::aes_string("time", "missing",
-                          color = "treatment", group = "treatment"),
-                      linetype = "dashed") +
-        ggplot2::labs(title = "Dropout", y = "Proportion dropout", x = "Time point") +
-        ggplot2::ylim(0,1)
-
-     if(type == "both") {
-         check_installed("gridExtra")
-        return(gridExtra::grid.arrange(p1, p2, ncol=2))
-     } else if(type == "effect") {
-         return(p1)
      } else if(type == "dropout") {
-         return(p2)
+        p <- .plot_dropout(paras)
+     } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
+       p <- .plot_diff(x, type = type, hu = hu)
      }
+     p
+}
+
+.plot_marg <- function(x, Q_long, ymin, ymax, RE = TRUE, overlay = FALSE, ...) {
+    x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    Q_long$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    if (overlay) {
+        # Overlay L1 trajectory on L2 panel
+        tmp <- x[x$var == "Within-subject", ]
+        # silently ignore overlay when RE_level != 1
+        if (nrow(tmp) > 0) {
+            tmp$var <- "Subject"
+            tmp$color <- "L1"
+        }
+        x$color <- NA
+        x[x$var == "Within-subject", "color"] <- "L1"
+        x[x$var == "Subject", "color"] <- "L2"
+        x[x$var == "Cluster", "color"] <- "L3"
+        x$color <- factor(x$color, levels = c("L1", "L2", "L3"))
+
+        x <- rbind(x, tmp)
+    }
+
+    plot_struct <- list(
+        ggplot2::scale_linetype_manual(
+            values = c("median" = "solid", "mean" = "dotted")
+        ),
+        ggplot2::guides(
+            color = ggplot2::guide_legend(
+                override.aes = list(fill = NA)
+            )
+        ),
+        ggplot2::scale_fill_brewer(
+            palette = "PuBu"
+        ), # PuBu
+        ggplot2::scale_color_manual(
+            values = c("#192a56", "#e84118", "#e84118")
+        ),
+        ggplot2::theme_minimal()
+    )
+
+    if (RE) {
+        p <- ggplot2::ggplot(
+            data = x,
+            ggplot2::aes_string(
+                "time",
+                "mean",
+                group = "treatment")
+        ) +
+            ggplot2::geom_ribbon(
+                data = Q_long,
+                ggplot2::aes_string(
+                    ymin = "min",
+                    ymax = "max",
+                    y = NULL,
+                    x = "time",
+                    group = interaction(
+                        Q_long$width,
+                        Q_long$treatment
+                    ),
+                    fill = "width"),
+                alpha = 0.75) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    y = "Q50",
+                    color = "color",
+                    linetype = "'median'",
+                    fill = NULL,
+                    group = interaction(
+                        x$color,
+                        x$var, x$treatment
+                    )
+                ),
+                size = 1) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    color = "color",
+                    linetype = "'mean'",
+                    fill = NULL,
+                    group = interaction(
+                        x$color,
+                        x$var,
+                        x$treatment
+                    )
+                ),
+                size = 1) +
+            ggplot2::facet_wrap(
+                ~"treatment",
+                ncol = 2
+            ) +
+            plot_struct
+    } else {
+        p <- ggplot2::ggplot(
+            data = x,
+            ggplot2::aes_string(
+                x = "time",
+                y = "mean",
+                group = "treatment",
+                color = "treatment")
+        ) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    linetype = "'mean'",
+                    fill = NULL
+                ),
+                size = 1
+            ) +
+            ggplot2::geom_line(
+                ggplot2::aes_string(
+                    y = "Q50",
+                    linetype = "'median'",
+                    fill = NULL
+                ),
+                size = 1
+            ) +
+            ggplot2::geom_point(
+                ggplot2::aes_string(
+                    y = "Q50"
+                )
+            ) +
+            plot_struct
+    }
+    p
+}
+
+.make_nested_trend <- function(object, RE, RE_level,
+                               var1 = "y",
+                               var2 = "y2",
+                               var3 = "y3",
+                               level1_func = ".sample_level1_nested",
+                               ...) {
+
+    l1_fn <- get(level1_func)
+    y1 <- NULL
+    y2 <- NULL
+    y3 <- NULL
+
+    if(any(RE_level == 1)) {
+        x1 <- do.call(l1_fn, list(pars = object$paras, ...))
+        y1 <- x1[[var1]]
+    }
+    if(any(RE_level == 2)) {
+        y2 <- object[[var2]]
+    }
+    if(any(RE_level == 3)) {
+        y3 <- object[[var3]]
+
+    }
+    args <- list("within-subject" = y1,
+                 "subject" = y2,
+                 "cluster" = y3)
+    args <- args[!vapply(args, is.null, logical(1))]
+    x <- .rbind_lists(args)
+    Q_long <- .rbind_lists(args, func = reshape_eta_sum)
+
+    # Get limits
+    if(RE) {
+        lims <- .get_facet_lims(d = Q_long,
+                                var_names = names(args),
+                                min_cols = "min",
+                                max_cols = "max")
+    } else {
+        lims <- .get_facet_lims(d = x,
+                                var_names = names(args),
+                                min_cols = c("mean", "Q50"),
+                                max_cols = c("mean", "Q50"))
+    }
+
+    # use same limits for lvl 1, 2 and 3
+    if(all(c("subject", "cluster") %in% lims$var)) {
+        tmp <- lims[lims$var %in% c("within-subject", "subject", "cluster"), ]
+        lims[lims$var == "within-subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+        lims[lims$var == "subject", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+        lims[lims$var == "cluster", "mean"] <- c(min(tmp$mean), max(tmp$mean))
+    }
+
+    x$var <- factor(x$var,
+                    labels = c("Within-subject", "Subject", "Cluster"),
+                    levels = c("within-subject","subject", "cluster"))
+    Q_long$var <- factor(Q_long$var,
+                         labels = c("Within-subject", "Subject", "Cluster"),
+                         levels =  c("within-subject","subject", "cluster"))
+
+    x$color <- x$var
+    Q_long$color <- Q_long$var
+    lims2 <- lims
+    lims2$treatment <- "Control"
+    lims <- rbind(lims, lims2)
+
+    lims$var <- factor(lims$var, labels = c("Within-subject", "Subject", "Cluster"),
+                       levels = c("within-subject","subject", "cluster"))
+    lims$treatment <- factor(lims$treatment, labels = c("Control", "Treatment"))
+    x$treatment <- factor(x$treatment, labels = c("Control", "Treatment"))
+    Q_long$treatment <- factor(Q_long$treatment, labels = c("Control", "Treatment"))
+
+    list(x = x,
+         Q_long = Q_long,
+         lims = lims)
+}
+
+.plot_nested_trend_ridges <- function(
+                                      res,
+                                      trend,
+                                      RE,
+                                      RE_level,
+                                      stat = "density",
+                                      family,
+                                      link_scale = FALSE,
+                                      ...
+) {
+    lims <- trend$lims
+    lims$int <- interaction(lims$time, lims$treatment, lims$var)
+    tmp <- lims[lims$var %in% c("Within-subject", "Subject", "Cluster"), ]
+    lims[lims$var == "Within-subject", "mean"] <- c(
+        min(tmp$mean),
+        max(tmp$mean)
+    )
+    lims[lims$var == "Subject", "mean"] <- c(
+        min(tmp$mean),
+        max(tmp$mean)
+    )
+    lims[lims$var == "Cluster", "mean"] <- c(
+        min(tmp$mean),
+        max(tmp$mean)
+    )
+    if (family != "binomial") {
+        res <- res[res$y > lims$mean[1] & res$y < lims$mean[2], ]
+    }
+    res$int <- interaction(res$time, res$treatment, res$var)
+    p <- ggplot2::ggplot(
+        data = res,
+        ggplot2::aes_string(
+            x = "y",
+            y = "time",
+            group = "int",
+            fill = "treatment",
+            color = "treatment"
+        )
+    )
+    if (family == "binomial" & !link_scale) {
+        d <- res[res$var == "Within-subject", ]
+        p <- p +
+            ggridges::geom_density_ridges(
+                data = d,
+                scale = 0.7,
+                stat = "binline",
+                ggplot2::aes_string(height = "'..count..'"),
+                bins = 20,
+                rel_min_height = 0.01,
+                color = ggplot2::alpha("white", 0.33),
+                alpha = 0.75,
+                size = 0.3
+            )
+    } else if (family == "poisson") {
+        d <- res[res$var == "Within-subject", ]
+        p <- p +
+            ggridges::geom_density_ridges(
+                data = d,
+                scale = 0.7, stat = "binline",
+                ggplot2::aes(height = "..count.."),
+                binwidth = 1,
+                rel_min_height = 0.01,
+                color = ggplot2::alpha("white", 0.33),
+                alpha = 0.75,
+                size = 0.3
+            )
+    }
+    else {
+        d <- res[res$var == "Within-subject", ]
+        p <- p +
+            ggridges::geom_density_ridges(
+                data = d,
+                scale = 0.7,
+                stat = stat,
+                ggplot2::aes_string(height = "..count.."),
+                rel_min_height = 0.01,
+                color = ggplot2::alpha("white", 0.33),
+                alpha = 0.75,
+                size = 0.3
+            )
+    }
+    d_lvl_2_3 <- trend$x[trend$x$var %in% c("Subject", "Cluster"),]
+    d_lvl_2_3$int <- interaction(d_lvl_2_3$treatment, d_lvl_2_3$var)
+    res_lvl_2_3 <- res[res$var %in% c("Subject", "Cluster"), ]
+    trend$x$int <- interaction(trend$x$treatment, trend$x$var)
+    p + ggridges::geom_density_ridges(
+        data = res_lvl_2_3,
+        scale = 0.7,
+        stat = stat,
+        ggplot2::aes_string(
+            height = "..count.."
+        ),
+        rel_min_height = 0.01,
+        color = ggplot2::alpha("white", 0.33),
+        alpha = 0.75,
+        size = 0.3) +
+        ggplot2::geom_path(
+            data = trend$x,
+            ggplot2::aes_string(
+                x = "mean",
+                y = "time",
+                linetype = "'mean'",
+                fill = NULL,
+                group = "int"
+            ),
+            size = 1) +
+        ggplot2::geom_path(
+            data = d_lvl_2_3,
+            ggplot2::aes_string(
+                x = "Q50",
+                y = "time",
+                linetype = "'median'",
+                fill = NULL,
+                group = "int"),
+            size = 1
+        ) +
+        ggplot2::geom_blank(
+            data = lims,
+            ggplot2::aes_string(
+                x = "mean",
+                y = "time"
+            )
+        ) +
+        ggplot2::coord_flip() +
+        ggplot2::theme_minimal() +
+        ggplot2::scale_y_discrete(breaks = unique(sort(res$time))) +
+        ggplot2::facet_wrap("~var", ncol = 2) +
+        ggplot2::scale_fill_manual(values = c("#30394F", "#203338")) +
+        ggplot2::scale_color_manual(values = c("#30394F", "#c0392b"))
+}
+
+plot.plcp_marginal_nested <- function(object, type = "trend", ..., RE = TRUE, RE_level = 2, hu = FALSE) {
+    check_installed("ggplot2")
+
+    ## DROPOUT
+    if(type == "dropout") {
+        .plot_dropout(object$paras)
+    ## TREND
+    } else if(type == "trend") {
+        trend <- .make_nested_trend(object = object,
+                                    RE = RE,
+                                    RE_level = RE_level,
+                                    ...)
+
+        if(RE) {
+            facets <- list(ggplot2::facet_wrap(var ~ treatment, scales = "free", ncol = 2))
+        } else {
+            facets <- list(ggplot2::facet_wrap(~var, ncol = 1, scales = "free"))
+        }
+        p <- .plot_marg(x = trend$x,
+                        Q_long = trend$Q_long,
+                        RE = RE,
+                        ymin = NA,
+                        ymax = NA,
+                        ...) +
+            ggplot2::geom_blank(data = trend$lims) +
+            ggplot2::labs(linetype = "",
+                 color = "",
+                 y = "Y",
+                 title = "Change over time") +
+            facets
+
+        #plot(p)
+        return(invisible(p))
+    ## POST
+    } else if(type %in% c("post_diff", "post_ratio", "post_ratio_diff")) {
+        .plot_diff_marg(object, type = type, ...)
+
+        ## Ridges
+    } else if(type == "trend_ridges") {
+        check_installed("ggridges")
+        res <- .mu_vec_to_long(object,
+                               RE_level = RE_level,
+                               ...)
+        trend <- .make_nested_trend(object = object,
+                                    RE = RE,
+                                    RE_level = RE_level,
+                                    ...)
+        .plot_nested_trend_ridges(res = res,
+                                  trend = trend,
+                                  RE_level = RE_level,
+                                  family = object$paras$family,
+                                  ...)
+    }
 
 }
 
+#' @param n specifies which row \code{n} should be used if \code{object}
 #' @export
-plot.plcp_multi <- function(x, n = 1, type = "both", ...) {
-    plot.plcp(x, n = n, type = type)
+plot.plcp_multi_nested <- function(x, n = 1, type = "trend", ...) {
+    p <- as.plcp(x[n, ])
+    plot.plcp_nested(p, type = type, ...)
 }
 
 # power curve
@@ -687,4 +1393,29 @@ check_installed <- function(x) {
    x <- x[!pkg]
 
    if(length(x) > 0) stop(paste("Please install packages: ", paste(x, collapse = ", ")))
+}
+
+
+get_lvl2_vcov <- function(pars) {
+    UseMethod("get_lvl2_vcov")
+}
+get_lvl2_vcov.plcp_nested <- function(object) {
+    p <- object
+    m <- with(p,
+        c(
+            sigma_subject_intercept^2,
+            sigma_subject_intercept * sigma_subject_slope * cor_subject,
+            sigma_subject_intercept * sigma_subject_slope * cor_subject,
+            sigma_subject_slope^2
+        )
+    )
+    m <- matrix(m, 2, 2)
+    m
+}
+
+get_lvl3_vcov <- function(object) {
+    UseMethod("get_lvl3_vcov")
+}
+get_lvl3_vcov.plcp_nested <- function(object) {
+
 }

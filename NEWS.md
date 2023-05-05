@@ -1,4 +1,13 @@
 
+
+# Changes in version 0.5.0
+
+## Minor changes
+* `simulate(..., seed = 1234)` no longer ignores the seed argument. If cores > 1 the "L'Ecuyer-CMRG" RNG is used via `parallel::clusterSetRNGStream`.
+
+## Bug fixes
+* `Summary(model = ...)` now correctly handles a vector of model names, and will give more informative error messages.
+
 # Changes in version 0.4.0
 
 This version substantially improves the `simulate` method.

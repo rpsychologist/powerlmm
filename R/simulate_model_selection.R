@@ -11,7 +11,12 @@ LRT_test <- function(m0, m1, alpha) {
 }
 comp_LRT <- function(m0, m1) {
 
+    m0$df <- unlist(m0$df)
+    m1$df <- unlist(m1$df)
 
+    # legacy
+    m0$ll <- unlist(m0$ll)
+    m1$ll <- unlist(m1$ll)
 
     if(unique(m0$df) < unique(m1$df)) {
         dev0 <- -2 * m0$ll
@@ -36,9 +41,10 @@ comp_LRT <- function(m0, m1) {
 prepare_LRT_models <- function(object) {
     models <- lapply(seq_along(object$res), function(i) {
         m <- object$res[i]
+
         list("label" = names(m),
-             "ll" = m[[1]]$logLik,
-             "df" = m[[1]]$df)
+             "ll" = unlist(m[[1]]$logLik),
+             "df" = unlist(m[[1]]$df))
     })
 
     models
