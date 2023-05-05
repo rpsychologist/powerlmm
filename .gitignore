@@ -4,3 +4,7 @@
 .RData
 ~$README.md
 powerlmm.pdf
+powerlmm_*.tar.gz
+powerlmm.Rcheck/
+.vscode/
+dev/
