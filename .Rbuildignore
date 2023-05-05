@@ -8,4 +8,5 @@
 ^powerlmm.pdf$
 ^\.travis\.yml$
 ^cran-comments\.md$
+^\.vscode$
 
