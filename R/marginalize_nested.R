@@ -66,7 +66,7 @@ marginalize.plcp_nested <- function(object,
         R_cov3 = R_cov3,
         sigma = sigma_error,
         shape = shape,
-        family = pars$family,
+        family = family,
         partially_nested = pars$partially_nested,
         R = R,
         ...))
@@ -105,7 +105,7 @@ marginalize.plcp_nested <- function(object,
 
     inv_link
 }
-.get_link <- function(family, sigma = NULL) {
+.get_link <- function(family = "gaussian", sigma = NULL) {
     ln_link <- function(sigma) {
         sigma <- sigma
         function(y) {
@@ -255,7 +255,6 @@ marginalize.plcp_nested <- function(object,
                                         R_cov,
                                         sd_log,
                                         shape,
-                                        family,
                                         Xmat,
                                         Zmat,
                                         marginal = FALSE,
@@ -263,6 +262,7 @@ marginalize.plcp_nested <- function(object,
                                         full = FALSE, ...) {
 
 
+    family = "gaussian"
     sd0 <- MASS::mvrnorm(R,
         c(0, 0, 0, 0),
         R_cov)
@@ -350,7 +350,7 @@ marginalize.plcp_nested <- function(object,
     #   fixed_cluster_percentiles: level 2 percentiles
 
     d <- .create_dummy_d(pars)
-    family <- pars$family
+    family <- "gaussian"
 
     betas <- with(pars, c(fixed_intercept,
         fixed_slope,

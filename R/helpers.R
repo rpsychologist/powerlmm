@@ -924,10 +924,10 @@ plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu
                                       RE,
                                       RE_level,
                                       stat = "density",
-                                      family,
                                       link_scale = FALSE,
                                       ...
 ) {
+    family = "gaussian"
     lims <- trend$lims
     lims$int <- interaction(lims$time, lims$treatment, lims$var)
     tmp <- lims[lims$var %in% c("Within-subject", "Subject", "Cluster"), ]
@@ -992,7 +992,7 @@ plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu
                 data = d,
                 scale = 0.7,
                 stat = stat,
-                ggplot2::aes_string(height = "..count.."),
+                ggplot2::aes_string(height = "after_stat(count)"),
                 rel_min_height = 0.01,
                 color = ggplot2::alpha("white", 0.33),
                 alpha = 0.75,
@@ -1008,12 +1008,13 @@ plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu
         scale = 0.7,
         stat = stat,
         ggplot2::aes_string(
-            height = "..count.."
-        ),
+            height = "after_stat(count)"
+            ),
         rel_min_height = 0.01,
         color = ggplot2::alpha("white", 0.33),
         alpha = 0.75,
-        size = 0.3) +
+        size = 0.3
+        ) +
         ggplot2::geom_path(
             data = trend$x,
             ggplot2::aes_string(
@@ -1023,7 +1024,8 @@ plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu
                 fill = NULL,
                 group = "int"
             ),
-            size = 1) +
+            size = 1
+        ) +
         ggplot2::geom_path(
             data = d_lvl_2_3,
             ggplot2::aes_string(
@@ -1045,7 +1047,7 @@ plot.plcp_nested <- function(x, type = "trend", ..., RE = TRUE, RE_level = 2, hu
         ggplot2::theme_minimal() +
         ggplot2::scale_y_discrete(breaks = unique(sort(res$time))) +
         ggplot2::facet_wrap("~var", ncol = 2) +
-        ggplot2::scale_fill_manual(values = c("#30394F", "#203338")) +
+        ggplot2::scale_fill_manual(values = c("#30394F", "#6ACEEB")) +
         ggplot2::scale_color_manual(values = c("#30394F", "#c0392b"))
 }
 

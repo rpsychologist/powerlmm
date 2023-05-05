@@ -20,6 +20,7 @@ if (capabilities("cairo")) {
     dev.args = list(png = list(type = "cairo"))
   )
 }
+CORES <- min(parallel::detectCores(logical = FALSE) - 1, 4)
 ```
 
 # powerlmm
@@ -45,10 +46,10 @@ groups, or physician), and missing data. The main features of the package are:
   using convenient simulation methods.
 
 ## Installation
-`powerlmm` can be installed from CRAN and GitHub. 
+`powerlmm` can be installed from ~CRAN~ and GitHub. 
 ```{r, eval = FALSE}
 # CRAN, version 0.4.0
-install.packages("powerlmm")
+# install.packages("powerlmm")
 
 # GitHub, dev version
 devtools::install_github("rpsychologist/powerlmm")
@@ -61,20 +62,25 @@ but unstandardized raw parameters values can also be used.
 
 ```{r three-level-setup, fig.width=9}
 library(powerlmm)
-d <- per_treatment(control = dropout_weibull(0.3, 2),
-               treatment = dropout_weibull(0.2, 2))
-p <- study_parameters(n1 = 11,
-                      n2 = 10,
-                      n3 = 5,
-                      T_end = 10,
-                      icc_pre_subject = 0.5,
-                      icc_pre_cluster = 0,
-                      icc_slope = 0.05,
-                      var_ratio = 0.02,
-                      dropout = d,
-                      effect_size = cohend(-0.8, 
-                                           standardizer = "pretest_SD"))
-
+d <- per_treatment(
+  control = dropout_weibull(0.3, 2),
+  treatment = dropout_weibull(0.2, 2)
+)
+p <- study_parameters(
+  n1 = 11,
+  n2 = 10,
+  n3 = 5,
+  T_end = 10,
+  icc_pre_subject = 0.5,
+  icc_pre_cluster = 0,
+  icc_slope = 0.05,
+  var_ratio = 0.02,
+  dropout = d,
+  effect_size = cohend(
+    ES = -0.8,
+    standardizer = "pretest_SD"
+  )
+)
 p
 ```
 
@@ -88,14 +94,18 @@ get_power(p, df = "satterthwaite")
 
 ## More vizualisations
 ```{r trends-varying}
-plot(p, 
-     RE_level = c(1, 2), 
-     type = "trend")
+plot(
+  p,
+  RE_level = c(1, 2),
+  type = "trend"
+)
 ```
 ```{r trend-ridges}
-plot(update(p, n1 = 3), 
-     RE_level = c(1, 2), 
-     type = "trend_ridges")
+plot(
+  update(p, n1 = 3),
+  RE_level = c(1, 2),
+  type = "trend_ridges"
+)
 ```
 
 
@@ -103,41 +113,51 @@ plot(update(p, n1 = 3),
 Unequal cluster sizes is also supported, the cluster sizes can either be random (sampled), or the marginal distribution can be specified. 
 
 ```{r three-level-power-unequal, message= FALSE, warning=FALSE}
-p <- study_parameters(n1 = 11,
-                      n2 = unequal_clusters(2, 3, 5, 20),
-                      icc_pre_subject = 0.5,
-                      icc_pre_cluster = 0,
-                      icc_slope = 0.05,
-                      var_ratio = 0.02,
-                      effect_size = cohend(-0.8, 
-                                           standardizer = "pretest_SD"))
-
+p <- study_parameters(
+  n1 = 11,
+  n2 = unequal_clusters(2, 3, 5, 20),
+  icc_pre_subject = 0.5,
+  icc_pre_cluster = 0,
+  icc_slope = 0.05,
+  var_ratio = 0.02,
+  effect_size = cohend(-0.8,
+    standardizer = "pretest_SD")
+)
 get_power(p)
 ```
 
 Cluster sizes follow a Poisson distribution
 ```{r three-level-power-unequal-random, message= FALSE, warning=FALSE}
-p <- study_parameters(n1 = 11,
-                      n2 = unequal_clusters(func = rpois(5, 5)), # sample from Poisson
-                      icc_pre_subject = 0.5,
-                      icc_pre_cluster = 0,
-                      icc_slope = 0.05,
-                      var_ratio = 0.02,
-                      effect_size = cohend(-0.8, 
-                                           standardizer = "pretest_SD"))
-
-get_power(p, R = 100, progress = FALSE) # expected power by averaging over R realizations
+p <- study_parameters(
+  n1 = 11,
+  n2 = unequal_clusters(func = rpois(5, 5)), # sample from Poisson
+  icc_pre_subject = 0.5,
+  icc_pre_cluster = 0,
+  icc_slope = 0.05,
+  var_ratio = 0.02,
+  effect_size = cohend(
+    ES = -0.8,
+    standardizer = "pretest_SD"
+  )
+)
+# expected power by averaging over R realizations
+get_power(p, R = 100, progress = FALSE)
 ```
 
 ### Convenience functions
 Several convenience functions are also included, e.g. for creating power curves.
 
 ```{r three-level-power-curve}
-x <- get_power_table(p, 
-                     n2 = 5:10, 
-                     n3 = c(4, 8, 12), 
-                     effect_size = cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
-                     cores = parallel::detectCores(logical = FALSE))
+x <- get_power_table(
+  p,
+  n2 = 5:10,
+  n3 = c(4, 8, 12),
+  effect_size = cohend(
+    ES = c(0.5, 0.8),
+    standardizer = "pretest_SD"
+  ),
+  cores = CORES
+)
 ```
 
 ```{r power-curve}
@@ -148,36 +168,43 @@ plot(x)
 The package includes a flexible simulation method that makes it easy to investigate the performance of different models. As an example, let's compare the power difference
 between the 2-level LMM with 11 repeated measures, to doing an ANCOVA at posttest. Using `sim_formula` different models can be fit to the same data set during the simulation.
 ```{r}
-p <- study_parameters(n1 = 11,
-                      n2 = 40, 
-                      icc_pre_subject = 0.5,
-                      cor_subject = -0.4,
-                      var_ratio = 0.02,
-                      effect_size = cohend(-0.8, 
-                                           standardizer = "pretest_SD"))
-
+p <- study_parameters(
+  n1 = 11,
+  n2 = 40,
+  icc_pre_subject = 0.5,
+  cor_subject = -0.4,
+  var_ratio = 0.02,
+  effect_size = cohend(
+    ES = -0.8,
+    standardizer = "pretest_SD"
+  )
+)
 # 2-lvl LMM
 f0 <- sim_formula("y ~ time + time:treatment + (1 + time | subject)")
-
 # ANCOVA, formulas with no random effects are with using lm()
-f1 <- sim_formula("y ~ treatment + pretest", 
-                  data_transform = transform_to_posttest, 
-                  test = "treatment")
-
-f <- sim_formula_compare("LMM" = f0, 
-                         "ANCOVA" = f1)
-
-res <- simulate(p, 
-                nsim = 2000, 
-                formula = f, 
-                cores = parallel::detectCores(logical = FALSE))
+f1 <- sim_formula("y ~ treatment + pretest",
+  data_transform = transform_to_posttest,
+  test = "treatment")
+f <- sim_formula_compare("LMM" = f0,
+  "ANCOVA" = f1)
+res <- simulate(
+  p,
+  nsim = 2000,
+  formula = f,
+  cores = CORES
+)
 ```
 
 We then summarize the results using `summary`. Let's look specifically at the treatment effects.
 
 ```{r}
-summary(res, para = list("LMM" = "time:treatment",
-                         "ANCOVA" = "treatment"))
+summary(
+  res,
+  para = list(
+    "LMM" = "time:treatment",
+    "ANCOVA" = "treatment"
+  )
+)
 ```
 
 
