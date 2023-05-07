@@ -1389,6 +1389,15 @@ get_n2.plcp <- function(paras) {
     list(treatment = n2_tx,
         control = n2_cc)
 }
+#' @export
+get_n2.plcp_custom <- function(paras) {
+    x <- list(
+        treatment = NA,
+        control = NA
+    )
+    attr(x$control, "per_treatment") <- FALSE
+    x
+}
 
 get_n2_ <- function(paras) {
     n2 <- unlist(paras$n2)
@@ -1418,6 +1427,16 @@ get_n3.plcp <- function(paras) {
         control = n3_cc,
         total = n3_tx + n3_cc)
 }
+#' @export
+get_n3.plcp_custom <- function(paras) {
+    x <- list(
+        treatment = NA,
+        control = NA
+    )
+    attr(x$control, "per_treatment") <- FALSE
+    x
+}
+
 get_n3_ <- function(paras) {
     n2 <- unlist(paras$n2)
     if (length(n2) == 1) {
@@ -1444,6 +1463,9 @@ get_tot_n.plcp <- function(paras, n = NULL) {
     data.frame(treatment = n_tx,
         control = n_cc,
         total = n_tx + n_cc)
+}
+get_tot_n.plcp_custom <- function(paras) {
+    paras$tot_n
 }
 get_tot_n.plcp_multi <- function(paras, n = 1) {
     get_tot_n.plcp(as.plcp(paras[n, ]))

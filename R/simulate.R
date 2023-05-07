@@ -827,8 +827,7 @@ simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     prepped <- prepare_paras(paras)
     d <- simulate_data(prepped)
     # saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
-    #tot_n <- length(unique(d[d$time == 0, ]$subject))
-    tot_n <- 100
+    tot_n <- length(unique(d[d$time == 0, ]$subject))
     fit <- analyze_data(formula, d)
     res <- extract_results(
         fit = fit,
@@ -1783,7 +1782,6 @@ summary.plcp_sim <- function(object, model = NULL, alpha = 0.05, para = NULL, ..
 #' @method summary plcp_sim_formula_compare
 #' @export
 summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05, model_selection = NULL, LRT_alpha = 0.1, para = NULL, ...) {
-
     if(is.null(model_selection)) {
         if(is.null(model)) {
             summary.plcp_sim(object,
@@ -1818,7 +1816,6 @@ summary.plcp_sim_formula_compare <- function(object, model = NULL, alpha = 0.05,
 
 
 summarize_RE <- function(res, theta) {
-
     d <- res$RE
     parms <- unique(d$parameter)
     tmp <- vector("list", length(parms))
@@ -1969,8 +1966,9 @@ get_RE_thetas.plcp_crossed <- function(paras, ...) {
         "cor_cluster_slope_slope_tx" = paras$cor_cluster_slope_slope_tx
     )
 }
+#' @export
 get_RE_thetas.plcp_custom <- function(paras, ...) {
-    list()
+    paras$thetas_RE
 }
 get_slope_diff.plcp_custom <- function(paras) NA
 
@@ -1986,6 +1984,10 @@ get_FE_thetas.default <- function(paras, ...) {
         "time" = paras$fixed_slope,
         "time:treatment" = get_slope_diff(paras) / paras$T_end
     )
+}
+#' @export
+get_FE_thetas.plcp_custom <- function(paras, ...) {
+    paras$thetas_FE
 }
 summarize_convergence <- function(paras, convergence) {
     UseMethod("summarize_convergence")
