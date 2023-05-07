@@ -357,9 +357,12 @@ simulate_data.plcp <- function(paras, ...) {
     NextMethod("simulate_data")
 }
 
+#' @rdname simulate_data
+#' @export
 simulate_data.plcp_custom <- function(paras, n = NULL) {
-    do.call(paras$data_gen, paras)
-
+    data_gen <- paras$data_gen
+    paras$data_gen <- NULL
+    do.call(data_gen, paras)
 }
 #' Perform a simulation study using a \code{study_parameters}-object
 #'
@@ -823,25 +826,22 @@ simulate.plcp_data_frame <-
 simulate_ <- function(sim, paras, satterthwaite, CI, formula) {
     prepped <- prepare_paras(paras)
     d <- simulate_data(prepped)
-
-    #saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
-    tot_n <- length(unique(d[d$time == 0,]$subject))
-
-
-
+    # saveRDS(d, file = paste0("/tmp/R/sim",sim, ".rds"))
+    #tot_n <- length(unique(d[d$time == 0, ]$subject))
+    tot_n <- 100
     fit <- analyze_data(formula, d)
-
-    res <- extract_results(fit = fit,
-                           #d = fit$d,
-                           CI = CI,
-                           satterthwaite = satterthwaite,
-                           df_bw = get_balanced_df(prepped),
-                           tot_n = tot_n,
-                           sim = sim)
+    res <- extract_results(
+        fit = fit,
+        # d = fit$d,
+        CI = CI,
+        satterthwaite = satterthwaite,
+        df_bw = get_balanced_df(prepped),
+        tot_n = tot_n,
+        sim = sim
+    )
 
     res
 }
-
 
 # Checks ------------------------------------------------------------------
 check_formula <- function(formula) {
@@ -911,22 +911,28 @@ fit_error <- function(e) {
 }
 
 analyze_data <- function(formula, d) {
-    fit <-
-        lapply(formula, function(f) {
-            #if(inherits(f, "plcp_sim_formula")) {
-                if(is.function(f$data_transform))
-                    d <- f$data_transform(d)
+    fit <- lapply(formula, function(f) {
+            # if(inherits(f, "plcp_sim_formula")) {
+            if (is.function(f$data_transform))
+                d <- f$data_transform(d)
 
-            #}
-            fit <- suppressWarnings(suppressMessages(tryCatch(fit_model(f, data = d),
-                            error = fit_error)))
+            # }
+            fit <- suppressWarnings(
+                suppressMessages(
+                    tryCatch(fit_model(f, data = d),
+                        error = fit_error)
+                )
+            )
 
-           list("fit" = fit,
+            list(
+                "fit" = fit,
                 "test" = f$test,
                 "post_test" = f$post_test,
                 "d" = d,
-                "formula" = f)
-        })
+                "formula" = f
+            )
+        }
+    )
 
     fit
 }

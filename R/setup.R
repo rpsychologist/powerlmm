@@ -13,38 +13,38 @@
 
 # checks
 .check_dropout_arg <- function(dropout) {
-    if(is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-    if(is.per_treatment(dropout)) {
+    if (is.numeric(dropout) && any(dropout != 0)) stop("'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+    if (is.per_treatment(dropout)) {
         tx <- dropout[[1]]$treatment
         cc <- dropout[[1]]$control
-        if(is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
-        if(is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+        if (is.numeric(cc) && any(cc != 0)) stop("Control group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
+        if (is.numeric(tx) && any(tx != 0)) stop("Treatment group's 'dropout' should be 0 or created by 'dropout_manual' or 'dropout_weibull'", call. = FALSE)
     }
 }
 .make_single_or_multi <- function(paras, model = NULL) {
-    if((is.data.frame(paras) & nrow(paras) == 1)) {
+    if ((is.data.frame(paras) & nrow(paras) == 1)) {
         paras <- as.list(paras)
     }
-    if(is.data.frame(paras)) {
-        if(is.null(model)) {
+    if (is.data.frame(paras)) {
+        if (is.null(model)) {
             multi <- "plcp_multi"
         } else {
             multi <- c(paste0(c("plcp_multi", model), collapse = "_"),
-                        "plcp_multi")
+                "plcp_multi")
         }
         class(paras) <- append(multi,
-                               class(paras))
+            class(paras))
     } else {
-        if(is.null(model)) {
+        if (is.null(model)) {
             single <- "plcp"
         } else {
             single <- c(paste0(c("plcp", model), collapse = "_"),
-                        "plcp")
+                "plcp")
         }
 
         class(paras) <- append(single,
-                               class(paras))
-        }
+            class(paras))
+    }
 
     paras
 }
@@ -132,8 +132,8 @@
 #'
 #' @export
 study_parameters <- function(design = study_design(nested = TRUE,
-                                                   levels = 3,
-                                                   time_form = "linear"), ...) {
+                                 levels = 3,
+                                 time_form = "linear"), ...) {
     UseMethod("study_parameters")
 }
 
@@ -203,52 +203,52 @@ study_parameters <- function(design = study_design(nested = TRUE,
 #' # Three level model with both subject- and cluster-level random slope
 #' # Power calculation using standardized inputs
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 5,
-#'                       n3 = 4,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       effect_size = cohend(-0.8))
+#'     n2 = 5,
+#'     n3 = 4,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     effect_size = cohend(-0.8))
 #'
 #' get_power(p)
 #'
 #' # The same calculation with all parameters specified directly
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 5,
-#'                       n3 = 4,
-#'                       T_end = 10,
-#'                       fixed_intercept = 37,
-#'                       fixed_slope = -0.65,
-#'                       sigma_subject_intercept = 2.8,
-#'                       sigma_subject_slope = 0.4726944,
-#'                       sigma_cluster_intercept = 0,
-#'                       sigma_cluster_slope = 0.1084435,
-#'                       sigma_error = 2.8,
-#'                       cor_subject = -0.5,
-#'                       cor_cluster = 0,
-#'                       effect_size = cohend(-0.8))
+#'     n2 = 5,
+#'     n3 = 4,
+#'     T_end = 10,
+#'     fixed_intercept = 37,
+#'     fixed_slope = -0.65,
+#'     sigma_subject_intercept = 2.8,
+#'     sigma_subject_slope = 0.4726944,
+#'     sigma_cluster_intercept = 0,
+#'     sigma_cluster_slope = 0.1084435,
+#'     sigma_error = 2.8,
+#'     cor_subject = -0.5,
+#'     cor_cluster = 0,
+#'     effect_size = cohend(-0.8))
 #' get_power(p)
 #'
 #' # Standardized and unstandardized inputs
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 5,
-#'                       n3 = 4,
-#'                       sigma_subject_intercept = 2.8,
-#'                       icc_pre_cluster = 0.07,
-#'                       sigma_subject_slope = 0.47,
-#'                       icc_slope = 0.05,
-#'                       sigma_error = 2.8,
-#'                       effect_size = cohend(-0.8))
+#'     n2 = 5,
+#'     n3 = 4,
+#'     sigma_subject_intercept = 2.8,
+#'     icc_pre_cluster = 0.07,
+#'     sigma_subject_slope = 0.47,
+#'     icc_slope = 0.05,
+#'     sigma_error = 2.8,
+#'     effect_size = cohend(-0.8))
 #'
 #' get_power(p)
 #'
 #' ## Two-level model with subject-level random slope
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 40,
-#'                       icc_pre_subject = 0.5,
-#'                       var_ratio = 0.03,
-#'                       effect_size = cohend(-0.8))
+#'     n2 = 40,
+#'     icc_pre_subject = 0.5,
+#'     var_ratio = 0.03,
+#'     effect_size = cohend(-0.8))
 #' get_power(p)
 #'
 #' # add missing data
@@ -257,47 +257,48 @@ study_parameters <- function(design = study_design(nested = TRUE,
 #'
 #' ## Comparing a combination of values
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = c(5, 10),
-#'                       n3 = c(2, 4),
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = c(0, 0.05),
-#'                       effect_size = cohend(c(-0.5, -0.8))
-#'                       )
+#'     n2 = c(5, 10),
+#'     n3 = c(2, 4),
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     var_ratio = 0.03,
+#'     icc_slope = c(0, 0.05),
+#'     effect_size = cohend(c(-0.5, -0.8))
+#' )
 #'
 #' get_power(p)
 #' @export
-study_parameters.plcp_design_nested <- function(design = study_design(nested = TRUE),
-                                    n1,
-                             n2,
-                             n3 = 1,
-                             T_end = NULL,
-                             fixed_intercept = 0L,
-                             fixed_slope = 0L,
-                             sigma_subject_intercept = NULL,
-                             sigma_subject_slope = NULL,
-                             sigma_cluster_intercept = NULL,
-                             sigma_cluster_slope = NULL,
-                             fixed_cluster_intercepts = NULL,
-                             fixed_cluster_slopes = NULL,
-                             sigma_error = 10,
-                             cor_subject = 0L,
-                             cor_cluster = 0L,
-                             cor_within = 0L,
-                             var_ratio = NULL,
-                             icc_slope = NULL,
-                             icc_pre_subject = NULL,
-                             icc_pre_cluster = NULL,
-                             effect_size = 0L,
-                             cohend = NULL,
-                             partially_nested = FALSE,
-                             dropout = 0L,
-                             deterministic_dropout = TRUE, ...) {
+study_parameters.plcp_design_nested <- function(
+                                                design = study_design(nested = TRUE),
+                                                n1,
+                                                n2,
+                                                n3 = 1,
+                                                T_end = NULL,
+                                                fixed_intercept = 0L,
+                                                fixed_slope = 0L,
+                                                sigma_subject_intercept = NULL,
+                                                sigma_subject_slope = NULL,
+                                                sigma_cluster_intercept = NULL,
+                                                sigma_cluster_slope = NULL,
+                                                fixed_cluster_intercepts = NULL,
+                                                fixed_cluster_slopes = NULL,
+                                                sigma_error = 10,
+                                                cor_subject = 0L,
+                                                cor_cluster = 0L,
+                                                cor_within = 0L,
+                                                var_ratio = NULL,
+                                                icc_slope = NULL,
+                                                icc_pre_subject = NULL,
+                                                icc_pre_cluster = NULL,
+                                                effect_size = 0L,
+                                                cohend = NULL,
+                                                partially_nested = FALSE,
+                                                dropout = 0L,
+                                                deterministic_dropout = TRUE, ...) {
 
-    #if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
+    # if(!is.per_treatment(n2) & length(n2) == 1) n2 <- list(n2)
     # deprecated Cohen's d
-    if(!is.null(cohend)) {
+    if (!is.null(cohend)) {
         effect_size <- cohend(cohend, standardizer = "pretest_SD", treatment = "control")
     }
 
@@ -305,46 +306,46 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
     .check_dropout_arg(dropout)
 
     # warn n3 is ignored
-    if(is.unequal_clusters(n2) & !is.per_treatment(n2) & is.per_treatment(n3)) {
+    if (is.unequal_clusters(n2) & !is.per_treatment(n2) & is.per_treatment(n3)) {
         message("'n3' per_treatment argument is ignored. 'n3' is automatically based on length of unequal_clusters")
     }
 
     # icc_slope + sigma_*_slope
-    if(!is.null(icc_slope) & (!is.null(sigma_subject_slope) &
-                              !is.null(sigma_cluster_slope))) {
+    if (!is.null(icc_slope) & (!is.null(sigma_subject_slope) &
+        !is.null(sigma_cluster_slope))) {
         stop("Can't use 'icc_slope' with both 'sigma_subject_slope' and 'sigma_cluster_slope'", call. = FALSE)
 
     }
-    if(!is.null(sigma_subject_slope) &
-       !is.null(var_ratio)) {
+    if (!is.null(sigma_subject_slope) &
+        !is.null(var_ratio)) {
         stop("Can't use both 'sigma_subject_slope' and 'var_ratio'", call. = FALSE)
 
     }
-    if(!is.null(sigma_cluster_slope) &
-       !is.null(var_ratio)) {
+    if (!is.null(sigma_cluster_slope) &
+        !is.null(var_ratio)) {
         stop("Can't use both 'sigma_cluster_slope' and 'var_ratio'", call. = FALSE)
 
     }
-    if(!is.null(sigma_subject_intercept) & !is.null(icc_pre_subject)) {
+    if (!is.null(sigma_subject_intercept) & !is.null(icc_pre_subject)) {
         stop("Can't use both 'icc_pre_subject' and 'sigma_subject_intercept'", call. = FALSE)
     }
 
-    if(!is.null(sigma_cluster_intercept) & !is.null(icc_pre_cluster)) {
+    if (!is.null(sigma_cluster_intercept) & !is.null(icc_pre_cluster)) {
         stop("Can't use both 'icc_pre_cluster' and 'sigma_cluster_intercept'", call. = FALSE)
     }
 
-    if(is.null(sigma_subject_intercept) & is.null(icc_pre_subject)) {
-           stop("Both 'sigma_subject_intercept' and 'icc_pre_subject' can't be NULL", call. = FALSE)
+    if (is.null(sigma_subject_intercept) & is.null(icc_pre_subject)) {
+        stop("Both 'sigma_subject_intercept' and 'icc_pre_subject' can't be NULL", call. = FALSE)
     }
-    if(!is.null(sigma_cluster_slope) & !is.null(icc_slope)) {
+    if (!is.null(sigma_cluster_slope) & !is.null(icc_slope)) {
         stop("Can't use both 'icc_slope' and 'sigma_cluster_slope'", call. = FALSE)
     }
-    if(!is.null(sigma_cluster_slope) & is.null(sigma_subject_slope)) {
+    if (!is.null(sigma_cluster_slope) & is.null(sigma_subject_slope)) {
         stop("'sigma_subject_slope' is missing", call. = FALSE)
     }
-    if(is.null(icc_pre_cluster) &
-       !is.null(sigma_cluster_intercept) &
-       !is.null(icc_pre_subject)) {
+    if (is.null(icc_pre_cluster) &
+        !is.null(sigma_cluster_intercept) &
+        !is.null(icc_pre_subject)) {
         stop("'icc_pre_subject' and 'sigma_cluster_intercept' can't be combined, use 'icc_pre_cluster'", call. = FALSE)
     }
 
@@ -381,51 +382,51 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
 
 
     ## Default NA
-    if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
+    if (is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
         tmp_args$icc_pre_subject <- NA
     }
-    if(
-        is.null(var_ratio) & 
-        (is.null(sigma_subject_slope) || any(is.na(sigma_subject_slope))) &
-        is.null(sigma_cluster_slope)
+    if (
+        is.null(var_ratio) &
+            (is.null(sigma_subject_slope) || any(is.na(sigma_subject_slope))) &
+            is.null(sigma_cluster_slope)
     ) {
         tmp_args$var_ratio <- NA
     }
-    if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
+    if (is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
         tmp_args$icc_pre_cluster <- NA
     }
-    if(is.null(icc_slope) & is.null(sigma_cluster_slope)) {
+    if (is.null(icc_slope) & is.null(sigma_cluster_slope)) {
         tmp_args$icc_slope <- NA
     }
     tmp <- expand.grid(tmp_args)
     ## --
 
     ## icc_cluster > icc_subject
-    if(!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
-        if(any((tmp$icc_pre_cluster > tmp$icc_pre_subject), na.rm=TRUE)) {
+    if (!is.null(icc_pre_cluster) & !is.null(icc_pre_subject)) {
+        if (any((tmp$icc_pre_cluster > tmp$icc_pre_subject), na.rm = TRUE)) {
             stop("'icc_pre_cluster' can't be larger than 'icc_pre_subject'", call. = FALSE)
         }
     }
 
     # check cluster slope variance exists when var ratio is NA or zero.
-    if(!is.null(tmp$var_ratio)) {
-        if(any(is.na(tmp$var_ratio) & tmp$icc_slope >= 0, na.rm = TRUE)) {
+    if (!is.null(tmp$var_ratio)) {
+        if (any(is.na(tmp$var_ratio) & tmp$icc_slope >= 0, na.rm = TRUE)) {
             stop("'icc_slope' can't be >= 0 when 'var_ratio' or 'sigma_subject_slope' is NA", call. = FALSE)
         }
-        if((any(tmp$var_ratio == 0, na.rm=TRUE) | any(sigma_subject_slope == 0)) &&
-           any(tmp$icc_slope > 0, na.rm=TRUE)) {
+        if ((any(tmp$var_ratio == 0, na.rm = TRUE) | any(sigma_subject_slope == 0)) &&
+            any(tmp$icc_slope > 0, na.rm = TRUE)) {
             stop("'icc_slope' can't be > 0 when 'var_ratio' or 'sigma_subject_slope' is 0", call. = FALSE)
         }
     }
 
     ## Default T_end
-    if(is.null(args$T_end)) tmp$T_end <- tmp$n1 - 1
+    if (is.null(args$T_end)) tmp$T_end <- tmp$n1 - 1
 
 
     ## Solve raw values
 
     # Solve subject_intercept
-    if(is.null(sigma_subject_intercept)) {
+    if (is.null(sigma_subject_intercept)) {
 
         icc_cluster <- tmp$icc_pre_cluster
         icc_cluster[is.na(icc_cluster)] <- 0
@@ -433,54 +434,54 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
         tmp$sigma_subject_intercept <-
             sqrt(
                 tmp$sigma_error^2 /
-                    (1-(tmp$icc_pre_subject)) *
+                    (1 - (tmp$icc_pre_subject)) *
                     (tmp$icc_pre_subject - icc_cluster)
             )
     }
 
     # solve subject_slope
-    if(is.null(sigma_subject_slope)) {
+    if (is.null(sigma_subject_slope)) {
 
         icc <- tmp$icc_slope
         icc[is.na(icc) | is.null(icc)] <- 0
         tmp$sigma_subject_slope <- sqrt(tmp$var_ratio *
-                                                 tmp$sigma_error^2 * (1-icc))
+            tmp$sigma_error^2 * (1 - icc))
 
     }
     # Solve cluster_intercept
-    if(is.null(sigma_cluster_intercept)) {
+    if (is.null(sigma_cluster_intercept)) {
         # from icc_pre_subject
-        if(is.null(sigma_subject_intercept)) {
+        if (is.null(sigma_subject_intercept)) {
             tmp$sigma_cluster_intercept <-
                 sqrt(
                     tmp$sigma_error^2 /
-                        (1-(tmp$icc_pre_subject)) *
+                        (1 - (tmp$icc_pre_subject)) *
                         tmp$icc_pre_cluster
                 )
-        # from sigma_subject_intercept
+            # from sigma_subject_intercept
         } else {
-            v0 <- with(tmp, (icc_pre_cluster*(sigma_error^2 + sigma_subject_intercept^2))
-                       /(1-icc_pre_cluster))
+            v0 <- with(tmp, (icc_pre_cluster * (sigma_error^2 + sigma_subject_intercept^2))
+            / (1 - icc_pre_cluster))
             tmp$sigma_cluster_intercept <- sqrt(v0)
         }
 
     }
 
     # Solve cluster_slope
-    if(is.null(sigma_cluster_slope)) {
+    if (is.null(sigma_cluster_slope)) {
 
         # check if NA
-        if(is.null(icc_slope) || all(is.na(icc_slope)) ) {
+        if (is.null(icc_slope) || all(is.na(icc_slope))) {
 
             tmp$sigma_cluster_slope <- NA
         } else {
             # solve from icc_slope and var_ratio
-            if(is.null(sigma_subject_slope)) {
+            if (is.null(sigma_subject_slope)) {
                 v1 <- with(tmp, var_ratio * sigma_error^2 * icc_slope)
                 tmp$sigma_cluster_slope <- sqrt(v1)
                 # solve from subject_slope and icc_slope
             } else {
-                x <- with(tmp, sigma_subject_slope^2/(1-icc_slope))
+                x <- with(tmp, sigma_subject_slope^2 / (1 - icc_slope))
                 v1 <- x - tmp$sigma_subject_slope^2
                 v1 <- sqrt(v1)
                 tmp$sigma_cluster_slope <- v1
@@ -492,9 +493,9 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
 
     # keep cols
     cols <- which(colnames(tmp) %in% c("icc_slope",
-                                       "var_ratio",
-                                       "icc_pre_cluster",
-                                       "icc_pre_subject"))
+        "var_ratio",
+        "icc_pre_cluster",
+        "icc_pre_subject"))
     cols <- colnames(tmp)[cols]
     paras <- tmp[, !(names(tmp) %in% cols)]
 
@@ -504,16 +505,16 @@ study_parameters.plcp_design_nested <- function(design = study_design(nested = T
     # Single or multi?
     paras <- .make_single_or_multi(paras, model = "nested")
     # Default cor_*
-    if(is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
-    if(is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
+    if (is.null(paras$cor_cluster)) paras$cor_cluster <- cor_cluster
+    if (is.null(paras$cor_subject)) paras$cor_subject <- cor_subject
 
     # Classes
-    #class(paras) <- c("plcp","plcp_nested")
-    if(all(is.na(paras$sigma_cluster_slope)) &
-       all(is.na(paras$sigma_cluster_intercept))) {
+    # class(paras) <- c("plcp","plcp_nested")
+    if (all(is.na(paras$sigma_cluster_slope)) &
+        all(is.na(paras$sigma_cluster_intercept))) {
         class(paras) <- append(class(paras), c("plcp_2lvl"))
     } else if (all(!is.na(paras$sigma_cluster_slope)) |
-               all(!is.na(paras$sigma_cluster_intercept))) {
+        all(!is.na(paras$sigma_cluster_intercept))) {
         class(paras) <- append(class(paras), c("plcp_3lvl"))
     } else {
         class(paras) <- append(class(paras), c("plcp_mixed"))
@@ -560,13 +561,13 @@ get_slope_diff <- function(object) {
 #' @rdname get_slope_diff
 #' @export
 get_slope_diff.plcp <- function(object) {
-    #object$sigma_subject_intercept[is.na(object$sigma_subject_intercept)] <- 0
-    #object$sigma_cluster_intercept[is.na(object$sigma_cluster_intercept)] <- 0
-    #object <- NA_to_zero(object)
+    # object$sigma_subject_intercept[is.na(object$sigma_subject_intercept)] <- 0
+    # object$sigma_cluster_intercept[is.na(object$sigma_cluster_intercept)] <- 0
+    # object <- NA_to_zero(object)
 
-    if(inherits(object$effect_size[[1]], "plcp_cohend")) {
+    if (inherits(object$effect_size[[1]], "plcp_cohend")) {
         slope <- object$effect_size[[1]]$set(object)
-    } else if(is.numeric(unlist(object$effect_size))) {
+    } else if (is.numeric(unlist(object$effect_size))) {
         slope <- unlist(object$effect_size)
     }
     slope
@@ -643,11 +644,11 @@ get_slope_diff.plcp_multi <- function(object) {
 #'
 #' # Pretest SD
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 20,
-#'                       icc_pre_subject = 0.5,
-#'                       cor_subject = -0.4,
-#'                       var_ratio = 0.03,
-#'                       effect_size = cohend(0.4, standardizer = "pretest_SD"))
+#'     n2 = 20,
+#'     icc_pre_subject = 0.5,
+#'     cor_subject = -0.4,
+#'     var_ratio = 0.03,
+#'     effect_size = cohend(0.4, standardizer = "pretest_SD"))
 #'
 #' get_slope_diff(p)
 #'
@@ -656,29 +657,29 @@ get_slope_diff.plcp_multi <- function(object) {
 #' # thus ES = 0.4 indicate larger raw slope difference
 #' # using posttest SD
 #' p <- update(p, effect_size = cohend(0.4,
-#'                                     standardizer = "posttest_SD"))
+#'     standardizer = "posttest_SD"))
 #' get_slope_diff(p)
 #'
 #'
 #' # Random slope SD
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 20,
-#'                       icc_pre_subject = 0.5,
-#'                       cor_subject = -0.4,
-#'                       var_ratio = 0.03,
-#'                       effect_size = cohend(0.4, standardizer = "slope_SD"))
+#'     n2 = 20,
+#'     icc_pre_subject = 0.5,
+#'     cor_subject = -0.4,
+#'     var_ratio = 0.03,
+#'     effect_size = cohend(0.4, standardizer = "slope_SD"))
 #'
 #' # Partially nested ----------------------------------------------------------
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 20,
-#'                       n3 = 4,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0.25,
-#'                       cor_subject = -0.4,
-#'                       var_ratio = 0.03,
-#'                       partially_nested = TRUE,
-#'                       effect_size = cohend(0.4, standardizer = "pretest_SD")
-#'                       )
+#'     n2 = 20,
+#'     n3 = 4,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0.25,
+#'     cor_subject = -0.4,
+#'     var_ratio = 0.03,
+#'     partially_nested = TRUE,
+#'     effect_size = cohend(0.4, standardizer = "pretest_SD")
+#' )
 #' # Default is to use control groups SD
 #' get_slope_diff(p)
 #'
@@ -686,31 +687,31 @@ get_slope_diff.plcp_multi <- function(object) {
 #' # Thus, ES of 0.4 will indicate a larger raw difference
 #' # using the treatment group's SD
 #' p <- update(p, effect_size = cohend(0.4,
-#'                                     standardizer = "pretest_SD",
-#'                                     treatment = "treatment"))
+#'     standardizer = "pretest_SD",
+#'     treatment = "treatment"))
 #' get_slope_diff(p)
 #'
 #' ## Combine multiple values, and raw and standardized effects ----------------
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 20,
-#'                       icc_pre_subject = 0.5,
-#'                       cor_subject = -0.4,
-#'                       var_ratio = 0.03,
-#'                       effect_size = c(-5, 9,
-#'                                       cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
-#'                                       cohend(c(0.5, 0.8), standardizer = "posttest_SD")))
+#'     n2 = 20,
+#'     icc_pre_subject = 0.5,
+#'     cor_subject = -0.4,
+#'     var_ratio = 0.03,
+#'     effect_size = c(-5, 9,
+#'         cohend(c(0.5, 0.8), standardizer = "pretest_SD"),
+#'         cohend(c(0.5, 0.8), standardizer = "posttest_SD")))
 #'
 #'
 #' ## Recreate results in Raudenbush & Liu 2001 --------------------------------
 #' rauden_liu <- function(D, f, n = 238) {
 #'     n1 <- f * D + 1
 #'     p <- study_parameters(n1 = n1,
-#'                           n2 = n/2,
-#'                           T_end = D,
-#'                           sigma_subject_intercept = sqrt(0.0333),
-#'                           sigma_subject_slope = sqrt(0.0030),
-#'                           sigma_error = sqrt(0.0262),
-#'                           effect_size = cohend(0.4, standardizer = "slope_SD"))
+#'         n2 = n / 2,
+#'         T_end = D,
+#'         sigma_subject_intercept = sqrt(0.0333),
+#'         sigma_subject_slope = sqrt(0.0030),
+#'         sigma_error = sqrt(0.0262),
+#'         effect_size = cohend(0.4, standardizer = "slope_SD"))
 #'     x <- get_power(p)
 #'     round(x$power, 2)
 #' }
@@ -718,39 +719,38 @@ get_slope_diff.plcp_multi <- function(object) {
 #' ## Table 1 in Raudenbush & Liu 2001
 #' ## NB, it looks like they made an error in column 1.
 #' g <- expand.grid(D = 2:8,
-#'                  f = c(0.5, 1:6))
+#'     f = c(0.5, 1:6))
 #' g$power <- mapply(rauden_liu, D = g$D, f = g$f)
 #' tidyr::spread(g, f, power)
 #'
 #'
 #' ## Table 3 Table 1 in Raudenbush & Liu 2001
 #' g <- expand.grid(n = seq(100, 800, by = 100),
-#'                  D = 4,
-#'                  f = c(0.5, 1:6))
+#'     D = 4,
+#'     f = c(0.5, 1:6))
 #' g$power <- mapply(rauden_liu, n = g$n, f = g$f, D = g$D)
 #' tidyr::spread(g, n, power)
-#'
 cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
-    if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
-    if(!standardizer %in% c("pretest_SD",
-                           "posttest_SD",
-                           "slope_SD")) stop("Wrong 'standardizer', allowed options are: 'pretest_SD', 'posttest_SD', and 'slope_SD'.", call. = FALSE)
-    if(!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'")
+    if (length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
+    if (!standardizer %in% c("pretest_SD",
+        "posttest_SD",
+        "slope_SD")) stop("Wrong 'standardizer', allowed options are: 'pretest_SD', 'posttest_SD', and 'slope_SD'.", call. = FALSE)
+    if (!treatment %in% c("treatment", "control")) stop("Wrong 'treatment', allowed options are: 'treatment' or 'control'")
 
     vapply(ES, .cohend,
-           standardizer = standardizer,
-           treatment = treatment,
-           list(1))
+        standardizer = standardizer,
+        treatment = treatment,
+        list(1))
 }
 .cohend <- function(ES, standardizer, treatment) {
-    if(length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
+    if (length(ES) != 1) stop("Length of ES is not equal to 1.", call. = FALSE)
     # return a ES func
     # that get_slope_diff we can evaluate
-    if(standardizer == "pretest_SD") {
+    if (standardizer == "pretest_SD") {
         f <- calc_slope_from_d(ES, time = "pre", treatment = treatment)
-    } else if(standardizer == "posttest_SD") {
+    } else if (standardizer == "posttest_SD") {
         f <- calc_slope_from_d(ES, time = "post", treatment = treatment)
-    } else if(standardizer == "slope_SD") {
+    } else if (standardizer == "slope_SD") {
         f <- function(paras) {
             slope_SD <- get_slope_SD(paras, treatment = treatment)
             T_end <- paras$T_end
@@ -760,11 +760,11 @@ cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
     }
     get <- function() {
         list("ES" = ES,
-             "standardizer" = standardizer,
-             "treatment" = treatment)
+            "standardizer" = standardizer,
+            "treatment" = treatment)
     }
     x <- list("set" = f,
-              "get" = get)
+        "get" = get)
     class(x) <- append(class(x), "plcp_cohend")
 
     list(x)
@@ -810,12 +810,12 @@ calc_slope_from_d <- function(ES, time, treatment) {
     }
 }
 get_effect_size <- function(object) {
-        UseMethod("get_effect_size")
+    UseMethod("get_effect_size")
 }
 
 get_effect_size.plcp <- function(object) {
     ES <- object$effect_size
-    if(inherits(ES[[1]], "plcp_cohend")) {
+    if (inherits(ES[[1]], "plcp_cohend")) {
         out <- ES[[1]]$get()
     } else {
         ES <- unlist(ES)
@@ -826,8 +826,8 @@ get_effect_size.plcp <- function(object) {
 }
 get_effect_size.plcp_multi <- function(object) {
     x <- lapply(1:nrow(object), function(i) {
-        data.frame(get_effect_size.plcp(object[i,]))
-        }
+        data.frame(get_effect_size.plcp(object[i, ]))
+    }
     )
     x <- do.call(rbind, x)
     x$standardizer <- as.character(x$standardizer)
@@ -845,7 +845,7 @@ replace_repeating <- function(x, empty) {
 }
 get_dropout_post <- function(object) {
     x <- get_dropout(object)
-    x[nrow(x),]
+    x[nrow(x), ]
 }
 
 .add_ES_multi <- function(object, out, out_dense, ...) {
@@ -858,13 +858,13 @@ get_dropout_post <- function(object) {
     out$effect_size <- ES$ES
 
     list(out = out,
-         out_dense = out_dense)
+        out_dense = out_dense)
 }
 
 prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     paras <- object
     n2 <- lapply(1:nrow(paras), function(i) {
-        x <- get_n2(as.plcp(paras[i,]))
+        x <- get_n2(as.plcp(paras[i, ]))
 
 
         x$control <- deparse_n2(x$control)
@@ -872,15 +872,15 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         tx <- print_per_treatment_(1, x, n2 = TRUE)
         cc <- print_per_treatment_(2, x, n2 = TRUE)
         data.frame(treatment_lab = tx$lab,
-                   treatment = tx$num,
-                   control_lab = cc$lab,
-                   control = cc$num,
-                   stringsAsFactors = FALSE)
+            treatment = tx$num,
+            control_lab = cc$lab,
+            control = cc$num,
+            stringsAsFactors = FALSE)
     })
     n2 <- do.call(rbind, n2)
 
     n3 <- lapply(1:nrow(paras), function(i) {
-        x <- get_n3(as.plcp(paras[i,]))
+        x <- get_n3(as.plcp(paras[i, ]))
     })
     n3 <- do.call(rbind, n3)
 
@@ -894,7 +894,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
 
     dropout <- lapply(1:nrow(object), function(i) get_dropout_post(object[i, ]))
     dropout <- do.call(rbind, dropout)
-    if(all(dropout$control == dropout$treatment)) {
+    if (all(dropout$control == dropout$treatment)) {
         out$dropout <- dropout$treatment
     } else {
         out$dropout_tx <- dropout$treatment
@@ -903,7 +903,7 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     }
 
     per_tx_n2 <- vapply(seq_along(object$n2), function(i) is.per_treatment(object$n2[i]), logical(1))
-    if(all(n2$treatment_lab == n2$control_lab) & !any(per_tx_n2)) {
+    if (all(n2$treatment_lab == n2$control_lab) & !any(per_tx_n2)) {
         out$n2_lab <- n2$treatment_lab
         out$n2 <- n2$treatment
     } else {
@@ -911,18 +911,18 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
         out$n2_tx <- n2$treatment
         out$n2_cc_lab <- n2$control_lab
         out$n2_cc <- n2$control
-        #out$n2_tx_lab <- n2$treatment_lab
-        #out$n2_cc_lab <- n2$control_lab
+        # out$n2_tx_lab <- n2$treatment_lab
+        # out$n2_cc_lab <- n2$control_lab
         out$n2 <- NULL
     }
 
     unequal_clust <- lapply(seq_along(object$n2), function(i) is.unequal_clusters(object$n2[i]))
     unequal_clust <- unlist(unequal_clust)
 
-    if(any(unequal_clust)) {
+    if (any(unequal_clust)) {
         out$n3 <- NULL
     } else {
-        if(all(n3$treatment == n3$control)) {
+        if (all(n3$treatment == n3$control)) {
             out$n3 <- n3$treatment
         } else {
             out$n3_tx <- n3$treatment
@@ -942,16 +942,16 @@ prepare_multi_setup <- function(object, empty = ".", digits = 2) {
     out$icc_slope <- round(object$icc_slope, digits)
     out$var_ratio <- round(object$var_ratio, digits)
 
-    for(i in 1:ncol(out)) {
-        col_tmp <- out[,i]
+    for (i in 1:ncol(out)) {
+        col_tmp <- out[, i]
         col_tmp[is.na(col_tmp)] <- "NA"
-        out[,i] <- replace_repeating(col_tmp, empty = empty)
+        out[, i] <- replace_repeating(col_tmp, empty = empty)
 
     }
 
     list(out = out,
-         out_dense = out_dense,
-         object = object)
+        out_dense = out_dense,
+        object = object)
 }
 
 # prepare
@@ -965,17 +965,17 @@ get_multi_title.plcp_2lvl <- function(object) {
     "# Multi-study setup (two-level)"
 }
 get_multi_title.plcp_3lvl <- function(object) {
-   "# Multi-study setup (three-level)"
+    "# Multi-study setup (three-level)"
 }
 get_multi_title.plcp_multi_crossed <- function(object) {
-   "# Multi-study setup (three-level, crossed)"
+    "# Multi-study setup (three-level, crossed)"
 }
 
 select_setup_cols <- function(x) {
     cols <- c("n1",
-              "n2_lab", "n2_tx_lab", "n2_cc_lab",
-              "dropout", "dropout_tx", "dropout_cc",
-              "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "effect_size")
+        "n2_lab", "n2_tx_lab", "n2_cc_lab",
+        "dropout", "dropout_tx", "dropout_cc",
+        "icc_pre_subject", "icc_pre_cluster", "icc_slope", "var_ratio", "effect_size")
     cols[cols %in% colnames(x)]
 }
 
@@ -989,7 +989,7 @@ select_setup_cols <- function(x) {
 #' @export
 print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
     nr <- nrow(x)
-    if(nr <= print_max) rmax <- nr else rmax <- print_max
+    if (nr <= print_max) rmax <- nr else rmax <- print_max
     hidden_row <- nr - print_max
     x <- x[1:rmax, ]
     pp <- prepare_multi_setup(x, empty = empty, digits = digits)
@@ -1001,7 +1001,7 @@ print.plcp_multi <- function(x, print_max = 10, empty = ".", digits = 2, ...) {
     colnames(out) <- gsub("_lab", "", colnames(out))
 
     print(out)
-    if(hidden_row > 0) {
+    if (hidden_row > 0) {
         cat("# ...", hidden_row, "setups not shown.")
     }
 
@@ -1015,14 +1015,14 @@ eval_n2 <- function(n2) {
     n2 <- n2[[1]]()
     n2 <- round(n2, 0)
     func <- attr(n2, "func")
-    if(func != "manual") {
+    if (func != "manual") {
         trunc <- attr(n2, "trunc")
         repl <- attr(n2, "replace")
 
         n2[n2 < trunc] <- repl
     }
     n2 <- n2[n2 > 0]
-    if(length(n2) < 1) stop("All clusters of size 0")
+    if (length(n2) < 1) stop("All clusters of size 0")
     attr(n2, "func") <- func
     attr(n2, "per_treatment") <- FALSE
     n2
@@ -1041,17 +1041,17 @@ prepare_paras.default <- function(paras) {
         paras$n3 <- n3_cc
         paras_tx$n3 <- n3_tx
 
-       attr(paras$n3, "per_treatment") <- TRUE
-       attr(paras_tx$n3, "per_treatment") <- TRUE
+        attr(paras$n3, "per_treatment") <- TRUE
+        attr(paras_tx$n3, "per_treatment") <- TRUE
     }
-    if(is.per_treatment(paras$n2)) {
+    if (is.per_treatment(paras$n2)) {
         paras_tx$n2 <- paras$n2[[1]]$treatment
         paras$n2 <- paras$n2[[1]]$control
-        if(is.unequal_clusters(paras$n2)) {
+        if (is.unequal_clusters(paras$n2)) {
             paras$n2 <- eval_n2(paras$n2)
             paras$n3 <- length(paras$n2)
         }
-        if(is.unequal_clusters(paras_tx$n2)) {
+        if (is.unequal_clusters(paras_tx$n2)) {
             paras_tx$n2 <- eval_n2(paras_tx$n2)
             paras_tx$n3 <- length(paras_tx$n2)
         }
@@ -1059,25 +1059,25 @@ prepare_paras.default <- function(paras) {
 
     } else {
     }
-    if(is.unequal_clusters(paras$n2)) {
+    if (is.unequal_clusters(paras$n2)) {
         paras$n2 <- eval_n2(paras$n2)
         paras_tx$n2 <- paras$n2
         paras$n3 <- length(unlist(paras$n2))
-        paras_tx$n3 <-  paras$n3
+        paras_tx$n3 <- paras$n3
     }
-    if(is.per_treatment(paras$fixed_cluster_intercepts)) {
+    if (is.per_treatment(paras$fixed_cluster_intercepts)) {
         paras_tx$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$treatment
         paras$fixed_cluster_intercepts <- paras$fixed_cluster_intercepts[[1]]$control
     }
-    if(!is.null(paras_tx$fixed_cluster_intercepts) &
-       length(paras_tx$fixed_cluster_intercepts) == 1) {
+    if (!is.null(paras_tx$fixed_cluster_intercepts) &
+        length(paras_tx$fixed_cluster_intercepts) == 1) {
         paras_tx$fixed_cluster_intercepts <- rep(paras_tx$fixed_cluster_intercepts, paras_tx$n3)
     }
-    if(!is.null(paras$fixed_cluster_intercepts) &
-       length(paras$fixed_cluster_intercepts) == 1) {
+    if (!is.null(paras$fixed_cluster_intercepts) &
+        length(paras$fixed_cluster_intercepts) == 1) {
         paras$fixed_cluster_intercepts <- rep(paras$fixed_cluster_intercepts, paras$n3)
     }
-    if(is.per_treatment(paras$fixed_cluster_slopes)) {
+    if (is.per_treatment(paras$fixed_cluster_slopes)) {
         paras_tx$fixed_cluster_slopes <- paras$fixed_cluster_slopes[[1]]$treatment
         paras$fixed_cluster_slopes <- paras$fixed_cluster_slopes[[1]]$control
     }
@@ -1086,12 +1086,12 @@ prepare_paras.default <- function(paras) {
     #     paras$n3 <- length(unlist(paras$n2))
     #     paras_tx$n3 <- length(unlist(paras$n2))
     # }
-    if(paras$partially_nested) {
+    if (paras$partially_nested) {
         paras$sigma_cluster_intercept <- 0L
         paras$cor_cluster <- 0L
         paras$sigma_cluster_slope <- 0L
     }
-    if(is.per_treatment(paras$dropout)) {
+    if (is.per_treatment(paras$dropout)) {
         paras_tx$dropout <- paras$dropout[[1]][[1]]
         paras$dropout <- paras$dropout[[1]][[2]]
 
@@ -1100,10 +1100,10 @@ prepare_paras.default <- function(paras) {
     }
 
 
-    if(length(paras_tx$n2) == 1) {
+    if (length(paras_tx$n2) == 1) {
         paras_tx$n2 <- rep(paras_tx$n2, paras_tx$n3)
     }
-    if(length(paras$n2) == 1) {
+    if (length(paras$n2) == 1) {
         paras$n2 <- rep(paras$n2, paras$n3)
     }
 
@@ -1113,8 +1113,8 @@ prepare_paras.default <- function(paras) {
 
 
     out <- list(control = paras,
-         treatment = paras_tx,
-         prepared = TRUE)
+        treatment = paras_tx,
+        prepared = TRUE)
 
     class(out) <- class(paras)
     out
@@ -1154,15 +1154,15 @@ prepare_paras.plcp_custom <- function(paras) paras
 #' library(dplyr)
 #' n2 <- unequal_clusters(5, 10, 15, 40)
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = n2,
-#'                       n3 = 6,
-#'                       T_end = 10,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       sigma_error = 1,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'     n2 = n2,
+#'     n3 = 6,
+#'     T_end = 10,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     sigma_error = 1,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     cohend = -0.8)
 #'
 #' # verify cluster sizes
 #' d <- simulate_data(p)
@@ -1174,39 +1174,39 @@ prepare_paras.plcp_custom <- function(paras) paras
 #' # Poisson distributed cluster sizes, same in both groups
 #' n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = n2,
-#'                       T_end = 10,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       sigma_error = 1,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'     n2 = n2,
+#'     T_end = 10,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     sigma_error = 1,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     cohend = -0.8)
 #'
 #' # Independent draws from same dist
 #' n2 <- unequal_clusters(func = rpois(n = 5, lambda = 5))
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = per_treatment(n2, n2),
-#'                       T_end = 10,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       sigma_error = 1,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'     n2 = per_treatment(n2, n2),
+#'     T_end = 10,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     sigma_error = 1,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     cohend = -0.8)
 #'
 #' # Use per_treatment() to specify per treatment ------------------------------
 #' n2 <- per_treatment(unequal_clusters(2, 2, 2, 2, 3, 4, 5),
-#'                      unequal_clusters(10, 15))
+#'     unequal_clusters(10, 15))
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = n2,
-#'                       n3 = 3,
-#'                       T_end = 10,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'     n2 = n2,
+#'     n3 = 3,
+#'     T_end = 10,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     cohend = -0.8)
 #'
 #' # verify cluster sizes
 #' d <- simulate_data(p)
@@ -1215,8 +1215,8 @@ prepare_paras.plcp_custom <- function(paras) paras
 #'     group_by(treatment, cluster) %>%
 #'     summarise(n = n())
 unequal_clusters <- function(..., func = NULL, trunc = 1, replace = 1) {
-    if(length(list(...)) > 0 & !is.null(func)) stop("Can't combine manual cluster sizes and 'func'.")
-    if(is.null(func)) {
+    if (length(list(...)) > 0 & !is.null(func)) stop("Can't combine manual cluster sizes and 'func'.")
+    if (is.null(func)) {
         x <- list(cluster_sizes = ...)
         tmp <- "manual"
     } else {
@@ -1225,7 +1225,7 @@ unequal_clusters <- function(..., func = NULL, trunc = 1, replace = 1) {
     }
 
     out <- function() {
-        if(is.call(x)) x <- eval(x)
+        if (is.call(x)) x <- eval(x)
         x <- unlist(x)
         attr(x, "func") <- tmp
         attr(x, "trunc") <- trunc
@@ -1234,12 +1234,12 @@ unequal_clusters <- function(..., func = NULL, trunc = 1, replace = 1) {
     }
 
     class(out) <- "plcp_unequal_clusters"
-   # x <- list(unequal_clusters=x)
-    #class(x) <- "unequal_clusters"
+    # x <- list(unequal_clusters=x)
+    # class(x) <- "unequal_clusters"
     list(out)
 }
 is.unequal_clusters <- function(x) {
-    if(is.per_treatment(x)) {
+    if (is.per_treatment(x)) {
         tx <- x[[1]]$treatment[[1]]
         cc <- x[[1]]$control[[1]]
         res <- any(c(class(tx), class(cc)) == "plcp_unequal_clusters")
@@ -1268,41 +1268,40 @@ is.unequal_clusters <- function(x) {
 #'
 #' @examples
 #' n2 <- per_treatment(control = 10,
-#'                     treatment = 20)
+#'     treatment = 20)
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = n2,
-#'                       n3 = 6,
-#'                       T_end = 10,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
-
-per_treatment  <- function(control, treatment) {
+#'     n2 = n2,
+#'     n3 = 6,
+#'     T_end = 10,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     cohend = -0.8)
+per_treatment <- function(control, treatment) {
     dots <- list(treatment = treatment,
-                 control = control)
-    #res <- lapply(dots, list)
+        control = control)
+    # res <- lapply(dots, list)
 
     class(dots) <- "plcp_per_treatment"
     x <- list(dots)
-    #class(x) <- "plcp_per_treatment"
+    # class(x) <- "plcp_per_treatment"
 
     x
 }
 is.per_treatment <- function(x) {
-    if(!is.function(x)) {
+    if (!is.function(x)) {
         return(class(x[[1]]) == "plcp_per_treatment")
     } else return(FALSE)
 }
 as.plcp <- function(.p) {
 
-    if(is.data.frame(.p)) {
+    if (is.data.frame(.p)) {
         tmp <- as.list(.p)
         tmp$design <- attr(.p, "call")$design
-        #func <- paste0("study_parameters.", tmp$design)
+        # func <- paste0("study_parameters.", tmp$design)
         paras <- do.call(study_parameters, tmp)
-        #class(paras) <- append(c("plcp"), class(paras))
+        # class(paras) <- append(c("plcp"), class(paras))
     }
     paras
 }
@@ -1316,18 +1315,17 @@ as.plcp <- function(.p) {
 #'
 #' @examples
 #' p <- study_parameters(n1 = 11,
-#'                       n2 = 10,
-#'                       n3 = 3,
-#'                       T_end = 10,
-#'                       icc_pre_subject = 0.5,
-#'                       icc_pre_cluster = 0,
-#'                       var_ratio = 0.03,
-#'                       icc_slope = 0.05,
-#'                       cohend = -0.8)
+#'     n2 = 10,
+#'     n3 = 3,
+#'     T_end = 10,
+#'     icc_pre_subject = 0.5,
+#'     icc_pre_cluster = 0,
+#'     var_ratio = 0.03,
+#'     icc_slope = 0.05,
+#'     cohend = -0.8)
 #'
 #' p <- update(p, icc_slope = 0.1)
 #' get_ICC_slope(p)
-#'
 #' \dontrun{
 #' # Using a "new" argument does not work (yet)
 #' update(p, sigma_cluster_slope = 2)
@@ -1341,13 +1339,13 @@ update.plcp <- function(object, ...) {
     new_args <- list(...)
 
     # suport legacy argument 'cohend'
-    if("cohend" %in% names(new_args)) {
+    if ("cohend" %in% names(new_args)) {
         new_args$effect_size <- cohend(new_args$cohend)
         new_args$cohend <- NULL
     }
     new <- check_new_argument(args, new_args)
-    if(length(new) > 0) stop(paste0("Updating new arguments is not yet implemented. '", new, "' was not used in original call."), call. = FALSE)
-    for(i in seq_along(new_args)) {
+    if (length(new) > 0) stop(paste0("Updating new arguments is not yet implemented. '", new, "' was not used in original call."), call. = FALSE)
+    for (i in seq_along(new_args)) {
         args[[names(new_args[i])]] <- new_args[[i]]
     }
 
@@ -1358,14 +1356,14 @@ update.plcp <- function(object, ...) {
 #' @method update plcp_multi
 #' @export
 update.plcp_multi <- function(object, ...) {
-    if("plcp_filtered" %in% class(object)) stop("Object is a subset. Update currently only works with the full object.", call. = FALSE)
+    if ("plcp_filtered" %in% class(object)) stop("Object is a subset. Update currently only works with the full object.", call. = FALSE)
     update.plcp(object, ...)
 }
 check_new_argument <- function(args, new) {
-   x <- lapply(args[names(new)], is.null)
-   x <- which(unlist(x))
+    x <- lapply(args[names(new)], is.null)
+    x <- which(unlist(x))
 
-   names(x)
+    names(x)
 }
 
 #' @export
@@ -1377,24 +1375,24 @@ get_n2.plcp <- function(paras) {
     tmp <- prepare_paras(paras)
 
     n2_cc <- unlist(tmp$control$n2)
-    if(tmp$control$partially_nested) {
-        if(length(n2_cc) == 1) {
-            n2_cc<- tmp$control$n3 * n2_cc
-            } else {
-                attrib <- attributes(n2_cc)
-                n2_cc <- sum(n2_cc)
-                attributes(n2_cc) <- attrib
-                }
+    if (tmp$control$partially_nested) {
+        if (length(n2_cc) == 1) {
+            n2_cc <- tmp$control$n3 * n2_cc
+        } else {
+            attrib <- attributes(n2_cc)
+            n2_cc <- sum(n2_cc)
+            attributes(n2_cc) <- attrib
+        }
     }
     n2_tx <- unlist(tmp$treatment$n2)
 
     list(treatment = n2_tx,
-               control = n2_cc)
+        control = n2_cc)
 }
 
 get_n2_ <- function(paras) {
     n2 <- unlist(paras$n2)
-    if(length(n2) == 1) {
+    if (length(n2) == 1) {
         n3 <- paras$n3
     } else {
         n3 <- length(n2)
@@ -1413,16 +1411,16 @@ get_n3.plcp <- function(paras) {
     tmp <- prepare_paras(paras)
 
     n3_cc <- get_n3_(tmp$control)
-    if(tmp$control$partially_nested) n3_cc <- 0L
+    if (tmp$control$partially_nested) n3_cc <- 0L
     n3_tx <- get_n3_(tmp$treatment)
 
     data.frame(treatment = n3_tx,
-               control = n3_cc,
-               total = n3_tx + n3_cc)
+        control = n3_cc,
+        total = n3_tx + n3_cc)
 }
 get_n3_ <- function(paras) {
     n2 <- unlist(paras$n2)
-    if(length(n2) == 1) {
+    if (length(n2) == 1) {
         n3 <- paras$n3
     } else {
         n3 <- length(n2)
@@ -1444,17 +1442,17 @@ get_tot_n.plcp <- function(paras, n = NULL) {
     n_tx <- get_tot_n_(paras_tx)
 
     data.frame(treatment = n_tx,
-               control = n_cc,
-               total = n_tx + n_cc)
+        control = n_cc,
+        total = n_tx + n_cc)
 }
 get_tot_n.plcp_multi <- function(paras, n = 1) {
     get_tot_n.plcp(as.plcp(paras[n, ]))
 }
 get_tot_n_ <- function(paras) {
     n2 <- unlist(paras$n2)
-    if(is.unequal_clusters(n2)) n2 <- n2[[1]]()
+    if (is.unequal_clusters(n2)) n2 <- n2[[1]]()
 
-    if(length(n2) == 1) {
+    if (length(n2) == 1) {
         tot_n <- paras$n3 * n2
     } else {
         tot_n <- sum(n2)
@@ -1496,4 +1494,3 @@ get_tot_n_ <- function(paras) {
 #
 #     out
 # }
-
