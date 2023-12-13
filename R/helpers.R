@@ -538,9 +538,9 @@ plot.plcp_power_table <- function(x, ...) {
     color <- colnames(x)[1]
     if(is.na(color)) color <- NULL
     .d$dropout <- factor(.d$dropout)
-    p <- ggplot2::ggplot(.d, ggplot2::aes_string("tot_n", "power", group = "id", color = color, linetype = "dropout")) +
+    p <- ggplot2::ggplot(.d, ggplot2::aes(.data[["tot_n"]], .data[["power"]], group = "id", color = color, linetype = "dropout")) +
         ggplot2::geom_line() +
-        ggplot2::geom_point(ggplot2::aes_string(alpha = "dropout")) +
+        ggplot2::geom_point(ggplot2::aes(alpha = .data[["dropout"]])) +
         ggplot2::theme_minimal() +
         ggplot2::scale_y_continuous(breaks = scales::pretty_breaks(10)) +
         ggplot2::scale_x_continuous(breaks = scales::pretty_breaks(10)) +

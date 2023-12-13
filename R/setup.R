@@ -324,7 +324,7 @@ study_parameters <- function(n1,
     if(is.null(icc_pre_subject) & is.null(sigma_subject_intercept)) {
         tmp_args$icc_pre_subject <- NA
     }
-    if(is.null(var_ratio) & (is.null(sigma_subject_slope) || is.na(sigma_subject_slope)) & is.null(sigma_cluster_slope)) {
+    if(is.null(var_ratio) & (is.null(sigma_subject_slope) | any(is.na(sigma_subject_slope))) & is.null(sigma_cluster_slope)) {
         tmp_args$var_ratio <- NA
     }
     if(is.null(icc_pre_cluster) & is.null(sigma_cluster_intercept)) {
@@ -345,7 +345,7 @@ study_parameters <- function(n1,
 
     # check cluster slope variance exists when var ratio is NA or zero.
     if(!is.null(tmp$var_ratio)) {
-        if(is.na(tmp$var_ratio) && any(tmp$icc_slope >= 0, na.rm=TRUE)) {
+        if(any(is.na(tmp$var_ratio)) && any(tmp$icc_slope >= 0, na.rm=TRUE)) {
             stop("'icc_slope' can't be >= 0 when 'var_ratio' or 'sigma_subject_slope' is NA", call. = FALSE)
         }
         if((any(tmp$var_ratio == 0, na.rm=TRUE) | any(sigma_subject_slope == 0)) &&
@@ -575,9 +575,9 @@ prepare_print_plcp <- function(x, two_level = FALSE) {
     effect <- paste(effect$ES, " (", effect_label,")", sep = "")
 
     gd <- get_dropout(x)
-    gd$time <- format(gd$time, nsmall = 0, digits = 3, width = 2)
-    gd$control <-  format(gd$control*100, nsmall = 0, digits = 0, width = 2)
-    gd$treatment <- format(gd$treatment*100, nsmall = 0, digits = 0, width = 2)
+    gd$time <- formatC(gd$time,  digits = 3, width = 2)
+    gd$control <-  formatC(gd$control*100,  digits = 0, width = 2, format = "f")
+    gd$treatment <- formatC(gd$treatment*100,  digits = 0, width = 2, format = "f")
     colnames(gd) <- c("time", "%, control", "%, treatment")
     gd <- print_per_treatment(gd)
 
@@ -852,6 +852,7 @@ get_slope_diff.plcp_multi <- function(object) {
 #' g$power <- mapply(rauden_liu, n = g$n, f = g$f, D = g$D)
 #' tidyr::spread(g, n, power)
 #'
+
 cohend <- function(ES, standardizer = "pretest_SD", treatment = "control") {
     if(length(standardizer) != 1) stop("Length of 'standardizer' must be equal to 1", call. = FALSE)
     if(!standardizer %in% c("pretest_SD",
