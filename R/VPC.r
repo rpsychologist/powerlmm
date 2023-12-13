@@ -106,7 +106,7 @@ plot.plcp_VPC <- function(x, ...) {
                                     "between-subjects (L2)",
                                     "within-subjects (L1)"))
 
-    p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "proportion", color = "level", fill = "level")) +
+    p <- ggplot2::ggplot(res, ggplot2::aes(.data[["time"]], .data[["proportion"]], color = "level", fill = "level")) +
         ggplot2::geom_line() +
         ggplot2::geom_point() +
         ggplot2::labs(title = "Variance partitioning",
@@ -251,9 +251,9 @@ plot.plcp_sds <- function(x, ...) {
      res <- .res
      res$time <- round(res$time,1)
 
-     p <- ggplot2::ggplot(res, ggplot2::aes_string("time", "SD_with_random_slopes")) +
-         ggplot2::geom_hline(ggplot2::aes_string(color = "'Random slopes = 0'",
-                         yintercept = "SD_no_random_slopes")) +
+     p <- ggplot2::ggplot(res, ggplot2::aes(.data[["time"]], .data[["SD_with_random_slopes"]])) +
+         ggplot2::geom_hline(ggplot2::aes(color = "'Random slopes = 0'",
+                                          yintercept = .data[["SD_no_random_slopes"]])) +
          ggplot2::geom_line(ggplot2::aes(color = "With random slopes")) +
          ggplot2::geom_point(ggplot2::aes(color = "With random slopes")) +
          ggplot2::scale_x_continuous(breaks = unique(res$time)) +
@@ -265,6 +265,7 @@ plot.plcp_sds <- function(x, ...) {
      #  if(!is.nulls(facet)) p + facet_wrap(facet)
 
      p
+
 
 }
 
@@ -376,9 +377,9 @@ plot.plcp_ICC2 <- function(x, ...) {
 
     break_labs <- as.numeric(dimnames(x)[[1]])
 
-    p <- ggplot2::ggplot(res, ggplot2::aes_string("time1", "time2", color = "cor", fill = "cor")) +
+    p <- ggplot2::ggplot(res, ggplot2::aes(.data[["time1"]], .data[["time2"]], color = "cor", fill = "cor")) +
         ggplot2::geom_tile() +
-        ggplot2::geom_text(ggplot2::aes_string(label = "cor2"), hjust = "center", color = "black") +
+        ggplot2::geom_text(ggplot2::aes(label = .data[["cor2"]]), hjust = "center", color = "black") +
         ggplot2::scale_x_continuous(breaks = breaks, labels = break_labs) +
         ggplot2::scale_y_continuous(breaks = breaks, labels = break_labs) +
         ggplot2::labs(color = "Correlation", fill = "Correlation",
